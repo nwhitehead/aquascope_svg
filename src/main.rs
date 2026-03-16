@@ -23,6 +23,10 @@ struct Rect {
     h: f32,
 }
 
+pub trait Translatable {
+    fn translate(self, tx: f32, ty: f32) -> Self;
+}
+
 /// Trait that drawable objects have
 pub trait Drawable {
     fn bounding_box(&self) -> Rect;
@@ -32,6 +36,25 @@ pub trait Drawable {
 /// A drawing is any item that can be present in the final SVG
 struct GBox {
     r: Rect,
+}
+
+impl Translatable for Rect {
+    fn translate(self, tx: f32, ty: f32) -> Self {
+        Rect {
+            x: self.x + tx,
+            y: self.y + ty,
+            w: self.w,
+            h: self.h,
+        }
+    }
+}
+
+impl Translatable for GBox {
+    fn translate(self, tx: f32, ty: f32) -> Self {
+        GBox {
+            r: self.r.translate(tx, ty),
+        }
+    }
 }
 
 impl Drawable for GBox {
@@ -56,10 +79,13 @@ impl Drawable for GBox {
         doc.add(path)
     }
 }
+
+/// Utility function for extracting viewBox numbers from Rect
 fn view_box(r: Rect) -> (f32, f32, f32, f32) {
     (r.x, r.y, r.w, r.h)
 }
 
+/// Expand rect evenly on all sides by d
 fn outline(rect: Rect, d: f32) -> Rect {
     Rect {
         x: rect.x - d,
@@ -71,6 +97,21 @@ fn outline(rect: Rect, d: f32) -> Rect {
 
 struct GArray {
     items: Vec<Box<dyn Drawable>>,
+}
+
+impl GArray {
+    fn push(&mut self, item: Box<dyn Drawable>) {
+        self.items.push(item);
+    }
+}
+
+impl Drawable for GArray {
+    fn bounding_box(&self) -> Rect {
+        Rect { x: 0.0, y: 0.0, w: 0.0, h: 0.0 }
+    }
+    fn draw(&self, doc: Document) -> Document {
+        doc
+    }
 }
 
 //fn node_of_value(value: &MValue) 

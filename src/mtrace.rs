@@ -171,6 +171,7 @@ pub enum MResult {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MTrace {
+    pub code: String,
     pub steps: Vec<MStep>,
     pub result: MResult,
 }

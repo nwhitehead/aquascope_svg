@@ -23,17 +23,15 @@ struct Rect {
     h: f32,
 }
 
-trait Translatable {
-    fn translate(self, tx: f32, ty: f32) -> Self;
-}
-
 /// Trait that drawable objects have
 trait Drawable {
+    fn translate(&mut self, tx: f32, ty: f32);
     fn bounding_box(&self) -> Rect;
     fn draw(&self, doc: Document) -> Document;
 }
 
 /// A drawing is any item that can be present in the final SVG
+#[derive(Clone)]
 struct GBox {
     r: Rect,
 }
@@ -45,26 +43,20 @@ impl GBox {
         }
     }
 }
-impl Translatable for Rect {
-    fn translate(self, tx: f32, ty: f32) -> Self {
-        Rect {
-            x: self.x + tx,
-            y: self.y + ty,
-            w: self.w,
-            h: self.h,
-        }
-    }
-}
 
-impl Translatable for GBox {
-    fn translate(self, tx: f32, ty: f32) -> Self {
-        GBox {
-            r: self.r.translate(tx, ty),
-        }
+fn translate(r: &Rect, tx: f32, ty: f32) -> Rect {
+    Rect {
+        x: r.x + tx,
+        y: r.y + ty,
+        w: r.w,
+        h: r.h,
     }
 }
 
 impl Drawable for GBox {
+    fn translate(&mut self, tx: f32, ty: f32) {
+        self.r = translate(&self.r, tx, ty);
+    }
     fn bounding_box(&self) -> Rect {
         self.r.clone()
     }
@@ -118,6 +110,12 @@ impl GArray {
 }
 
 impl Drawable for GArray {
+    fn translate(&mut self, tx: f32, ty: f32) {
+        for item in &mut self.items {
+            item.translate(tx, ty);
+        }
+    }
+
     fn bounding_box(&self) -> Rect {
         let mut x: f32 = 1000.0;
         let mut y: f32 = 1000.0;
@@ -141,8 +139,10 @@ impl Drawable for GArray {
     }
 }
 
-fn hstack(left: &dyn Drawable, right: &dyn Drawable) -> Box<dyn Drawable> {
+fn hstack(left: Box<dyn Drawable>, right: Box<dyn Drawable>) -> Box<dyn Drawable> {
     let left_bb = left.bounding_box();
+    let mut c = GArray::new();
+    c.push(left);
     Box::new(GBox::new(0.0, 0.0, 1.0, 1.0))
 }
 
@@ -211,6 +211,7 @@ fn main() {
     }
     let bx = GBox::new(0.0, 0.0, 40.0, 40.0);
     let bx2 = GBox::new(20.0, 20.0, 40.0, 40.0);
+    let hs = hstack(Box::new(bx.clone()), Box::new(bx2.clone()));
     let mut c = GArray::new();
     c.push(Box::new(bx));
     c.push(Box::new(bx2));

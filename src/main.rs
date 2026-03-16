@@ -38,6 +38,13 @@ struct GBox {
     r: Rect,
 }
 
+impl GBox {
+    fn new(x: f32, y: f32, w: f32, h: f32) -> Self {
+        Self {
+            r: Rect { x, y, w, h}
+        }
+    }
+}
 impl Translatable for Rect {
     fn translate(self, tx: f32, ty: f32) -> Self {
         Rect {
@@ -103,6 +110,11 @@ impl GArray {
     fn push(&mut self, item: Box<dyn Drawable>) {
         self.items.push(item);
     }
+    fn new() -> Self {
+        Self {
+            items: vec![],
+        }
+    }
 }
 
 impl Drawable for GArray {
@@ -127,6 +139,11 @@ impl Drawable for GArray {
         }
         d
     }
+}
+
+fn hstack(left: &dyn Drawable, right: &dyn Drawable) -> Box<dyn Drawable> {
+    let left_bb = left.bounding_box();
+    Box::new(GBox::new(0.0, 0.0, 1.0, 1.0))
 }
 
 //fn node_of_value(value: &MValue) 
@@ -192,16 +209,13 @@ fn main() {
             println!("Heap[{}]: {:?}", heap_idx, leaves);
         }
     }
-    let bx = GBox { 
-        r: Rect {
-            x: 0.0,
-            y: 0.0,
-            w: 40.0,
-            h: 40.0,
-        },
-    };
-    let document = bx.draw(Document::new())
-        .set("viewBox", view_box(outline(bx.bounding_box(), 10.0)));
+    let bx = GBox::new(0.0, 0.0, 40.0, 40.0);
+    let bx2 = GBox::new(20.0, 20.0, 40.0, 40.0);
+    let mut c = GArray::new();
+    c.push(Box::new(bx));
+    c.push(Box::new(bx2));
+    let document = c.draw(Document::new())
+        .set("viewBox", view_box(outline(c.bounding_box(), 10.0)));
 
     svg::save("image.svg", &document).unwrap();
 }

@@ -24,7 +24,7 @@ export type MMemorySegment =
 
 export interface MPath {
   segment: MMemorySegment;
-  parts: Array<MPathSegment>;
+  parts: MPathSegment[];
 }
 
 export type MHeapAllocKind =
@@ -33,8 +33,8 @@ export type MHeapAllocKind =
   | { type: "Box" };
 
 export type Abbreviated<T> =
-  | { type: "All"; value: Array<T> }
-  | { type: "Only"; value: [Array<T>, T] };
+  | { type: "All"; value: T[] }
+  | { type: "Only"; value: [T[], T] };
 
 export type MValue =
   | { type: "Bool"; value: boolean }
@@ -42,14 +42,14 @@ export type MValue =
   | { type: "Uint"; value: bigint }
   | { type: "Int"; value: bigint }
   | { type: "Float"; value: number }
-  | { type: "Tuple"; value: Array<MValue> }
+  | { type: "Tuple"; value: MValue[] }
   | { type: "Array"; value: Abbreviated<MValue> }
   | {
       type: "Adt";
       value: {
         name: string;
         variant: string | null;
-        fields: Array<[string, MValue]>;
+        fields: [string, MValue][];
         alloc_kind: MHeapAllocKind | null;
       };
     }
@@ -59,22 +59,22 @@ export type MValue =
 export interface MLocal {
   name: string;
   value: MValue;
-  moved_paths: Array<Array<MPathSegment>>;
+  moved_paths: MPathSegment[][];
 }
 
 export interface MFrame {
   name: string;
   body_span: CharRange;
   location: CharRange;
-  locals: Array<MLocal>;
+  locals: MLocal[];
 }
 
 export interface MStack {
-  frames: Array<MFrame>;
+  frames: MFrame[];
 }
 
 export interface MHeap {
-  locations: Array<MValue>;
+  locations: MValue[];
 }
 
 export interface MStep {
@@ -91,6 +91,6 @@ export type MResult =
   | { type: "Error"; value: MUndefinedBehavior };
 
 export interface MTrace {
-  steps: Array<MStep>;
+  steps: MStep[];
   result: MResult;
 }

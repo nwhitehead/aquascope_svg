@@ -1,5 +1,8 @@
 use clap::Parser;
 use std::fs;
+use svg::{Document, Node};
+use svg::node::element::Path;
+use svg::node::element::path::Data;
 
 mod mtrace;
 use mtrace::{AbbreviatedMValue, MTrace, MValue};
@@ -11,6 +14,43 @@ struct Args {
     #[arg(help = "Input filename")]
     input: String,
 }
+
+/// Trait that drawable objects have
+pub trait Drawable {
+    fn bounding_box(&self) -> (f32, f32, f32, f32);
+    fn draw(&self, doc: Document) -> Document;
+}
+
+/// A drawing is any item that can be present in the final SVG
+struct GBox {
+    x: f32,
+    y: f32,
+    w: f32,
+    h: f32,
+}
+
+impl Drawable for GBox {
+    fn bounding_box(&self) -> (f32, f32, f32, f32) {
+        (self.x, self.y, self.w, self.h)
+    }
+    fn draw(&self, doc: Document) -> Document {
+        let data = Data::new()
+            .move_to((self.x, self.y))
+            .line_by((self.x + self.w, self.y))
+            .line_by((self.x + self.w, self.y + self.h))
+            .line_by((self.x, self.y + self.h))
+            .close();
+
+        let path = Path::new()
+            .set("fill", "none")
+            .set("stroke", "black")
+            .set("stroke-width", 3)
+            .set("d", data);
+
+        doc.add(path)
+    }
+}
+//fn node_of_value(value: &MValue) 
 
 fn collect_leaves(value: &MValue) -> Vec<&MValue> {
     let mut leaves = Vec::new();
@@ -73,4 +113,14 @@ fn main() {
             println!("Heap[{}]: {:?}", heap_idx, leaves);
         }
     }
+    let bx = GBox {
+        x: -10.0,
+        y: -10.0,
+        w: 20.0,
+        h: 20.0,
+    };
+    let document = bx.draw(Document::new())
+        .set("viewBox", bx.bounding_box());
+
+    svg::save("image.svg", &document).unwrap();
 }

@@ -23,12 +23,12 @@ struct Rect {
     h: f32,
 }
 
-pub trait Translatable {
+trait Translatable {
     fn translate(self, tx: f32, ty: f32) -> Self;
 }
 
 /// Trait that drawable objects have
-pub trait Drawable {
+trait Drawable {
     fn bounding_box(&self) -> Rect;
     fn draw(&self, doc: Document) -> Document;
 }
@@ -107,10 +107,25 @@ impl GArray {
 
 impl Drawable for GArray {
     fn bounding_box(&self) -> Rect {
-        Rect { x: 0.0, y: 0.0, w: 0.0, h: 0.0 }
+        let mut x: f32 = 1000.0;
+        let mut y: f32 = 1000.0;
+        let mut x2: f32 = -1000.0;
+        let mut y2: f32 = -1000.0;
+        for item in &self.items {
+            let bb = item.bounding_box();
+            x = x.min(bb.x);
+            y = y.min(bb.y);
+            x2 = x2.max(bb.x + bb.w);
+            y2 = y2.max(bb.y + bb.h);
+        }
+        Rect { x, y, w: x2 - x, h: y2 - y }
     }
     fn draw(&self, doc: Document) -> Document {
-        doc
+        let mut d = doc;
+        for item in &self.items {
+            d = item.draw(d);
+        }
+        d
     }
 }
 

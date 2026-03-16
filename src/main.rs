@@ -42,9 +42,9 @@ impl Drawable for GBox {
         let (x, y, w, h) = (self.r.x, self.r.y, self.r.w, self.r.h);
         let data = Data::new()
             .move_to((x, y))
-            .line_by((x + w, y))
-            .line_by((x + w, y + h))
-            .line_by((x, y + h))
+            .line_by((w, 0))
+            .line_by((0, h))
+            .line_by((-w, 0))
             .close();
 
         let path = Path::new()
@@ -57,12 +57,22 @@ impl Drawable for GBox {
     }
 }
 fn view_box(r: Rect) -> (f32, f32, f32, f32) {
-    (r.x, r.y, r.x + r.w, r.y + r.h)
+    (r.x, r.y, r.w, r.h)
 }
 
-fn outline(rect: Rect) -> Rect {
-    rect
+fn outline(rect: Rect, d: f32) -> Rect {
+    Rect {
+        x: rect.x - d,
+        y: rect.y - d,
+        w: rect.w + 2.0 * d,
+        h: rect.h + 2.0 * d,
+    }
 }
+
+struct GArray {
+    items: Vec<Box<dyn Drawable>>,
+}
+
 //fn node_of_value(value: &MValue) 
 
 fn collect_leaves(value: &MValue) -> Vec<&MValue> {
@@ -135,7 +145,7 @@ fn main() {
         },
     };
     let document = bx.draw(Document::new())
-        .set("viewBox", view_box(bx.bounding_box()));
+        .set("viewBox", view_box(outline(bx.bounding_box(), 10.0)));
 
     svg::save("image.svg", &document).unwrap();
 }

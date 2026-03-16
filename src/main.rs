@@ -117,6 +117,7 @@ impl Drawable for GArray {
     }
 
     fn bounding_box(&self) -> Rect {
+        // Find bounding box by absolute coords at first, convert to width, height at end
         let mut x: f32 = 1000.0;
         let mut y: f32 = 1000.0;
         let mut x2: f32 = -1000.0;
@@ -139,11 +140,19 @@ impl Drawable for GArray {
     }
 }
 
-fn hstack(left: Box<dyn Drawable>, right: Box<dyn Drawable>) -> Box<dyn Drawable> {
+fn hstack(left: Box<dyn Drawable>, mut right: Box<dyn Drawable>) -> Box<dyn Drawable> {
+    // For hstack, always just move right part
     let left_bb = left.bounding_box();
+    let right_bb = right.bounding_box();
+    // Shift horizontally to make right_bb.x match up with left_bb.x + left_bb.w
+    let tx = (left_bb.x + left_bb.w) - right_bb.x;
+    // Shift vertically to make right_bb.y + 0.5 * right_bb.h match up left_bb.y + 0.5 * left_bb.h
+    let ty = (left_bb.y + 0.5 * left_bb.h) - (right_bb.y + 0.5 * right_bb.h);
     let mut c = GArray::new();
     c.push(left);
-    Box::new(GBox::new(0.0, 0.0, 1.0, 1.0))
+    right.translate(tx, ty);
+    c.push(right);
+    Box::new(c)
 }
 
 //fn node_of_value(value: &MValue) 
@@ -189,6 +198,11 @@ fn collect_leaves(value: &MValue) -> Vec<&MValue> {
     leaves
 }
 
+fn render(x: Box<dyn Drawable>) -> Document {
+    x.draw(Document::new())
+        .set("viewBox", view_box(outline(x.bounding_box(), 10.0)))
+}
+
 fn main() {
     let args = Args::parse();
     let content = fs::read_to_string(&args.input).expect("Failed to read input file");
@@ -215,8 +229,9 @@ fn main() {
     let mut c = GArray::new();
     c.push(Box::new(bx));
     c.push(Box::new(bx2));
-    let document = c.draw(Document::new())
-        .set("viewBox", view_box(outline(c.bounding_box(), 10.0)));
+    let document = render(hs);
+    // let document = c.draw(Document::new())
+    //     .set("viewBox", view_box(outline(c.bounding_box(), 10.0)));
 
     svg::save("image.svg", &document).unwrap();
 }

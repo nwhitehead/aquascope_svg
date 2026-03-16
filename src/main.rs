@@ -15,30 +15,36 @@ struct Args {
     input: String,
 }
 
-/// Trait that drawable objects have
-pub trait Drawable {
-    fn bounding_box(&self) -> (f32, f32, f32, f32);
-    fn draw(&self, doc: Document) -> Document;
-}
-
-/// A drawing is any item that can be present in the final SVG
-struct GBox {
+#[derive(Clone)]
+struct Rect {
     x: f32,
     y: f32,
     w: f32,
     h: f32,
 }
 
+/// Trait that drawable objects have
+pub trait Drawable {
+    fn bounding_box(&self) -> Rect;
+    fn draw(&self, doc: Document) -> Document;
+}
+
+/// A drawing is any item that can be present in the final SVG
+struct GBox {
+    r: Rect,
+}
+
 impl Drawable for GBox {
-    fn bounding_box(&self) -> (f32, f32, f32, f32) {
-        (self.x, self.y, self.w, self.h)
+    fn bounding_box(&self) -> Rect {
+        self.r.clone()
     }
     fn draw(&self, doc: Document) -> Document {
+        let (x, y, w, h) = (self.r.x, self.r.y, self.r.w, self.r.h);
         let data = Data::new()
-            .move_to((self.x, self.y))
-            .line_by((self.x + self.w, self.y))
-            .line_by((self.x + self.w, self.y + self.h))
-            .line_by((self.x, self.y + self.h))
+            .move_to((x, y))
+            .line_by((x + w, y))
+            .line_by((x + w, y + h))
+            .line_by((x, y + h))
             .close();
 
         let path = Path::new()
@@ -49,6 +55,13 @@ impl Drawable for GBox {
 
         doc.add(path)
     }
+}
+fn view_box(r: Rect) -> (f32, f32, f32, f32) {
+    (r.x, r.y, r.x + r.w, r.y + r.h)
+}
+
+fn outline(rect: Rect) -> Rect {
+    rect
 }
 //fn node_of_value(value: &MValue) 
 
@@ -113,14 +126,16 @@ fn main() {
             println!("Heap[{}]: {:?}", heap_idx, leaves);
         }
     }
-    let bx = GBox {
-        x: -10.0,
-        y: -10.0,
-        w: 20.0,
-        h: 20.0,
+    let bx = GBox { 
+        r: Rect {
+            x: 0.0,
+            y: 0.0,
+            w: 40.0,
+            h: 40.0,
+        },
     };
     let document = bx.draw(Document::new())
-        .set("viewBox", bx.bounding_box());
+        .set("viewBox", view_box(bx.bounding_box()));
 
     svg::save("image.svg", &document).unwrap();
 }

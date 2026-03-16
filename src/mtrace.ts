@@ -62,23 +62,23 @@ export interface MLocal {
   moved_paths: Array<Array<MPathSegment>>;
 }
 
-export interface MFrame<L> {
+export interface MFrame {
   name: string;
   body_span: CharRange;
-  location: L;
+  location: CharRange;
   locals: Array<MLocal>;
 }
 
-export interface MStack<L> {
-  frames: Array<MFrame<L>>;
+export interface MStack {
+  frames: Array<MFrame>;
 }
 
 export interface MHeap {
   locations: Array<MValue>;
 }
 
-export interface MStep<L> {
-  stack: MStack<L>;
+export interface MStep {
+  stack: MStack;
   heap: MHeap;
 }
 
@@ -90,7 +90,7 @@ export type MResult =
   | { type: "Success" }
   | { type: "Error"; value: MUndefinedBehavior };
 
-export interface MTrace<L> {
-  steps: Array<MStep<L>>;
+export interface MTrace {
+  steps: Array<MStep>;
   result: MResult;
 }

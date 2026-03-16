@@ -2,6 +2,8 @@ use clap::Parser;
 use serde_json::Value;
 use std::fs;
 
+mod mtrace;
+
 #[derive(Parser)]
 #[command(name = "aquascope_svg")]
 #[command(about = "A tool for converting Aquascope JSON to SVG", long_about = None)]

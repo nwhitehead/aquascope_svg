@@ -1,8 +1,8 @@
 use clap::Parser;
-use serde_json::Value;
 use std::fs;
 
 mod mtrace;
+use mtrace::MTrace;
 
 #[derive(Parser)]
 #[command(name = "aquascope_svg")]
@@ -15,6 +15,6 @@ struct Args {
 fn main() {
     let args = Args::parse();
     let content = fs::read_to_string(&args.input).expect("Failed to read input file");
-    let json: Value = serde_json::from_str(&content).expect("Failed to parse JSON");
+    let json: MTrace = serde_json::from_str(&content).expect("Failed to parse JSON");
     println!("{:?}", json);
 }

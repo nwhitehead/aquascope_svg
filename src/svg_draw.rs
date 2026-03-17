@@ -177,17 +177,42 @@ impl Drawable for GArray {
     }
 }
 
-struct Padded {
+struct Padding {
     top: f32,
     left: f32,
     bottom: f32,
     right: f32,
 }
 
-impl Padded {
+impl Padding {
     fn new(top: f32, left: f32, bottom: f32, right: f32) -> Self {
         Self { top, left, bottom, right }
     }
+}
+
+struct Padded {
+    item: Box<dyn Drawable>,
+    padding: Padding,
+}
+
+impl Drawable for Padded {
+    fn translate(&mut self, tx: f32, ty: f32) {
+        self.item.translate(tx, ty);
+    }
+    fn bounding_box(&self) -> Rect {
+        let bb = self.item.bounding_box();
+        let Padding { top, left, bottom, right } = self.padding;
+        Rect {
+            x: bb.x - left,
+            y: bb.y - top,
+            w: bb.w + left + right,
+            h: bb.h + top + bottom,
+        }
+    }
+    fn draw(&self, doc: Document) -> Document {
+        self.item.draw(doc)
+    }
+
 }
 
 enum FormulaType {

@@ -237,8 +237,13 @@ pub fn vstack_right(items: Vec<Box<dyn Drawable>>) -> GArray {
     stack_general(items, FormulaType::AlignHigh, FormulaType::Sequenced)
 }
 
-// pub fn text_in_box(txt: String) -> Box<dyn Drawable> {
+pub fn box_around(item: &dyn Drawable, dist: f32) -> GBox {
+    let bb = outline(item.bounding_box(), dist);
+    GBox::new(bb.x, bb.y, bb.w, bb.h)
+}
 
+// pub fn text_in_box(txt: String) -> GArray {
+//     let txtobj = Text::new(0.0, 0.0, txt);
 // }
 
 pub fn render(x: &dyn Drawable) -> Document {

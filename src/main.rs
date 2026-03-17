@@ -108,60 +108,42 @@ fn value_display(v: &MValue) -> String {
     }
 }
 
-fn simplify_box(v: &MValue) -> MValue {
+fn strip_off(v: &MValue, name: &str) -> MValue {
     match v {
-        MValue::Adt { value } => if value.name == "Box" {
-            let v2 = &value.fields[0].1;
-            match v2 {
-                MValue::Adt { value } => if value.name == "Unique" {
-                    let v3 = &value.fields[0].1;
-                    match v3 {
-                        MValue::Adt { value } => if value.name == "NonNull" {
-                            let v3 = &value.fields[0].1;
-                            v3.clone()
-                        } else {
-                            v2.clone()
-                        },
-                        _ => v.clone()
-                    }
-                } else {
-                    v.clone()
-                }
-                _ => v.clone()
-            }
+        MValue::Adt { value } => if value.name == name {
+            value.fields[0].1.clone()
         } else {
             v.clone()
         },
-        _ => v.clone(),
+        _ => v.clone()
     }
 }
 
-fn simplify_vec(v: &MValue) -> MValue {
-    match v {
-        MValue::Adt { value } => if value.name == "Box" {
-            let v2 = &value.fields[0].1;
-            match v2 {
-                MValue::Adt { value } => if value.name == "Unique" {
-                    let v3 = &value.fields[0].1;
-                    match v3 {
-                        MValue::Adt { value } => if value.name == "NonNull" {
-                            let v3 = &value.fields[0].1;
-                            v3.clone()
-                        } else {
-                            v2.clone()
-                        },
-                        _ => v.clone()
-                    }
-                } else {
-                    v.clone()
-                }
-                _ => v.clone()
-            }
-        } else {
-            v.clone()
-        },
-        _ => v.clone(),
+fn strip_off_mult(v: &MValue, names: Vec<&str>) -> MValue {
+    let mut res = v.clone();
+    let mut all_matched = true;
+    for name in names {
+        match res {
+            MValue::Adt { ref value } => if value.name == name {
+                res = value.fields[0].1.clone();
+            },
+            _ => all_matched = false,
+        }
     }
+    // Make subs all or nothing
+    if all_matched {
+        res
+    } else {
+        v.clone()
+    }
+}
+
+fn simplify_box(v: &MValue) -> MValue {
+    strip_off_mult(&v, vec!["Box", "Unique", "NonNull"])
+}
+
+fn simplify_vec(v: &MValue) -> MValue {
+    strip_off_mult(&v, vec!["Vec", "RawVec", "RawVecInner", "Unique", "NonNull"])
 }
 
 fn main() {
@@ -174,7 +156,7 @@ fn main() {
 
         for frame in &step.stack.frames {
             for local in &frame.locals {
-                let simpl = simplify_vec(&local.value);
+                let simpl = simplify_box(&simplify_vec(&local.value));
                 //let simpl = local.value.clone();
                 println!("Local '{}': {}", local.name, value_display(&simpl));
             }

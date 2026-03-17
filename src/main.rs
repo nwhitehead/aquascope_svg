@@ -207,9 +207,12 @@ fn main() {
     // Fill in pointer map with arbitrary names
     let mut pcnt = 0;
     for pntr in pntrs {
-        pointer_map.insert(pntr.clone(), format!("P{}", pcnt));
-        pcnt += 1;
+        if pointer_map.get(&pntr).is_none() {
+            pointer_map.insert(pntr.clone(), format!("P{}", pcnt));
+            pcnt += 1;
+        }
     }
+    println!("POINTER MAP\n------\n{:?}", pointer_map);
 
     // Extract tags to put into code snippet
     let mut tags = vec![];

@@ -1,0 +1,34 @@
+```rust
+fn main() /* L0 */ {
+    let mut x = 1; /* L1 */
+    let y = x;
+    x += 1;
+}
+```
+
+```execution
+# L0
+## Stack
+### main
+
+# L1
+## Stack
+### main
+x: 1
+
+# L2
+## Stack
+### main
+x: 1
+y: 1
+
+# L3
+## Stack
+### main
+x: 2
+y: 1
+
+# L4
+## Stack
+### main
+```

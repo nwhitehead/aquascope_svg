@@ -108,6 +108,62 @@ fn value_display(v: &MValue) -> String {
     }
 }
 
+fn simplify_box(v: &MValue) -> MValue {
+    match v {
+        MValue::Adt { value } => if value.name == "Box" {
+            let v2 = &value.fields[0].1;
+            match v2 {
+                MValue::Adt { value } => if value.name == "Unique" {
+                    let v3 = &value.fields[0].1;
+                    match v3 {
+                        MValue::Adt { value } => if value.name == "NonNull" {
+                            let v3 = &value.fields[0].1;
+                            v3.clone()
+                        } else {
+                            v2.clone()
+                        },
+                        _ => v.clone()
+                    }
+                } else {
+                    v.clone()
+                }
+                _ => v.clone()
+            }
+        } else {
+            v.clone()
+        },
+        _ => v.clone(),
+    }
+}
+
+fn simplify_vec(v: &MValue) -> MValue {
+    match v {
+        MValue::Adt { value } => if value.name == "Box" {
+            let v2 = &value.fields[0].1;
+            match v2 {
+                MValue::Adt { value } => if value.name == "Unique" {
+                    let v3 = &value.fields[0].1;
+                    match v3 {
+                        MValue::Adt { value } => if value.name == "NonNull" {
+                            let v3 = &value.fields[0].1;
+                            v3.clone()
+                        } else {
+                            v2.clone()
+                        },
+                        _ => v.clone()
+                    }
+                } else {
+                    v.clone()
+                }
+                _ => v.clone()
+            }
+        } else {
+            v.clone()
+        },
+        _ => v.clone(),
+    }
+}
+
 fn main() {
     let args = Args::parse();
     let content = fs::read_to_string(&args.input).expect("Failed to read input file");
@@ -118,7 +174,9 @@ fn main() {
 
         for frame in &step.stack.frames {
             for local in &frame.locals {
-                println!("Local '{}': {}", local.name, value_display(&local.value));
+                let simpl = simplify_vec(&local.value);
+                //let simpl = local.value.clone();
+                println!("Local '{}': {}", local.name, value_display(&simpl));
             }
         }
 

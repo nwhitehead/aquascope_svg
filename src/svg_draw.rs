@@ -33,14 +33,14 @@ pub struct Text {
 }
 
 impl Text {
-    pub fn new(x: f32, y: f32, txt: String) -> Self {
+    pub fn new(x: f32, y: f32, txt: &str) -> Self {
         Self {
             x,
             y,
             charwidth: 19.0,
             lineheight: 24.0,
             style: "font: 32px monospace;".into(),
-            txt,
+            txt: txt.into(),
         }
     }
 }
@@ -59,7 +59,6 @@ impl Drawable for Text {
         )
     }
     fn draw(&self, doc: Document) -> Document {
-        println!("Drawing text at p=({}, {})", self.x, self.y);
         let tnode = svg::node::element::Text::new(self.txt.clone())
             .set("fill", "black")
             .set("style", self.style.clone())
@@ -194,6 +193,19 @@ fn apply_formula(formula: &FormulaType, x: f32, w: f32, ix: f32, iw: f32) -> f32
     }
 }
 
+fn extend_bb(left: &Rect, right: &Rect) -> Rect {
+    let left_xmax = left.x + left.w;
+    let left_ymax = left.y + left.h;
+    let right_xmax = right.x + right.w;
+    let right_ymax = right.y + right.h;
+    let res_x = f32::min(left.x, right.x);
+    let res_y = f32::min(left.y, right.y);
+    let res_w = f32::max(left_xmax, right_xmax) - res_x;
+    let res_h = f32::max(left_ymax, right_ymax) - res_y;
+    Rect::new(res_x, res_y, res_w, res_h)
+}
+
+// General stacking function that can align and sequence along X and Y directions
 fn stack_general(
     items: Vec<Box<dyn Drawable>>,
     tx_formula: FormulaType,
@@ -207,6 +219,8 @@ fn stack_general(
             let tx = apply_formula(&tx_formula, b.x, b.w, item_bb.x, item_bb.w);
             let ty = apply_formula(&ty_formula, b.y, b.h, item_bb.y, item_bb.h);
             item.translate(tx, ty);
+            let item_bb = item.bounding_box();
+            bb = Some(extend_bb(&b, &item_bb));
         } else {
             bb = Some(item.bounding_box());
         }
@@ -215,37 +229,60 @@ fn stack_general(
     c
 }
 
+/// Stack centers on top of each other
 pub fn stack(items: Vec<Box<dyn Drawable>>) -> GArray {
     stack_general(items, FormulaType::Centered, FormulaType::Centered)
 }
+/// Sequence to the right, aligning midlines
 pub fn hstack(items: Vec<Box<dyn Drawable>>) -> GArray {
     stack_general(items, FormulaType::Sequenced, FormulaType::Centered)
 }
+/// Sequence to the right, aligning tops
 pub fn hstack_top(items: Vec<Box<dyn Drawable>>) -> GArray {
     stack_general(items, FormulaType::Sequenced, FormulaType::AlignLow)
 }
+/// Sequence to the right, aligning bottoms
 pub fn hstack_bottom(items: Vec<Box<dyn Drawable>>) -> GArray {
     stack_general(items, FormulaType::Sequenced, FormulaType::AlignHigh)
 }
+/// Sequence vertically down, aligning centers
 pub fn vstack(items: Vec<Box<dyn Drawable>>) -> GArray {
     stack_general(items, FormulaType::Centered, FormulaType::Sequenced)
 }
+/// Sequence vertically down, aligning left
 pub fn vstack_left(items: Vec<Box<dyn Drawable>>) -> GArray {
     stack_general(items, FormulaType::AlignLow, FormulaType::Sequenced)
 }
+/// Sequence vertically down, aligning right
 pub fn vstack_right(items: Vec<Box<dyn Drawable>>) -> GArray {
     stack_general(items, FormulaType::AlignHigh, FormulaType::Sequenced)
 }
 
+/// Create a box around an existing drawable
 pub fn box_around(item: &dyn Drawable, dist: f32) -> GBox {
     let bb = outline(item.bounding_box(), dist);
     GBox::new(bb.x, bb.y, bb.w, bb.h)
 }
 
-pub fn text_in_box(txt: String, dist: f32) -> GArray {
-    let txtobj = Text::new(0.0, 0.0, txt);
+/// Just string of text
+pub fn text(txt: &str) -> Text {
+    Text::new(0.0, 0.0, &txt)
+}
+
+/// Put a string in a box
+pub fn text_in_box(txt: &str, dist: f32) -> GArray {
+    let txtobj = Text::new(0.0, 0.0, &txt);
     let bb = box_around(&txtobj, dist);
     stack(vec![Box::new(txtobj), Box::new(bb)])
+}
+
+/// Sequence horizontally, aligning midline, inserting vertical bars
+pub fn hstack_spacers(items: Vec<Box<dyn Drawable>>, hspace: f32) -> GArray {
+    let mut spaced = vec![];
+    for item in &items {
+        spaced.push(item);
+    }
+    hstack(items)
 }
 
 pub fn render(x: &dyn Drawable) -> Document {

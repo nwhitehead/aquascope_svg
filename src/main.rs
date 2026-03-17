@@ -155,6 +155,28 @@ fn hstack(left: Box<dyn Drawable>, mut right: Box<dyn Drawable>) -> Box<dyn Draw
     Box::new(c)
 }
 
+fn hstack_multi(mut items: Vec<Box<dyn Drawable>>) -> Box<dyn Drawable> {
+    let mut bb = None;
+    let mut c = GArray::new();
+    for item in items {
+        if let Some(ref b) = bb {
+
+        } else {
+            bb = Some(item.bounding_box().clone());
+        }
+        // // For hstack, always just move right part
+        // let left_bb = left.bounding_box();
+        // let right_bb = right.bounding_box();
+        // // Shift horizontally to make right_bb.x match up with left_bb.x + left_bb.w
+        // let tx = (left_bb.x + left_bb.w) - right_bb.x;
+        // // Shift vertically to make right_bb.y + 0.5 * right_bb.h match up left_bb.y + 0.5 * left_bb.h
+        // let ty = (left_bb.y + 0.5 * left_bb.h) - (right_bb.y + 0.5 * right_bb.h);
+        c.push(item);
+    }
+    //right.translate(tx, ty);
+    Box::new(c)
+}
+
 //fn node_of_value(value: &MValue) 
 
 fn collect_leaves(value: &MValue) -> Vec<&MValue> {

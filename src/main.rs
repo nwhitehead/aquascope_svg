@@ -4,7 +4,7 @@ use svg::save;
 
 mod mtrace;
 mod svg_draw;
-use mtrace::{AbbreviatedMValue, MTrace, MValue, MValuePointer};
+use mtrace::{AbbreviatedMValue, MTrace, MValue, MValuePointer, CharRange, CharPos};
 use svg_draw::{box_around, hstack_spacers, render, stack, text, text_in_box};
 
 #[derive(Parser)]
@@ -167,10 +167,19 @@ fn extract_pointers(v: &MValue, out: &mut Vec<MValuePointer>) {
     }
 }
 
+fn tag_code(txt: &str, loc: &CharRange, tag: &str) -> String {
+    let mut lines: Vec<String> = txt.split('\n').map(|x| x.to_string()).collect();
+    let endloc = &loc.end;
+    lines[endloc.line as usize].insert_str(endloc.column as usize, tag);
+    lines.join("\n")
+}
+
 fn main() {
     let args = Args::parse();
     let content = fs::read_to_string(&args.input).expect("Failed to read input file");
     let json: MTrace = serde_json::from_str(&content).expect("Failed to parse JSON");
+    // Get original code text
+    let code = json.code;
 
     // Extract pointers so we know what to label
     let mut pntrs = vec![];
@@ -190,6 +199,7 @@ fn main() {
         println!("## Stack");
         if step.stack.frames.len() == 0 {}
         for frame in &step.stack.frames {
+            println!("{}", tag_code(&code, &frame.location, &format!(" /* L{} */ ", step_idx)));
             println!("### {}", frame.name);
             for local in &frame.locals {
                 let simpl = simplify_string(&simplify_box(&simplify_vec(&local.value)));

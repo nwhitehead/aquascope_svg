@@ -1,6 +1,6 @@
-use svg::node::element::path::Data;
-use svg::node::element::Path;
 use svg::Document;
+use svg::node::element::Path;
+use svg::node::element::path::Data;
 
 #[derive(Clone)]
 pub struct Rect {
@@ -123,11 +123,7 @@ pub struct SepLine {
 
 impl SepLine {
     fn new(h: f32) -> Self {
-        Self {
-            x: 0.0,
-            y: 0.0,
-            h
-        }
+        Self { x: 0.0, y: 0.0, h }
     }
 }
 
@@ -141,10 +137,7 @@ impl Drawable for SepLine {
     }
     fn draw(&self, doc: Document) -> Document {
         let (x, y, h) = (self.x, self.y, self.h);
-        let data = Data::new()
-            .move_to((x, y))
-            .line_by((0, h))
-            .close();
+        let data = Data::new().move_to((x, y)).line_by((0, h)).close();
         let path = Path::new()
             .set("fill", "none")
             .set("stroke", "gray")
@@ -152,7 +145,6 @@ impl Drawable for SepLine {
             .set("d", data);
         doc.add(path)
     }
-
 }
 
 pub fn view_box(r: Rect) -> (f32, f32, f32, f32) {
@@ -225,7 +217,12 @@ struct Padding {
 
 impl Padding {
     fn new(top: f32, left: f32, bottom: f32, right: f32) -> Self {
-        Self { top, left, bottom, right }
+        Self {
+            top,
+            left,
+            bottom,
+            right,
+        }
     }
 }
 
@@ -238,20 +235,17 @@ impl Padded {
     fn pad_uniform(item: Box<dyn Drawable>, d: f32) -> Self {
         Self {
             item,
-            padding: Padding::new(d, d, d, d)
+            padding: Padding::new(d, d, d, d),
         }
     }
     fn pad_x(item: Box<dyn Drawable>, d: f32) -> Self {
         Self {
             item,
-            padding: Padding::new(0.0, d, 0.0, d)
+            padding: Padding::new(0.0, d, 0.0, d),
         }
     }
     fn pad(item: Box<dyn Drawable>, padding: Padding) -> Self {
-        Self {
-            item,
-            padding,
-        }
+        Self { item, padding }
     }
 }
 
@@ -261,7 +255,12 @@ impl Drawable for Padded {
     }
     fn bounding_box(&self) -> Rect {
         let bb = self.item.bounding_box();
-        let Padding { top, left, bottom, right } = self.padding;
+        let Padding {
+            top,
+            left,
+            bottom,
+            right,
+        } = self.padding;
         Rect {
             x: bb.x - left,
             y: bb.y - top,
@@ -272,7 +271,6 @@ impl Drawable for Padded {
     fn draw(&self, doc: Document) -> Document {
         self.item.draw(doc)
     }
-
 }
 
 enum FormulaType {
@@ -379,7 +377,10 @@ pub fn hstack_spacers(items: Vec<Box<dyn Drawable>>, hspace: f32, vheight: f32) 
     let mut spaced: Vec<Box<dyn Drawable>> = vec![];
     for mut item in items {
         if spaced.len() > 0 {
-            spaced.push(Box::new(Padded::pad_x(Box::new(SepLine::new(vheight)), hspace)));
+            spaced.push(Box::new(Padded::pad_x(
+                Box::new(SepLine::new(vheight)),
+                hspace,
+            )));
         }
         spaced.push(item);
     }

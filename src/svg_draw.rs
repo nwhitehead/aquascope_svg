@@ -195,6 +195,27 @@ struct Padded {
     padding: Padding,
 }
 
+impl Padded {
+    fn pad_uniform(item: Box<dyn Drawable>, d: f32) -> Self {
+        Self {
+            item,
+            padding: Padding::new(d, d, d, d)
+        }
+    }
+    fn pad_x(item: Box<dyn Drawable>, d: f32) -> Self {
+        Self {
+            item,
+            padding: Padding::new(0.0, d, 0.0, d)
+        }
+    }
+    fn pad(item: Box<dyn Drawable>, padding: Padding) -> Self {
+        Self {
+            item,
+            padding,
+        }
+    }
+}
+
 impl Drawable for Padded {
     fn translate(&mut self, tx: f32, ty: f32) {
         self.item.translate(tx, ty);

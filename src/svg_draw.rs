@@ -242,9 +242,11 @@ pub fn box_around(item: &dyn Drawable, dist: f32) -> GBox {
     GBox::new(bb.x, bb.y, bb.w, bb.h)
 }
 
-// pub fn text_in_box(txt: String) -> GArray {
-//     let txtobj = Text::new(0.0, 0.0, txt);
-// }
+pub fn text_in_box(txt: String, dist: f32) -> GArray {
+    let txtobj = Text::new(0.0, 0.0, txt);
+    let bb = box_around(&txtobj, dist);
+    stack(vec![Box::new(txtobj), Box::new(bb)])
+}
 
 pub fn render(x: &dyn Drawable) -> Document {
     x.draw(Document::new())

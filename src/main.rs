@@ -5,7 +5,7 @@ use svg::save;
 mod mtrace;
 mod svg_draw;
 use mtrace::{AbbreviatedMValue, MTrace, MValue};
-use svg_draw::{box_around, render, stack, GBox, Text};
+use svg_draw::{text_in_box, render, stack, GBox, Text};
 
 #[derive(Parser)]
 #[command(name = "aquascope_svg")]
@@ -76,14 +76,8 @@ fn main() {
             println!("Heap[{}]: {:?}", heap_idx, leaves);
         }
     }
-    let t1 = Text::new(50.0, 0.0, "Blow".into());
-    let t2 = box_around(&t1, 10.0);
-    let hs = stack(vec![
-        Box::new(t1),
-        Box::new(t2),
-//        Box::new(GBox::new(0.0, 0.0, 40.0, 40.0)),
-    ]);
-    let document = render(&hs);
+    let t = text_in_box("Blow".into(), 10.0);
+    let document = render(&t);
 
     save("image.svg", &document).unwrap();
 }

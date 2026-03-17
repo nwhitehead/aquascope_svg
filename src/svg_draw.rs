@@ -177,6 +177,19 @@ impl Drawable for GArray {
     }
 }
 
+struct Padded {
+    top: f32,
+    left: f32,
+    bottom: f32,
+    right: f32,
+}
+
+impl Padded {
+    fn new(top: f32, left: f32, bottom: f32, right: f32) -> Self {
+        Self { top, left, bottom, right }
+    }
+}
+
 enum FormulaType {
     AlignLow,
     AlignHigh,
@@ -278,11 +291,16 @@ pub fn text_in_box(txt: &str, dist: f32) -> GArray {
 
 /// Sequence horizontally, aligning midline, inserting vertical bars
 pub fn hstack_spacers(items: Vec<Box<dyn Drawable>>, hspace: f32) -> GArray {
-    let mut spaced = vec![];
-    for item in &items {
+    let mut spaced: Vec<Box<dyn Drawable>> = vec![];
+    for mut item in items {
+        if spaced.len() > 0 {
+            spaced.push(Box::new(
+                GBox::new(0.0, 0.0, 2.0, 10.0)
+            ));
+        }
         spaced.push(item);
     }
-    hstack(items)
+    hstack(spaced)
 }
 
 pub fn render(x: &dyn Drawable) -> Document {

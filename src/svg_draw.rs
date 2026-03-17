@@ -198,7 +198,7 @@ fn stack_general(
     items: Vec<Box<dyn Drawable>>,
     tx_formula: FormulaType,
     ty_formula: FormulaType,
-) -> Box<dyn Drawable> {
+) -> GArray {
     let mut bb: Option<Rect> = None;
     let mut c = GArray::new();
     for mut item in items {
@@ -212,32 +212,36 @@ fn stack_general(
         }
         c.push(item);
     }
-    Box::new(c)
+    c
 }
 
-pub fn stack(items: Vec<Box<dyn Drawable>>) -> Box<dyn Drawable> {
+pub fn stack(items: Vec<Box<dyn Drawable>>) -> GArray {
     stack_general(items, FormulaType::Centered, FormulaType::Centered)
 }
-pub fn hstack(items: Vec<Box<dyn Drawable>>) -> Box<dyn Drawable> {
+pub fn hstack(items: Vec<Box<dyn Drawable>>) -> GArray {
     stack_general(items, FormulaType::Sequenced, FormulaType::Centered)
 }
-pub fn hstack_top(items: Vec<Box<dyn Drawable>>) -> Box<dyn Drawable> {
+pub fn hstack_top(items: Vec<Box<dyn Drawable>>) -> GArray {
     stack_general(items, FormulaType::Sequenced, FormulaType::AlignLow)
 }
-pub fn hstack_bottom(items: Vec<Box<dyn Drawable>>) -> Box<dyn Drawable> {
+pub fn hstack_bottom(items: Vec<Box<dyn Drawable>>) -> GArray {
     stack_general(items, FormulaType::Sequenced, FormulaType::AlignHigh)
 }
-pub fn vstack(items: Vec<Box<dyn Drawable>>) -> Box<dyn Drawable> {
+pub fn vstack(items: Vec<Box<dyn Drawable>>) -> GArray {
     stack_general(items, FormulaType::Centered, FormulaType::Sequenced)
 }
-pub fn vstack_left(items: Vec<Box<dyn Drawable>>) -> Box<dyn Drawable> {
+pub fn vstack_left(items: Vec<Box<dyn Drawable>>) -> GArray {
     stack_general(items, FormulaType::AlignLow, FormulaType::Sequenced)
 }
-pub fn vstack_right(items: Vec<Box<dyn Drawable>>) -> Box<dyn Drawable> {
+pub fn vstack_right(items: Vec<Box<dyn Drawable>>) -> GArray {
     stack_general(items, FormulaType::AlignHigh, FormulaType::Sequenced)
 }
 
-pub fn render(x: Box<dyn Drawable>) -> Document {
+// pub fn text_in_box(txt: String) -> Box<dyn Drawable> {
+
+// }
+
+pub fn render(x: &dyn Drawable) -> Document {
     x.draw(Document::new())
         .set("viewBox", view_box(outline(x.bounding_box(), 100.0)))
 }

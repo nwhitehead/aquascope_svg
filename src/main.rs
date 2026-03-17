@@ -80,7 +80,7 @@ fn main() {
         Box::new(Text::new(50.0, 0.0, "AntiDisestablishmentarialism".into())),
         Box::new(GBox::new(0.0, 0.0, 80.0, 40.0)),
     ]);
-    let document = render(hs);
+    let document = render(&hs);
 
     save("image.svg", &document).unwrap();
 }

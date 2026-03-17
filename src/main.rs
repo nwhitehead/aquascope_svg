@@ -140,37 +140,40 @@ impl Drawable for GArray {
     }
 }
 
-fn hstack(left: Box<dyn Drawable>, mut right: Box<dyn Drawable>) -> Box<dyn Drawable> {
-    // For hstack, always just move right part
-    let left_bb = left.bounding_box();
-    let right_bb = right.bounding_box();
-    // Shift horizontally to make right_bb.x match up with left_bb.x + left_bb.w
-    let tx = (left_bb.x + left_bb.w) - right_bb.x;
-    // Shift vertically to make right_bb.y + 0.5 * right_bb.h match up left_bb.y + 0.5 * left_bb.h
-    let ty = (left_bb.y + 0.5 * left_bb.h) - (right_bb.y + 0.5 * right_bb.h);
+fn hstack(mut items: Vec<Box<dyn Drawable>>) -> Box<dyn Drawable> {
+    let mut bb: Option<Rect> = None;
     let mut c = GArray::new();
-    c.push(left);
-    right.translate(tx, ty);
-    c.push(right);
+    for mut item in items {
+        let item_bb = item.bounding_box().clone();
+        if let Some(ref b) = bb {
+            // Shift horizontally to make item touch left of existing bb
+            let tx = (b.x + b.w) - item_bb.x;
+            // Shift vertically to make item centered with vertical center of existing bb
+            let ty = (b.y + 0.5 * b.h) - (item_bb.y + 0.5 * item_bb.h);
+            item.translate(tx, ty);
+        } else {
+            bb = Some(item.bounding_box());
+        }
+        c.push(item);
+    }
+    //right.translate(tx, ty);
     Box::new(c)
 }
 
-fn hstack_multi(mut items: Vec<Box<dyn Drawable>>) -> Box<dyn Drawable> {
-    let mut bb = None;
+fn vstack(mut items: Vec<Box<dyn Drawable>>) -> Box<dyn Drawable> {
+    let mut bb: Option<Rect> = None;
     let mut c = GArray::new();
-    for item in items {
+    for mut item in items {
+        let item_bb = item.bounding_box().clone();
         if let Some(ref b) = bb {
-
+            // Shift horizontally to make item centered with vertical center of existing bb
+            let tx = (b.x + 0.5 * b.w) - (item_bb.x + 0.5 * item_bb.w);
+            // Shift vertically to make item touch bottom of existing bb
+            let ty = (b.y + b.h) - item_bb.y;
+            item.translate(tx, ty);
         } else {
-            bb = Some(item.bounding_box().clone());
+            bb = Some(item.bounding_box());
         }
-        // // For hstack, always just move right part
-        // let left_bb = left.bounding_box();
-        // let right_bb = right.bounding_box();
-        // // Shift horizontally to make right_bb.x match up with left_bb.x + left_bb.w
-        // let tx = (left_bb.x + left_bb.w) - right_bb.x;
-        // // Shift vertically to make right_bb.y + 0.5 * right_bb.h match up left_bb.y + 0.5 * left_bb.h
-        // let ty = (left_bb.y + 0.5 * left_bb.h) - (right_bb.y + 0.5 * right_bb.h);
         c.push(item);
     }
     //right.translate(tx, ty);
@@ -246,14 +249,12 @@ fn main() {
         }
     }
     let bx = GBox::new(0.0, 0.0, 40.0, 40.0);
-    let bx2 = GBox::new(20.0, 20.0, 40.0, 40.0);
-    let hs = hstack(Box::new(bx.clone()), Box::new(bx2.clone()));
+    let bx2 = GBox::new(0.0, 0.0, 20.0, 40.0);
+    let hs = vstack(vec![Box::new(bx.clone()), Box::new(bx2.clone())]);
     let mut c = GArray::new();
     c.push(Box::new(bx));
     c.push(Box::new(bx2));
     let document = render(hs);
-    // let document = c.draw(Document::new())
-    //     .set("viewBox", view_box(outline(c.bounding_box(), 10.0)));
 
     svg::save("image.svg", &document).unwrap();
 }

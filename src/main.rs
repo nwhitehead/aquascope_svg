@@ -167,11 +167,19 @@ fn extract_pointers(v: &MValue, out: &mut Vec<MValuePointer>) {
     }
 }
 
-fn tag_code(txt: &str, loc: &CharRange, tag: &str) -> String {
+fn tag_code(txt: &str, loc: &CharPos, tag: &str) -> String {
     let mut lines: Vec<String> = txt.split('\n').map(|x| x.to_string()).collect();
-    let endloc = &loc.end;
+    let endloc = &loc;
     lines[endloc.line as usize].insert_str(endloc.column as usize, tag);
     lines.join("\n")
+}
+
+fn tag_code_multi(txt: &str, tags: Vec<(String, CharPos)>) -> String {
+    let mut result = txt.to_string();
+    for tag in tags.iter().rev() {
+        result = tag_code(&result, &tag.1, &tag.0);
+    }
+    result
 }
 
 fn main() {
@@ -193,13 +201,24 @@ fn main() {
     }
     println!("POINTERS\n------\n{:?}", pntrs);
 
+    // Extract tags to put into code snippet
+    let mut tags = vec![];
+    for (step_idx, step) in json.steps.iter().enumerate() {
+        for frame in &step.stack.frames {
+            let tag = format!(" /* L{} */ ", step_idx);
+            tags.push((tag, frame.location.end.clone()));
+        }
+    }
+
+    // Show code tagged with labels
+    println!("{}", tag_code_multi(&code, tags));
+
     for (step_idx, step) in json.steps.iter().enumerate() {
         println!("# L{}", step_idx);
 
         println!("## Stack");
         if step.stack.frames.len() == 0 {}
         for frame in &step.stack.frames {
-            println!("{}", tag_code(&code, &frame.location, &format!(" /* L{} */ ", step_idx)));
             println!("### {}", frame.name);
             for local in &frame.locals {
                 let simpl = simplify_string(&simplify_box(&simplify_vec(&local.value)));

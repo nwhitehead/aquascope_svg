@@ -155,18 +155,24 @@ fn main() {
     let json: MTrace = serde_json::from_str(&content).expect("Failed to parse JSON");
 
     for (step_idx, step) in json.steps.iter().enumerate() {
-        println!("=== Step {} ===", step_idx);
+        println!("# L{}", step_idx);
 
+        println!("## Stack");
+        if step.stack.frames.len() == 0 {}
         for frame in &step.stack.frames {
             for local in &frame.locals {
                 let simpl = simplify_string(&simplify_box(&simplify_vec(&local.value)));
-                //let simpl = local.value.clone();
-                println!("Local '{}': {}", local.name, value_display(&simpl));
+                println!("{}: {}", local.name, value_display(&simpl));
             }
         }
 
+        if step.heap.locations.len() > 0 {
+            println!("## Heap");
+        }
         for (heap_idx, heap_val) in step.heap.locations.iter().enumerate() {
             println!("Heap[{}]: {}", heap_idx, value_display(&heap_val));
         }
+        // Add blank line before starting next Ln part
+        println!("");
     }
 }

@@ -104,6 +104,7 @@ Syntax rules:
 * Anything can be escaped with backticks, that way you can put weird stuff in names
 
 
-What about structs?
+What about structs? Just allow `{}` syntax, let user figure it out.
+
 
 

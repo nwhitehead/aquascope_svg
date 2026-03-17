@@ -141,8 +141,8 @@ impl Drawable for GArray {
 }
 
 enum FormulaType {
-    ALIGN_LEFT,
-    ALIGN_RIGHT,
+    ALIGN_LOW,
+    ALIGN_HIGH,
     CENTERED,
     SEQUENCED,
 }
@@ -151,8 +151,8 @@ fn apply_formula(formula: &FormulaType, x: f32, w: f32, ix: f32, iw: f32) -> f32
     match formula {
         FormulaType::SEQUENCED => (x + w) - ix,
         FormulaType::CENTERED => (x + 0.5 * w) - (ix + 0.5 * iw),
-        FormulaType::ALIGN_LEFT => x - ix,
-        FormulaType::ALIGN_RIGHT => x + w - ix,
+        FormulaType::ALIGN_LOW => x - ix,
+        FormulaType::ALIGN_HIGH => x + w - ix,
     }
 }
 
@@ -175,43 +175,22 @@ fn stack_general(mut items: Vec<Box<dyn Drawable>>, tx_formula: FormulaType, ty_
 }
 
 fn hstack(mut items: Vec<Box<dyn Drawable>>) -> Box<dyn Drawable> {
-    let mut bb: Option<Rect> = None;
-    let mut c = GArray::new();
-    for mut item in items {
-        let item_bb = item.bounding_box().clone();
-        if let Some(ref b) = bb {
-            // Shift horizontally to make item touch left of existing bb
-            let tx = (b.x + b.w) - item_bb.x;
-            // Shift vertically to make item centered with vertical center of existing bb
-            let ty = (b.y + 0.5 * b.h) - (item_bb.y + 0.5 * item_bb.h);
-            item.translate(tx, ty);
-        } else {
-            bb = Some(item.bounding_box());
-        }
-        c.push(item);
-    }
-    //right.translate(tx, ty);
-    Box::new(c)
+    stack_general(items, FormulaType::SEQUENCED, FormulaType::CENTERED)
 }
-
+fn hstack_top(mut items: Vec<Box<dyn Drawable>>) -> Box<dyn Drawable> {
+    stack_general(items, FormulaType::SEQUENCED, FormulaType::ALIGN_LOW)
+}
+fn hstack_bottom(mut items: Vec<Box<dyn Drawable>>) -> Box<dyn Drawable> {
+    stack_general(items, FormulaType::SEQUENCED, FormulaType::ALIGN_HIGH)
+}
 fn vstack(mut items: Vec<Box<dyn Drawable>>) -> Box<dyn Drawable> {
-    let mut bb: Option<Rect> = None;
-    let mut c = GArray::new();
-    for mut item in items {
-        let item_bb = item.bounding_box().clone();
-        if let Some(ref b) = bb {
-            // Shift horizontally to make item centered with vertical center of existing bb
-            let tx = (b.x + 0.5 * b.w) - (item_bb.x + 0.5 * item_bb.w);
-            // Shift vertically to make item touch bottom of existing bb
-            let ty = (b.y + b.h) - item_bb.y;
-            item.translate(tx, ty);
-        } else {
-            bb = Some(item.bounding_box());
-        }
-        c.push(item);
-    }
-    //right.translate(tx, ty);
-    Box::new(c)
+    stack_general(items, FormulaType::CENTERED, FormulaType::SEQUENCED)
+}
+fn vstack_left(mut items: Vec<Box<dyn Drawable>>) -> Box<dyn Drawable> {
+    stack_general(items, FormulaType::ALIGN_LOW, FormulaType::SEQUENCED)
+}
+fn vstack_right(mut items: Vec<Box<dyn Drawable>>) -> Box<dyn Drawable> {
+    stack_general(items, FormulaType::ALIGN_HIGH, FormulaType::SEQUENCED)
 }
 
 //fn node_of_value(value: &MValue) 
@@ -284,7 +263,7 @@ fn main() {
     }
     let bx = GBox::new(0.0, 0.0, 40.0, 40.0);
     let bx2 = GBox::new(0.0, 0.0, 20.0, 40.0);
-    let hs = vstack(vec![Box::new(bx.clone()), Box::new(bx2.clone())]);
+    let hs = vstack_left(vec![Box::new(bx.clone()), Box::new(bx2.clone())]);
     let mut c = GArray::new();
     c.push(Box::new(bx));
     c.push(Box::new(bx2));

@@ -74,6 +74,31 @@ fn test_svg() {
     save("image.svg", &document).unwrap();
 }
 
+fn values_display(v: &Vec<MValue>) -> String {
+    "[]".into()
+}
+
+fn abbrv_values_display(v: &AbbreviatedMValue) -> String {
+    match v {
+        AbbreviatedMValue::All { value } => values_display(value),
+        _ => panic!("Illegal AbbreviatedMValue: Only"),
+    }
+}
+
+
+fn value_display(v: &MValue) -> String {
+    match v {
+        MValue::Bool { value } => format!("{:?}", value),
+        MValue::Char { value } => format!("{:?}", value),
+        MValue::Uint { value } => format!("{:?}", value),
+        MValue::Int { value } => format!("{:?}", value),
+        MValue::Float { value } => format!("{:?}", value),
+        //MValue::Array { value } => format!("{:?}", value),
+        MValue::Array { value } => abbrv_values_display(&value),
+        _ => "VALUE".into()
+    }
+}
+
 fn main() {
     let args = Args::parse();
     let content = fs::read_to_string(&args.input).expect("Failed to read input file");
@@ -84,14 +109,12 @@ fn main() {
 
         for frame in &step.stack.frames {
             for local in &frame.locals {
-                let leaves = collect_leaves(&local.value);
-                println!("Local '{}': {:?}", local.name, leaves);
+                println!("Local '{}': {}", local.name, value_display(&local.value));
             }
         }
 
         for (heap_idx, heap_val) in step.heap.locations.iter().enumerate() {
-            let leaves = collect_leaves(heap_val);
-            println!("Heap[{}]: {:?}", heap_idx, leaves);
+            println!("Heap[{}]: {}", heap_idx, value_display(&heap_val));
         }
     }
 }

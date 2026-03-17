@@ -4,7 +4,7 @@ use svg::save;
 
 mod mtrace;
 mod svg_draw;
-use mtrace::{AbbreviatedMValue, MTrace, MValue};
+use mtrace::{AbbreviatedMValue, MTrace, MValue, MValuePointer};
 use svg_draw::{box_around, hstack_spacers, render, stack, text, text_in_box};
 
 #[derive(Parser)]
@@ -149,10 +149,40 @@ fn simplify_string(v: &MValue) -> MValue {
     strip_off_mult_rec(&v, vec!["String", "Vec", "RawVec", "RawVecInner", "Unique", "NonNull"])
 }
 
+fn extract_pointers(v: &MValue, out: &mut Vec<MValuePointer>) {
+    match v {
+        MValue::Tuple { value } => value
+                .iter()
+                .map(|x| extract_pointers(x, out))
+                .collect(),
+        MValue::Array { value } => match value {
+            AbbreviatedMValue::All { value } => value
+                .iter()
+                .map(|x| extract_pointers(x, out))
+                .collect(),
+            _ => panic!("Illegal AbbreviatedMValue: Only"),
+        },
+        MValue::Pointer { value } => out.push(value.clone()),
+        _ => (),
+    }
+}
+
 fn main() {
     let args = Args::parse();
     let content = fs::read_to_string(&args.input).expect("Failed to read input file");
     let json: MTrace = serde_json::from_str(&content).expect("Failed to parse JSON");
+
+    // Extract pointers so we know what to label
+    let mut pntrs = vec![];
+    for (step_idx, step) in json.steps.iter().enumerate() {
+        for frame in &step.stack.frames {
+            for local in &frame.locals {
+                let simpl = simplify_string(&simplify_box(&simplify_vec(&local.value)));
+                extract_pointers(&simpl, &mut pntrs);
+            }
+        }
+    }
+    println!("POINTERS\n------\n{:?}", pntrs);
 
     for (step_idx, step) in json.steps.iter().enumerate() {
         println!("# L{}", step_idx);
@@ -160,6 +190,7 @@ fn main() {
         println!("## Stack");
         if step.stack.frames.len() == 0 {}
         for frame in &step.stack.frames {
+            println!("### {}", frame.name);
             for local in &frame.locals {
                 let simpl = simplify_string(&simplify_box(&simplify_vec(&local.value)));
                 println!("{}: {}", local.name, value_display(&simpl));

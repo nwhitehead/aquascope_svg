@@ -74,13 +74,19 @@ fn test_svg() {
     save("image.svg", &document).unwrap();
 }
 
-fn values_display(v: &Vec<MValue>) -> String {
-    format!("[{}]", v.iter().map(|x| value_display(&x)).collect::<Vec<String>>().join(", "))
+fn values_display_array(v: &Vec<MValue>) -> String {
+    let inner = v.iter().map(|x| value_display(&x)).collect::<Vec<String>>().join(", ");
+    format!("[{}]", inner)
+}
+
+fn values_display_tuple(v: &Vec<MValue>) -> String {
+    let inner = v.iter().map(|x| value_display(&x)).collect::<Vec<String>>().join(", ");
+    format!("[{}]", inner)
 }
 
 fn abbrv_values_display(v: &AbbreviatedMValue) -> String {
     match v {
-        AbbreviatedMValue::All { value } => values_display(value),
+        AbbreviatedMValue::All { value } => values_display_array(value),
         _ => panic!("Illegal AbbreviatedMValue: Only"),
     }
 }
@@ -93,9 +99,10 @@ fn value_display(v: &MValue) -> String {
         MValue::Uint { value } => format!("{:?}", value),
         MValue::Int { value } => format!("{:?}", value),
         MValue::Float { value } => format!("{:?}", value),
-        //MValue::Array { value } => format!("{:?}", value),
         MValue::Array { value } => abbrv_values_display(&value),
-        _ => "VALUE".into()
+        MValue::Tuple { value } => values_display_tuple(&value),
+        MValue::Adt { value } => "ADT".into(),
+        _ => format!("VALUE[{:?}]", &v).into()
     }
 }
 

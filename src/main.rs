@@ -101,7 +101,9 @@ fn value_display(v: &MValue) -> String {
         MValue::Float { value } => format!("{:?}", value),
         MValue::Array { value } => abbrv_values_display(&value),
         MValue::Tuple { value } => values_display_tuple(&value),
-        MValue::Adt { value } => "ADT".into(),
+        MValue::Unallocated { value } => "*".into(),
+//        MValue::Pointer { value } => "PTR".into(),
+//        MValue::Adt { value } => "ADT".into(),
         _ => format!("VALUE[{:?}]", &v).into()
     }
 }

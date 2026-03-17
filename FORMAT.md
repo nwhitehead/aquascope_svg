@@ -95,11 +95,14 @@ Syntax rules:
 * Labels are text followed by `:`
 * Values can be:
     * Number
-    * `[` optionally labelled values, `,` separated, `]`
-    * `(` optionally labelled values, `,` separated, `)`
+    * `[` optionally labelled values, `,` separated, `]` (array)
+    * `(` optionally labelled values, `,` separated, `)` (tuple)
     * `*` to indicate invalid
-    * `***` to indicate invalid and accessed
+    * `***` to indicate invalid and accessed (will be drawn red)
     * `ptr(` label `)`, label can be to any memory region in current step
+    * name `{` optionally labelled values, `,` separated, `}` (structs)
+* Anything can be escaped with backticks, that way you can put weird stuff in names
+
 
 What about structs?
 

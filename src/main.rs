@@ -75,7 +75,7 @@ fn test_svg() {
 }
 
 fn values_display(v: &Vec<MValue>) -> String {
-    "[]".into()
+    format!("[{}]", v.iter().map(|x| value_display(&x)).collect::<Vec<String>>().join(", "))
 }
 
 fn abbrv_values_display(v: &AbbreviatedMValue) -> String {

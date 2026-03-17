@@ -5,7 +5,7 @@ use svg::save;
 mod mtrace;
 mod svg_draw;
 use mtrace::{AbbreviatedMValue, MTrace, MValue};
-use svg_draw::{hstack_spacers, text_in_box, render, stack, text};
+use svg_draw::{hstack_spacers, box_around, text_in_box, render, stack, text};
 
 #[derive(Parser)]
 #[command(name = "aquascope_svg")]
@@ -78,14 +78,17 @@ fn main() {
     }
     let d = 10.0;
     let ds = 10.0;
+    let sep_height = 10.0;
     let arr0 = text("0");
     let arr1 = text("1");
     let arr2 = text("2");
-    let arr = hstack_spacers(vec![Box::new(arr0), Box::new(arr1), Box::new(arr2)], ds);
+    let arr = hstack_spacers(vec![Box::new(arr0), Box::new(arr1), Box::new(arr2)], ds, sep_height);
+    let box_arr = box_around(&arr, ds);
+    let box_arr_coll = stack(vec![Box::new(arr), Box::new(box_arr)]);
     let t1 = text_in_box("x".into(), d);
     let t2 = text_in_box("0".into(), d);
-    let spaced = hstack_spacers(vec![Box::new(t1), Box::new(t2)], ds);
-    let document = render(&arr);
+    let spaced = hstack_spacers(vec![Box::new(t1), Box::new(t2)], ds, sep_height);
+    let document = render(&box_arr_coll);
 
     save("image.svg", &document).unwrap();
 }

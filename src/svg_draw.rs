@@ -68,7 +68,15 @@ impl Drawable for Text {
     }
 }
 
-#[derive(Clone)]
+fn translate(r: &Rect, tx: f32, ty: f32) -> Rect {
+    Rect {
+        x: r.x + tx,
+        y: r.y + ty,
+        w: r.w,
+        h: r.h,
+    }
+}
+
 pub struct GBox {
     r: Rect,
 }
@@ -78,15 +86,6 @@ impl GBox {
         Self {
             r: Rect::new(x, y, w, h),
         }
-    }
-}
-
-fn translate(r: &Rect, tx: f32, ty: f32) -> Rect {
-    Rect {
-        x: r.x + tx,
-        y: r.y + ty,
-        w: r.w,
-        h: r.h,
     }
 }
 
@@ -114,6 +113,46 @@ impl Drawable for GBox {
 
         doc.add(path)
     }
+}
+
+pub struct SepLine {
+    x: f32,
+    y: f32,
+    h: f32,
+}
+
+impl SepLine {
+    fn new(h: f32) -> Self {
+        Self {
+            x: 0.0,
+            y: 0.0,
+            h
+        }
+    }
+}
+
+impl Drawable for SepLine {
+    fn translate(&mut self, tx: f32, ty: f32) {
+        self.x += tx;
+        self.y += ty;
+    }
+    fn bounding_box(&self) -> Rect {
+        Rect::new(self.x, self.y, 0.0, self.h)
+    }
+    fn draw(&self, doc: Document) -> Document {
+        let (x, y, h) = (self.x, self.y, self.h);
+        let data = Data::new()
+            .move_to((x, y))
+            .line_by((0, h))
+            .close();
+        let path = Path::new()
+            .set("fill", "none")
+            .set("stroke", "gray")
+            .set("stroke-width", 1)
+            .set("d", data);
+        doc.add(path)
+    }
+
 }
 
 pub fn view_box(r: Rect) -> (f32, f32, f32, f32) {
@@ -336,13 +375,11 @@ pub fn text_in_box(txt: &str, dist: f32) -> GArray {
 }
 
 /// Sequence horizontally, aligning midline, inserting vertical bars
-pub fn hstack_spacers(items: Vec<Box<dyn Drawable>>, hspace: f32) -> GArray {
+pub fn hstack_spacers(items: Vec<Box<dyn Drawable>>, hspace: f32, vheight: f32) -> GArray {
     let mut spaced: Vec<Box<dyn Drawable>> = vec![];
     for mut item in items {
         if spaced.len() > 0 {
-            spaced.push(Box::new(
-                GBox::new(0.0, 0.0, 2.0, 10.0)
-            ));
+            spaced.push(Box::new(Padded::pad_x(Box::new(SepLine::new(vheight)), hspace)));
         }
         spaced.push(item);
     }

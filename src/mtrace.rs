@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+// #[derive(Eq, Hash, PartialEq)]
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CharPos {
     pub line: u32,
@@ -20,6 +22,7 @@ pub struct CharRange {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Eq, Hash, PartialEq)]
 #[serde(tag = "type")]
 pub enum MPathSegment {
     Field { value: u32 },
@@ -28,6 +31,7 @@ pub enum MPathSegment {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Eq, Hash, PartialEq)]
 #[serde(tag = "type")]
 pub enum MMemorySegment {
     Stack { value: MStackValue },
@@ -35,17 +39,20 @@ pub enum MMemorySegment {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Eq, Hash, PartialEq)]
 pub struct MStackValue {
     pub frame: u32,
     pub local: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Eq, Hash, PartialEq)]
 pub struct MHeapValue {
     pub index: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Eq, Hash, PartialEq)]
 pub struct MPath {
     pub segment: MMemorySegment,
     pub parts: Vec<MPathSegment>,
@@ -101,6 +108,7 @@ pub struct MValueAdt {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Eq, Hash, PartialEq)]
 pub struct MValuePointer {
     pub path: MPath,
     pub range: Option<u64>,

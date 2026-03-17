@@ -1,10 +1,11 @@
 use clap::Parser;
 use std::fs;
 use svg::save;
+use std::collections::HashMap;
 
 mod mtrace;
 mod svg_draw;
-use mtrace::{AbbreviatedMValue, MTrace, MValue, MValuePointer, CharRange, CharPos};
+use mtrace::{AbbreviatedMValue, MPath, MTrace, MValue, MValuePointer, CharRange, CharPos};
 use svg_draw::{box_around, hstack_spacers, render, stack, text, text_in_box};
 
 #[derive(Parser)]
@@ -200,6 +201,15 @@ fn main() {
         }
     }
     println!("POINTERS\n------\n{:?}", pntrs);
+
+    // Pointer map
+    let mut pointer_map: HashMap<MValuePointer, String> = HashMap::new();
+    // Fill in pointer map with arbitrary names
+    let mut pcnt = 0;
+    for pntr in pntrs {
+        pointer_map.insert(pntr.clone(), format!("P{}", pcnt));
+        pcnt += 1;
+    }
 
     // Extract tags to put into code snippet
     let mut tags = vec![];

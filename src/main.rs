@@ -140,6 +140,40 @@ impl Drawable for GArray {
     }
 }
 
+enum FormulaType {
+    ALIGN_LEFT,
+    ALIGN_RIGHT,
+    CENTERED,
+    SEQUENCED,
+}
+
+fn apply_formula(formula: &FormulaType, x: f32, w: f32, ix: f32, iw: f32) -> f32 {
+    match formula {
+        FormulaType::SEQUENCED => (x + w) - ix,
+        FormulaType::CENTERED => (x + 0.5 * w) - (ix + 0.5 * iw),
+        FormulaType::ALIGN_LEFT => x - ix,
+        FormulaType::ALIGN_RIGHT => x + w - ix,
+    }
+}
+
+// Do general stacking, formulas for translation step can be selected for x and y coords
+fn stack_general(mut items: Vec<Box<dyn Drawable>>, tx_formula: FormulaType, ty_formula: FormulaType) -> Box<dyn Drawable> {
+    let mut bb: Option<Rect> = None;
+    let mut c = GArray::new();
+    for mut item in items {
+        let item_bb = item.bounding_box().clone();
+        if let Some(ref b) = bb {
+            let tx = apply_formula(&tx_formula, b.x, b.w, item_bb.x, item_bb.w);
+            let ty = apply_formula(&ty_formula, b.y, b.h, item_bb.y, item_bb.h);
+            item.translate(tx, ty);
+        } else {
+            bb = Some(item.bounding_box());
+        }
+        c.push(item);
+    }
+    Box::new(c)
+}
+
 fn hstack(mut items: Vec<Box<dyn Drawable>>) -> Box<dyn Drawable> {
     let mut bb: Option<Rect> = None;
     let mut c = GArray::new();

@@ -56,6 +56,24 @@ fn collect_leaves(value: &MValue) -> Vec<&MValue> {
     leaves
 }
 
+fn test_svg() {
+    let d = 10.0;
+    let ds = 10.0;
+    let sep_height = 10.0;
+    let arr0 = text("0");
+    let arr1 = text("1");
+    let arr2 = text("2");
+    let arr = hstack_spacers(vec![Box::new(arr0), Box::new(arr1), Box::new(arr2)], ds, sep_height);
+    let box_arr = box_around(&arr, ds);
+    let box_arr_coll = stack(vec![Box::new(arr), Box::new(box_arr)]);
+    let t1 = text_in_box("x".into(), d);
+    let t2 = text_in_box("0".into(), d);
+    let spaced = hstack_spacers(vec![Box::new(t1), Box::new(t2)], ds, sep_height);
+    let document = render(&box_arr_coll);
+
+    save("image.svg", &document).unwrap();
+}
+
 fn main() {
     let args = Args::parse();
     let content = fs::read_to_string(&args.input).expect("Failed to read input file");
@@ -76,19 +94,4 @@ fn main() {
             println!("Heap[{}]: {:?}", heap_idx, leaves);
         }
     }
-    let d = 10.0;
-    let ds = 10.0;
-    let sep_height = 10.0;
-    let arr0 = text("0");
-    let arr1 = text("1");
-    let arr2 = text("2");
-    let arr = hstack_spacers(vec![Box::new(arr0), Box::new(arr1), Box::new(arr2)], ds, sep_height);
-    let box_arr = box_around(&arr, ds);
-    let box_arr_coll = stack(vec![Box::new(arr), Box::new(box_arr)]);
-    let t1 = text_in_box("x".into(), d);
-    let t2 = text_in_box("0".into(), d);
-    let spaced = hstack_spacers(vec![Box::new(t1), Box::new(t2)], ds, sep_height);
-    let document = render(&box_arr_coll);
-
-    save("image.svg", &document).unwrap();
 }

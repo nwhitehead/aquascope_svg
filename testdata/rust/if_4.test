@@ -12,3 +12,8 @@ fn foo(mut b: i32) {
     println!("{b}");
   }
 }
+
+fn main() {
+  let x = 12;
+  foo(x);
+}

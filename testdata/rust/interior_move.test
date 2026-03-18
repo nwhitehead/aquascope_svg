@@ -1,4 +1,4 @@
-fn foo() {
+fn main() {
   let mut t = (String::from("1"), String::from("2"));
 
   let s = t.0;

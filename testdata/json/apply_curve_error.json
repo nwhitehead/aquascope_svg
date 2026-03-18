@@ -1,0 +1,47 @@
+{
+  "code": "fn main() {\n\nstruct TestResult {\n  scores: Vec<usize>,\n  curve: Option<usize>\n}\n\nimpl TestResult {\n  pub fn get_curve(&self) -> &Option<usize> {\n    &self.curve\n  }\n\n  pub fn apply_curve(&mut self) {\n    if let Some(curve) = self.get_curve() {\n      for score in self.scores.iter_mut() {\n        *score += *curve;\n      }\n    }\n  }\n}\n\n}",
+  "result": {
+    "type": "Success"
+  },
+  "steps": [
+    {
+      "heap": {
+        "locations": []
+      },
+      "stack": {
+        "frames": [
+          {
+            "body_span": {
+              "end": {
+                "column": 1,
+                "line": 21
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 0,
+                "line": 0
+              }
+            },
+            "locals": [],
+            "location": {
+              "end": {
+                "column": 9,
+                "line": 0
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 0,
+                "line": 0
+              }
+            },
+            "name": "main"
+          }
+        ]
+      }
+    }
+  ]
+}

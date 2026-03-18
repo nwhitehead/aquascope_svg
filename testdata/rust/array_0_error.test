@@ -1,3 +1,5 @@
+fn main() {
+
 fn with_string() {
    // a[_] doesn't have O
    let a = [String::from("a")];
@@ -12,4 +14,8 @@ fn with_int() {
    let i = a[0];
 
    drop(i);
+}
+
+   with_string();
+   with_int();
 }

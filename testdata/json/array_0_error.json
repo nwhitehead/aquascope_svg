@@ -1,0 +1,932 @@
+{
+  "code": "fn main() {\n\nfn with_string() {\n   // a[_] doesn't have O\n   let a = [String::from(\"a\")];\n\n   let s = a[0];\n}\n\nfn with_int() {\n   // a[_] doesn't have O\n   let a = [0];\n\n   let i = a[0];\n\n   drop(i);\n}\n\n   with_string();\n   with_int();\n}\n",
+  "result": {
+    "type": "Error",
+    "value": {
+      "type": "PointerUseAfterFree",
+      "value": {
+        "alloc_id": 0
+      }
+    }
+  },
+  "steps": [
+    {
+      "heap": {
+        "locations": []
+      },
+      "stack": {
+        "frames": [
+          {
+            "body_span": {
+              "end": {
+                "column": 1,
+                "line": 20
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 0,
+                "line": 0
+              }
+            },
+            "locals": [],
+            "location": {
+              "end": {
+                "column": 9,
+                "line": 0
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 0,
+                "line": 0
+              }
+            },
+            "name": "main"
+          }
+        ]
+      }
+    },
+    {
+      "heap": {
+        "locations": []
+      },
+      "stack": {
+        "frames": [
+          {
+            "body_span": {
+              "end": {
+                "column": 1,
+                "line": 20
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 0,
+                "line": 0
+              }
+            },
+            "locals": [],
+            "location": {
+              "end": {
+                "column": 17,
+                "line": 18
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 3,
+                "line": 18
+              }
+            },
+            "name": "main"
+          }
+        ]
+      }
+    },
+    {
+      "heap": {
+        "locations": []
+      },
+      "stack": {
+        "frames": [
+          {
+            "body_span": {
+              "end": {
+                "column": 1,
+                "line": 20
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 0,
+                "line": 0
+              }
+            },
+            "locals": [],
+            "location": {
+              "end": {
+                "column": 17,
+                "line": 18
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 3,
+                "line": 18
+              }
+            },
+            "name": "main"
+          },
+          {
+            "body_span": {
+              "end": {
+                "column": 1,
+                "line": 7
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 0,
+                "line": 2
+              }
+            },
+            "locals": [],
+            "location": {
+              "end": {
+                "column": 16,
+                "line": 2
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 0,
+                "line": 2
+              }
+            },
+            "name": "main::with_string"
+          }
+        ]
+      }
+    },
+    {
+      "heap": {
+        "locations": [
+          {
+            "type": "Array",
+            "value": {
+              "type": "All",
+              "value": [
+                {
+                  "type": "Char",
+                  "value": 97
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "stack": {
+        "frames": [
+          {
+            "body_span": {
+              "end": {
+                "column": 1,
+                "line": 20
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 0,
+                "line": 0
+              }
+            },
+            "locals": [],
+            "location": {
+              "end": {
+                "column": 17,
+                "line": 18
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 3,
+                "line": 18
+              }
+            },
+            "name": "main"
+          },
+          {
+            "body_span": {
+              "end": {
+                "column": 1,
+                "line": 7
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 0,
+                "line": 2
+              }
+            },
+            "locals": [
+              {
+                "moved_paths": [],
+                "name": "a",
+                "value": {
+                  "type": "Array",
+                  "value": {
+                    "type": "All",
+                    "value": [
+                      {
+                        "type": "Adt",
+                        "value": {
+                          "alloc_kind": {
+                            "type": "String",
+                            "value": {
+                              "len": 1
+                            }
+                          },
+                          "fields": [
+                            [
+                              "vec",
+                              {
+                                "type": "Adt",
+                                "value": {
+                                  "alloc_kind": null,
+                                  "fields": [
+                                    [
+                                      "buf",
+                                      {
+                                        "type": "Adt",
+                                        "value": {
+                                          "alloc_kind": null,
+                                          "fields": [
+                                            [
+                                              "inner",
+                                              {
+                                                "type": "Adt",
+                                                "value": {
+                                                  "alloc_kind": null,
+                                                  "fields": [
+                                                    [
+                                                      "ptr",
+                                                      {
+                                                        "type": "Adt",
+                                                        "value": {
+                                                          "alloc_kind": null,
+                                                          "fields": [
+                                                            [
+                                                              "pointer",
+                                                              {
+                                                                "type": "Adt",
+                                                                "value": {
+                                                                  "alloc_kind": null,
+                                                                  "fields": [
+                                                                    [
+                                                                      "pointer",
+                                                                      {
+                                                                        "type": "Pointer",
+                                                                        "value": {
+                                                                          "path": {
+                                                                            "parts": [],
+                                                                            "segment": {
+                                                                              "type": "Heap",
+                                                                              "value": {
+                                                                                "index": 0
+                                                                              }
+                                                                            }
+                                                                          },
+                                                                          "range": null
+                                                                        }
+                                                                      }
+                                                                    ]
+                                                                  ],
+                                                                  "name": "NonNull",
+                                                                  "variant": null
+                                                                }
+                                                              }
+                                                            ]
+                                                          ],
+                                                          "name": "Unique",
+                                                          "variant": null
+                                                        }
+                                                      }
+                                                    ],
+                                                    [
+                                                      "cap",
+                                                      {
+                                                        "type": "Adt",
+                                                        "value": {
+                                                          "alloc_kind": null,
+                                                          "fields": [
+                                                            [
+                                                              "0",
+                                                              {
+                                                                "type": "Uint",
+                                                                "value": 1
+                                                              }
+                                                            ]
+                                                          ],
+                                                          "name": "Cap",
+                                                          "variant": null
+                                                        }
+                                                      }
+                                                    ]
+                                                  ],
+                                                  "name": "RawVecInner",
+                                                  "variant": null
+                                                }
+                                              }
+                                            ]
+                                          ],
+                                          "name": "RawVec",
+                                          "variant": null
+                                        }
+                                      }
+                                    ],
+                                    [
+                                      "len",
+                                      {
+                                        "type": "Uint",
+                                        "value": 1
+                                      }
+                                    ]
+                                  ],
+                                  "name": "Vec",
+                                  "variant": null
+                                }
+                              }
+                            ]
+                          ],
+                          "name": "String",
+                          "variant": null
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "location": {
+              "end": {
+                "column": 31,
+                "line": 4
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 3,
+                "line": 4
+              }
+            },
+            "name": "main::with_string"
+          }
+        ]
+      }
+    },
+    {
+      "heap": {
+        "locations": [
+          {
+            "type": "Array",
+            "value": {
+              "type": "All",
+              "value": [
+                {
+                  "type": "Char",
+                  "value": 97
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "stack": {
+        "frames": [
+          {
+            "body_span": {
+              "end": {
+                "column": 1,
+                "line": 20
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 0,
+                "line": 0
+              }
+            },
+            "locals": [],
+            "location": {
+              "end": {
+                "column": 17,
+                "line": 18
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 3,
+                "line": 18
+              }
+            },
+            "name": "main"
+          },
+          {
+            "body_span": {
+              "end": {
+                "column": 1,
+                "line": 7
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 0,
+                "line": 2
+              }
+            },
+            "locals": [
+              {
+                "moved_paths": [
+                  []
+                ],
+                "name": "a",
+                "value": {
+                  "type": "Array",
+                  "value": {
+                    "type": "All",
+                    "value": [
+                      {
+                        "type": "Adt",
+                        "value": {
+                          "alloc_kind": {
+                            "type": "String",
+                            "value": {
+                              "len": 1
+                            }
+                          },
+                          "fields": [
+                            [
+                              "vec",
+                              {
+                                "type": "Adt",
+                                "value": {
+                                  "alloc_kind": null,
+                                  "fields": [
+                                    [
+                                      "buf",
+                                      {
+                                        "type": "Adt",
+                                        "value": {
+                                          "alloc_kind": null,
+                                          "fields": [
+                                            [
+                                              "inner",
+                                              {
+                                                "type": "Adt",
+                                                "value": {
+                                                  "alloc_kind": null,
+                                                  "fields": [
+                                                    [
+                                                      "ptr",
+                                                      {
+                                                        "type": "Adt",
+                                                        "value": {
+                                                          "alloc_kind": null,
+                                                          "fields": [
+                                                            [
+                                                              "pointer",
+                                                              {
+                                                                "type": "Adt",
+                                                                "value": {
+                                                                  "alloc_kind": null,
+                                                                  "fields": [
+                                                                    [
+                                                                      "pointer",
+                                                                      {
+                                                                        "type": "Pointer",
+                                                                        "value": {
+                                                                          "path": {
+                                                                            "parts": [],
+                                                                            "segment": {
+                                                                              "type": "Heap",
+                                                                              "value": {
+                                                                                "index": 0
+                                                                              }
+                                                                            }
+                                                                          },
+                                                                          "range": null
+                                                                        }
+                                                                      }
+                                                                    ]
+                                                                  ],
+                                                                  "name": "NonNull",
+                                                                  "variant": null
+                                                                }
+                                                              }
+                                                            ]
+                                                          ],
+                                                          "name": "Unique",
+                                                          "variant": null
+                                                        }
+                                                      }
+                                                    ],
+                                                    [
+                                                      "cap",
+                                                      {
+                                                        "type": "Adt",
+                                                        "value": {
+                                                          "alloc_kind": null,
+                                                          "fields": [
+                                                            [
+                                                              "0",
+                                                              {
+                                                                "type": "Uint",
+                                                                "value": 1
+                                                              }
+                                                            ]
+                                                          ],
+                                                          "name": "Cap",
+                                                          "variant": null
+                                                        }
+                                                      }
+                                                    ]
+                                                  ],
+                                                  "name": "RawVecInner",
+                                                  "variant": null
+                                                }
+                                              }
+                                            ]
+                                          ],
+                                          "name": "RawVec",
+                                          "variant": null
+                                        }
+                                      }
+                                    ],
+                                    [
+                                      "len",
+                                      {
+                                        "type": "Uint",
+                                        "value": 1
+                                      }
+                                    ]
+                                  ],
+                                  "name": "Vec",
+                                  "variant": null
+                                }
+                              }
+                            ]
+                          ],
+                          "name": "String",
+                          "variant": null
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "moved_paths": [],
+                "name": "s",
+                "value": {
+                  "type": "Adt",
+                  "value": {
+                    "alloc_kind": {
+                      "type": "String",
+                      "value": {
+                        "len": 1
+                      }
+                    },
+                    "fields": [
+                      [
+                        "vec",
+                        {
+                          "type": "Adt",
+                          "value": {
+                            "alloc_kind": null,
+                            "fields": [
+                              [
+                                "buf",
+                                {
+                                  "type": "Adt",
+                                  "value": {
+                                    "alloc_kind": null,
+                                    "fields": [
+                                      [
+                                        "inner",
+                                        {
+                                          "type": "Adt",
+                                          "value": {
+                                            "alloc_kind": null,
+                                            "fields": [
+                                              [
+                                                "ptr",
+                                                {
+                                                  "type": "Adt",
+                                                  "value": {
+                                                    "alloc_kind": null,
+                                                    "fields": [
+                                                      [
+                                                        "pointer",
+                                                        {
+                                                          "type": "Adt",
+                                                          "value": {
+                                                            "alloc_kind": null,
+                                                            "fields": [
+                                                              [
+                                                                "pointer",
+                                                                {
+                                                                  "type": "Pointer",
+                                                                  "value": {
+                                                                    "path": {
+                                                                      "parts": [],
+                                                                      "segment": {
+                                                                        "type": "Heap",
+                                                                        "value": {
+                                                                          "index": 0
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    "range": null
+                                                                  }
+                                                                }
+                                                              ]
+                                                            ],
+                                                            "name": "NonNull",
+                                                            "variant": null
+                                                          }
+                                                        }
+                                                      ]
+                                                    ],
+                                                    "name": "Unique",
+                                                    "variant": null
+                                                  }
+                                                }
+                                              ],
+                                              [
+                                                "cap",
+                                                {
+                                                  "type": "Adt",
+                                                  "value": {
+                                                    "alloc_kind": null,
+                                                    "fields": [
+                                                      [
+                                                        "0",
+                                                        {
+                                                          "type": "Uint",
+                                                          "value": 1
+                                                        }
+                                                      ]
+                                                    ],
+                                                    "name": "Cap",
+                                                    "variant": null
+                                                  }
+                                                }
+                                              ]
+                                            ],
+                                            "name": "RawVecInner",
+                                            "variant": null
+                                          }
+                                        }
+                                      ]
+                                    ],
+                                    "name": "RawVec",
+                                    "variant": null
+                                  }
+                                }
+                              ],
+                              [
+                                "len",
+                                {
+                                  "type": "Uint",
+                                  "value": 1
+                                }
+                              ]
+                            ],
+                            "name": "Vec",
+                            "variant": null
+                          }
+                        }
+                      ]
+                    ],
+                    "name": "String",
+                    "variant": null
+                  }
+                }
+              }
+            ],
+            "location": {
+              "end": {
+                "column": 16,
+                "line": 6
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 3,
+                "line": 6
+              }
+            },
+            "name": "main::with_string"
+          }
+        ]
+      }
+    },
+    {
+      "heap": {
+        "locations": []
+      },
+      "stack": {
+        "frames": [
+          {
+            "body_span": {
+              "end": {
+                "column": 1,
+                "line": 20
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 0,
+                "line": 0
+              }
+            },
+            "locals": [],
+            "location": {
+              "end": {
+                "column": 17,
+                "line": 18
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 3,
+                "line": 18
+              }
+            },
+            "name": "main"
+          },
+          {
+            "body_span": {
+              "end": {
+                "column": 1,
+                "line": 7
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 0,
+                "line": 2
+              }
+            },
+            "locals": [
+              {
+                "moved_paths": [
+                  []
+                ],
+                "name": "a",
+                "value": {
+                  "type": "Array",
+                  "value": {
+                    "type": "All",
+                    "value": [
+                      {
+                        "type": "Adt",
+                        "value": {
+                          "alloc_kind": {
+                            "type": "String",
+                            "value": {
+                              "len": 1
+                            }
+                          },
+                          "fields": [
+                            [
+                              "vec",
+                              {
+                                "type": "Adt",
+                                "value": {
+                                  "alloc_kind": null,
+                                  "fields": [
+                                    [
+                                      "buf",
+                                      {
+                                        "type": "Adt",
+                                        "value": {
+                                          "alloc_kind": null,
+                                          "fields": [
+                                            [
+                                              "inner",
+                                              {
+                                                "type": "Adt",
+                                                "value": {
+                                                  "alloc_kind": null,
+                                                  "fields": [
+                                                    [
+                                                      "ptr",
+                                                      {
+                                                        "type": "Adt",
+                                                        "value": {
+                                                          "alloc_kind": null,
+                                                          "fields": [
+                                                            [
+                                                              "pointer",
+                                                              {
+                                                                "type": "Adt",
+                                                                "value": {
+                                                                  "alloc_kind": null,
+                                                                  "fields": [
+                                                                    [
+                                                                      "pointer",
+                                                                      {
+                                                                        "type": "Unallocated",
+                                                                        "value": {
+                                                                          "alloc_id": 0
+                                                                        }
+                                                                      }
+                                                                    ]
+                                                                  ],
+                                                                  "name": "NonNull",
+                                                                  "variant": null
+                                                                }
+                                                              }
+                                                            ]
+                                                          ],
+                                                          "name": "Unique",
+                                                          "variant": null
+                                                        }
+                                                      }
+                                                    ],
+                                                    [
+                                                      "cap",
+                                                      {
+                                                        "type": "Adt",
+                                                        "value": {
+                                                          "alloc_kind": null,
+                                                          "fields": [
+                                                            [
+                                                              "0",
+                                                              {
+                                                                "type": "Uint",
+                                                                "value": 1
+                                                              }
+                                                            ]
+                                                          ],
+                                                          "name": "Cap",
+                                                          "variant": null
+                                                        }
+                                                      }
+                                                    ]
+                                                  ],
+                                                  "name": "RawVecInner",
+                                                  "variant": null
+                                                }
+                                              }
+                                            ]
+                                          ],
+                                          "name": "RawVec",
+                                          "variant": null
+                                        }
+                                      }
+                                    ],
+                                    [
+                                      "len",
+                                      {
+                                        "type": "Uint",
+                                        "value": 1
+                                      }
+                                    ]
+                                  ],
+                                  "name": "Vec",
+                                  "variant": null
+                                }
+                              }
+                            ]
+                          ],
+                          "name": "String",
+                          "variant": null
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "location": {
+              "end": {
+                "column": 1,
+                "line": 7
+              },
+              "filename": {
+                "private_use_as_methods_instead": 0
+              },
+              "start": {
+                "column": 0,
+                "line": 7
+              }
+            },
+            "name": "main::with_string"
+          }
+        ]
+      }
+    }
+  ]
+}

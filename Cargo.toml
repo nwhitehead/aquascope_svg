@@ -10,3 +10,7 @@ serde_json = "1.0"
 
 [dev-dependencies]
 assert_cmd = "2.0"
+
+[[bin]]
+name = "aquascope_json_to_states"
+path = "src/main.rs"

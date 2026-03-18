@@ -27,19 +27,19 @@ struct Args {
     show_locations: bool,
 }
 
-fn values_display_array(v: &Vec<MValue>) -> String {
+fn values_display_array(v: &[MValue]) -> String {
     let inner = v
         .iter()
-        .map(|x| value_display(&x))
+        .map(value_display)
         .collect::<Vec<String>>()
         .join(", ");
     format!("[{}]", inner)
 }
 
-fn values_display_tuple(v: &Vec<MValue>) -> String {
+fn values_display_tuple(v: &[MValue]) -> String {
     let inner = v
         .iter()
-        .map(|x| value_display(&x))
+        .map(value_display)
         .collect::<Vec<String>>()
         .join(", ");
     format!("[{}]", inner)
@@ -57,22 +57,22 @@ fn escape(x: &str) -> String {
     if x.contains('{') || x.contains('}') {
         format!("`{}`", x)
     } else {
-        format!("{}", x)
+        x.into()
     }
 }
 
 fn adt_name(v: &MValueAdt) -> String {
     if let Some(variant) = &v.variant {
-        format!("{}::{}", escape(&v.name), escape(&variant))
+        format!("{}::{}", escape(&v.name), escape(variant))
     } else {
-        format!("{}", escape(&v.name))
+        escape(&v.name)
     }
 }
 
-fn adt_fields(f: &Vec<(String, MValue)>) -> String {
+fn adt_fields(f: &[(String, MValue)]) -> String {
     let inner = f
         .iter()
-        .map(|(n, v)| format!("{}: {}", n, value_display(&v)))
+        .map(|(n, v)| format!("{}: {}", n, value_display(v)))
         .collect::<Vec<String>>()
         .join(", ");
     format!("{{{}}}", inner)
@@ -80,7 +80,7 @@ fn adt_fields(f: &Vec<(String, MValue)>) -> String {
 
 // TODO: handle subslice, I don't know how that works
 // TODO: use field names instead of numbers (how?)
-fn ptr_tail(v: &Vec<MPathSegment>) -> String {
+fn ptr_tail(v: &[MPathSegment]) -> String {
     v.iter()
         .map(|x| {
             let v = match x {
@@ -112,10 +112,10 @@ fn value_display(v: &MValue) -> String {
         MValue::Uint { value } => format!("{:?}", value),
         MValue::Int { value } => format!("{:?}", value),
         MValue::Float { value } => format!("{:?}", value),
-        MValue::Array { value } => abbrv_values_display(&value),
-        MValue::Tuple { value } => values_display_tuple(&value),
+        MValue::Array { value } => abbrv_values_display(value),
+        MValue::Tuple { value } => values_display_tuple(value),
         MValue::Unallocated { value: _ } => "*".into(),
-        MValue::Pointer { value } => format!("ptr({})", ptr_display(&value)),
+        MValue::Pointer { value } => format!("ptr({})", ptr_display(value)),
         MValue::Adt { value } => format!("{}{}", adt_name(value), adt_fields(&value.fields)),
     }
 }
@@ -166,24 +166,24 @@ fn strip_off_mult_rec(v: &MValue, names: Vec<&str>) -> MValue {
                 },
             },
         },
-        _ => strip_off_mult(&v, names),
+        _ => strip_off_mult(v, names),
     }
 }
 
 fn simplify_box(v: &MValue) -> MValue {
-    strip_off_mult_rec(&v, vec!["Box", "Unique", "NonNull"])
+    strip_off_mult_rec(v, vec!["Box", "Unique", "NonNull"])
 }
 
 fn simplify_vec(v: &MValue) -> MValue {
     strip_off_mult_rec(
-        &v,
+        v,
         vec!["Vec", "RawVec", "RawVecInner", "Unique", "NonNull"],
     )
 }
 
 fn simplify_string(v: &MValue) -> MValue {
     strip_off_mult_rec(
-        &v,
+        v,
         vec![
             "String",
             "Vec",
@@ -197,30 +197,28 @@ fn simplify_string(v: &MValue) -> MValue {
 
 fn tag_code_multi(txt: &str, tags: Vec<(String, CharPos)>) -> String {
     // This implements "Katia's Algorithm"
-    let mut lines: Vec<String> = txt.split('\n').map(|x| x.to_string()).collect();
+    let lines: Vec<String> = txt.split('\n').map(|x| x.to_string()).collect();
     let mut result: Vec<String> = vec![];
-    let mut row = 0;
-    for line in lines {
+    for (row, line) in lines.into_iter().enumerate() {
         let mut col = 0;
         let mut tagged_line = String::new();
         for c in line.chars() {
             tagged_line.push(c);
             // Try all tags, put in the ones that match the location (without updating col)
             for (tag, pos) in &tags {
-                if pos.line == row && pos.column == col {
-                    tagged_line.push_str(&tag);
+                if pos.line == row as u32 && pos.column == col {
+                    tagged_line.push_str(tag);
                 }
             }
             col += 1;
         }
         // Make sure any tags for the current line that haven't triggered trigger now
         for (tag, pos) in &tags {
-            if pos.line == row && pos.column >= col {
-                tagged_line.push_str(&tag);
+            if pos.line == row as u32 && pos.column >= col {
+                tagged_line.push_str(tag);
             }
         }
         result.push(tagged_line);
-        row += 1;
     }
     result.join("\n")
 }
@@ -256,7 +254,6 @@ fn main() {
         println!("# L{}", step_idx);
 
         println!("## Stack");
-        if step.stack.frames.len() == 0 {}
         for frame in &step.stack.frames {
             println!("### {}", frame.name);
             for local in &frame.locals {
@@ -265,14 +262,14 @@ fn main() {
             }
         }
 
-        if step.heap.locations.len() > 0 {
+        if !step.heap.locations.is_empty() {
             println!("## Heap");
         }
         for (heap_idx, heap_val) in step.heap.locations.iter().enumerate() {
-            println!("H{}: {}", heap_idx, value_display(&heap_val));
+            println!("H{}: {}", heap_idx, value_display(heap_val));
         }
         // Add blank line before starting next Ln part
-        println!("");
+        println!();
     }
     println!("```");
 }

@@ -21,8 +21,7 @@ pub struct CharRange {
     pub filename: FilenameIndex,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, Hash, PartialEq)]
 #[serde(tag = "type")]
 pub enum MPathSegment {
     Field { value: u32 },
@@ -30,29 +29,25 @@ pub enum MPathSegment {
     Subslice { value: (u32, u32) },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, Hash, PartialEq)]
 #[serde(tag = "type")]
 pub enum MMemorySegment {
     Stack { value: MStackValue },
     Heap { value: MHeapValue },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, Hash, PartialEq)]
 pub struct MStackValue {
     pub frame: u32,
     pub local: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, Hash, PartialEq)]
 pub struct MHeapValue {
     pub index: u32,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, Hash, PartialEq)]
 pub struct MPath {
     pub segment: MMemorySegment,
     pub parts: Vec<MPathSegment>,
@@ -107,8 +102,7 @@ pub struct MValueAdt {
     pub alloc_kind: Option<MHeapAllocKind>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, Hash, PartialEq)]
 pub struct MValuePointer {
     pub path: MPath,
     pub range: Option<u64>,

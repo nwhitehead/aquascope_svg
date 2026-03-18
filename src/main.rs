@@ -2,7 +2,10 @@ use clap::Parser;
 use std::fs;
 
 mod mtrace;
-use mtrace::{AbbreviatedMValue, MTrace, MValue, MValueAdt, MValuePointer, CharPos, MMemorySegment, MPathSegment};
+use mtrace::{
+    AbbreviatedMValue, CharPos, MMemorySegment, MPathSegment, MTrace, MValue, MValueAdt,
+    MValuePointer,
+};
 
 #[derive(Parser)]
 #[command(name = "aquascope_svg")]
@@ -10,7 +13,11 @@ use mtrace::{AbbreviatedMValue, MTrace, MValue, MValueAdt, MValuePointer, CharPo
 struct Args {
     #[arg(help = "Input filename")]
     input: String,
-    #[arg(long, help = "Whether to show code snippet in output", default_value_t = true)]
+    #[arg(
+        long,
+        help = "Whether to show code snippet in output",
+        default_value_t = true
+    )]
     show_code: bool,
 }
 
@@ -68,8 +75,7 @@ fn adt_fields(f: &Vec<(String, MValue)>) -> String {
 // TODO: handle subslice, I don't know how that works
 // TODO: use field names instead of numbers (how?)
 fn ptr_tail(v: &Vec<MPathSegment>) -> String {
-    v
-        .iter()
+    v.iter()
         .map(|x| {
             let v = match x {
                 MPathSegment::Field { value } => value,
@@ -143,13 +149,14 @@ fn strip_off_mult_rec(v: &MValue, names: Vec<&str>) -> MValue {
                 },
                 AbbreviatedMValue::Only { value } => AbbreviatedMValue::Only {
                     value: (
-                        value.0
+                        value
+                            .0
                             .iter()
                             .map(|x| strip_off_mult_rec(x, names.clone()))
                             .collect(),
                         // TODO: what is second value? we recurse into it here but what is it?
-                        Box::new(strip_off_mult_rec(&value.1, names.clone()))
-                    )
+                        Box::new(strip_off_mult_rec(&value.1, names.clone())),
+                    ),
                 },
             },
         },
@@ -169,7 +176,17 @@ fn simplify_vec(v: &MValue) -> MValue {
 }
 
 fn simplify_string(v: &MValue) -> MValue {
-    strip_off_mult_rec(&v, vec!["String", "Vec", "RawVec", "RawVecInner", "Unique", "NonNull"])
+    strip_off_mult_rec(
+        &v,
+        vec![
+            "String",
+            "Vec",
+            "RawVec",
+            "RawVecInner",
+            "Unique",
+            "NonNull",
+        ],
+    )
 }
 
 fn tag_code(txt: &str, loc: &CharPos, tag: &str) -> String {

@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 mod mtrace;
 mod svg_draw;
-use mtrace::{AbbreviatedMValue, MPath, MTrace, MValue, MValuePointer, CharRange, CharPos, MMemorySegment};
+use mtrace::{AbbreviatedMValue, MPath, MTrace, MValue, MValueAdt, MValuePointer, CharRange, CharPos, MMemorySegment, MPathSegment};
 use svg_draw::{box_around, hstack_spacers, render, stack, text, text_in_box};
 
 #[derive(Parser)]
@@ -63,6 +63,56 @@ fn abbrv_values_display(v: &AbbreviatedMValue) -> String {
     }
 }
 
+fn escape(x: &str) -> String {
+    if x.contains('{') || x.contains('}') {
+        format!("`{}`", x)
+    } else {
+        format!("{}", x)
+    }
+}
+
+fn adt_name(v: &MValueAdt) -> String {
+    if let Some(variant) = &v.variant {
+        format!("{}::{}", escape(&v.name), escape(&variant))
+    } else {
+        format!("{}", escape(&v.name))
+    }
+}
+
+fn adt_fields(f: &Vec<(String, MValue)>) -> String {
+    let inner = f
+        .iter()
+        .map(|(n, v)| format!("{}: {}", n, value_display(&v)))
+        .collect::<Vec<String>>()
+        .join(", ");
+    format!("{{{}}}", inner)
+}
+
+// TODO: handle subslice, I don't know how that works
+// TODO: use field names instead of numbers (how?)
+fn ptr_tail(v: &Vec<MPathSegment>) -> String {
+    v
+        .iter()
+        .map(|x| {
+            let v = match x {
+                MPathSegment::Field { value } => value,
+                MPathSegment::Index { value } => value,
+                _ => panic!("Unhandled subslice pointer specification"),
+            };
+            format!(".{}", v)
+        })
+        .collect::<Vec<String>>()
+        .join("")
+}
+
+// TODO: handle shadowing for stack stuff by adding ticks, currently IGNORED
+fn ptr_display(p: &MValuePointer) -> String {
+    match &p.path.segment {
+        MMemorySegment::Stack { value } => format!("{}{}", value.local, ptr_tail(&p.path.parts)),
+        MMemorySegment::Heap { value } => format!("H{}{}", value.index, ptr_tail(&p.path.parts)),
+    }
+}
+
 fn value_display(v: &MValue) -> String {
     match v {
         MValue::Bool { value } => format!("{:?}", value),
@@ -76,8 +126,9 @@ fn value_display(v: &MValue) -> String {
         MValue::Array { value } => abbrv_values_display(&value),
         MValue::Tuple { value } => values_display_tuple(&value),
         MValue::Unallocated { value } => "*".into(),
-        MValue::Pointer { value } => format!("ptr({:?})", value),
-        //        MValue::Adt { value } => "ADT".into(),
+        //MValue::Pointer { value } => format!("ptr({:?})", value),
+        MValue::Pointer { value } => format!("ptr({})", ptr_display(&value)),
+        MValue::Adt { value } => format!("{}{}", adt_name(value), adt_fields(&value.fields)),
         _ => format!("VALUE[{:?}]", &v).into(),
     }
 }
@@ -183,95 +234,12 @@ fn tag_code_multi(txt: &str, tags: Vec<(String, CharPos)>) -> String {
     result
 }
 
-fn is_heap(p: &MValuePointer) -> bool {
-    match p.path.segment {
-        MMemorySegment::Heap { .. } => true,
-        _ => false,
-    }
-}
-
-fn is_base_stack(p: &MValuePointer) -> bool {
-    match p.path.segment {
-        MMemorySegment::Heap { .. } => false,
-        MMemorySegment::Stack { .. } => false,
-    }
-}
-
-fn values_display_extra_array(v: &Vec<MValue>, map: &HashMap<MValuePointer, String>) -> String {
-    let inner = v
-        .iter()
-        .map(|x| value_display_extra(&x, &map))
-        .collect::<Vec<String>>()
-        .join(", ");
-    format!("[{}]", inner)
-}
-
-fn values_display_extra_tuple(v: &Vec<MValue>, map: &HashMap<MValuePointer, String>) -> String {
-    let inner = v
-        .iter()
-        .map(|x| value_display_extra(&x, &map))
-        .collect::<Vec<String>>()
-        .join(", ");
-    format!("[{}]", inner)
-}
-
-fn abbrv_values_display_extra(v: &AbbreviatedMValue, map: &HashMap<MValuePointer, String>) -> String {
-    match v {
-        AbbreviatedMValue::All { value } => values_display_extra_array(value, &map),
-        _ => panic!("Illegal AbbreviatedMValue: Only"),
-    }
-}
-
-fn value_display_extra(v: &MValue, map: &HashMap<MValuePointer, String>) -> String {
-    match v {
-        MValue::Bool { value } => format!("{:?}", value),
-        MValue::Char { value } => format!(
-            "'{}'",
-            std::char::from_u32(*value).expect("Characters must be UTF-8")
-        ),
-        MValue::Uint { value } => format!("{:?}", value),
-        MValue::Int { value } => format!("{:?}", value),
-        MValue::Float { value } => format!("{:?}", value),
-        MValue::Array { value } => abbrv_values_display(&value),
-        MValue::Tuple { value } => values_display_tuple(&value),
-        MValue::Unallocated { value } => "*".into(),
-        MValue::Pointer { value } => format!("ptr({:?})", value),
-        //        MValue::Adt { value } => "ADT".into(),
-        _ => format!("VALUE[{:?}]", &v).into(),
-    }
-}
-
 fn main() {
     let args = Args::parse();
     let content = fs::read_to_string(&args.input).expect("Failed to read input file");
     let json: MTrace = serde_json::from_str(&content).expect("Failed to parse JSON");
     // Get original code text
     let code = json.code;
-
-    // Extract pointers so we know what to label
-    let mut pntrs = vec![];
-    for (step_idx, step) in json.steps.iter().enumerate() {
-        for frame in &step.stack.frames {
-            for local in &frame.locals {
-                let simpl = simplify_string(&simplify_box(&simplify_vec(&local.value)));
-                extract_pointers(&simpl, &mut pntrs);
-            }
-        }
-    }
-    println!("POINTERS\n------\n{:?}", pntrs);
-
-    // Pointer map
-    let mut pointer_map: HashMap<MValuePointer, String> = HashMap::new();
-    // Fill in pointer map with arbitrary names
-    let mut h_cnt = 0;
-    let mut s_cnt = 0;
-    for pntr in pntrs {
-        if pointer_map.get(&pntr).is_none() {
-            pointer_map.insert(pntr.clone(), format!("P{}", h_cnt));
-            h_cnt += 1;
-        }
-    }
-    println!("POINTER MAP\n------\n{:?}", pointer_map);
 
     // Extract tags to put into code snippet
     let mut tags = vec![];

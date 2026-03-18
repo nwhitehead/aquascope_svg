@@ -1,8 +1,8 @@
 ```rust
-fn main() /* L0 */  {
+fn main()  /* L0 */ {
   let x = 0; /* L1 */ 
-  let f = || /* /* L2 */  L4 */  x /* L5 */ ;
-  let y = f(); /* L3 */  /* L4 */  /* L5 */  /* L6 */   
+  let f = ||  /* L4 */ x; /* L5 */  /* L2 */ 
+  let y = f();  /* L3 */  /* L4 */  /* L5 */  /* L6 */  
 } /* L7 */ ```
 
 ```states

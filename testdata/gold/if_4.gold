@@ -1,5 +1,5 @@
 ```rust
-fn foo(mut b: i32) /* L3 */  {
+fn foo(mut b: i32)  /* L3 */ {
   let a = &mut b; /* L4 */ 
 
   if {
@@ -14,7 +14,7 @@ fn foo(mut b: i32) /* L3 */  {
   } /* L5 */ 
 } /* L6 */ 
 
-fn main() /* L0 */  {
+fn main()  /* L0 */ {
   let x = 12; /* L1 */ 
   foo(x); /* L2 */  /* L3 */  /* L4 */  /* L5 */  /* L6 */  /* L7 */ 
 } /* L8 */ 

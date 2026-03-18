@@ -1,7 +1,7 @@
 ```rust
-fn main() /* L0 */  {
+fn main()  /* L0 */ {
 
-fn with_string() /* L2 */  {
+fn with_string()  /* L2 */ {
    // a[_] doesn't have O
    let a = [String::from("a")]; /* L3 */ 
 

@@ -1,5 +1,5 @@
 ```rust
-fn main() /* L0 */  {
+fn main()  /* L0 */ {
   let mut s1 = String::from(""); /* L1 */ 
   let b = &mut s1; /* L2 */ 
   let mut v = vec![0, 1, 2, 3]; /* L3 */ 

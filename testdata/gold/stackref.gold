@@ -1,5 +1,5 @@
 ```rust
-fn main() /* L0 */  {
+fn main()  /* L0 */ {
   let mut x = 1; /* L1 */ 
   let y = &mut x; /* L2 */ 
   *y += 1; /* L3 */ 

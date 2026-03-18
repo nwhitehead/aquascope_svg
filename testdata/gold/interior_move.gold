@@ -1,5 +1,5 @@
 ```rust
-fn main() /* L0 */  {
+fn main()  /* L0 */ {
   let mut t = (String::from("1"), String::from("2")); /* L1 */ 
 
   let s = t.0; /* L2 */ 

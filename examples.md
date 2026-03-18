@@ -1,17 +1,20 @@
 ```rust
-fn main() /* L0 */ {
-    let mut x = 1; /* L1 */
-    let y = x;
+fn main() {
+    let mut x = 1;
+    let y = f(x);
     x += 1;
+}
+fn f(x: i32) -> i32 {
+    x + 1
 }
 ```
 
-```execution
-# L0
+```states
+# L0 {pos="1"}
 ## Stack
 ### main
 
-# L1
+# L1 {pos="2"}
 ## Stack
 ### main
 x: 1

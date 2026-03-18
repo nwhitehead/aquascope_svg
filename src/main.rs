@@ -1,12 +1,8 @@
 use clap::Parser;
 use std::fs;
-use svg::save;
-use std::collections::HashMap;
 
 mod mtrace;
-mod svg_draw;
-use mtrace::{AbbreviatedMValue, MPath, MTrace, MValue, MValueAdt, MValuePointer, CharRange, CharPos, MMemorySegment, MPathSegment};
-use svg_draw::{box_around, hstack_spacers, render, stack, text, text_in_box};
+use mtrace::{AbbreviatedMValue, MTrace, MValue, MValueAdt, MValuePointer, CharPos, MMemorySegment, MPathSegment};
 
 #[derive(Parser)]
 #[command(name = "aquascope_svg")]
@@ -14,28 +10,8 @@ use svg_draw::{box_around, hstack_spacers, render, stack, text, text_in_box};
 struct Args {
     #[arg(help = "Input filename")]
     input: String,
-}
-
-fn test_svg() {
-    let d = 10.0;
-    let ds = 10.0;
-    let sep_height = 10.0;
-    let arr0 = text("0");
-    let arr1 = text("1");
-    let arr2 = text("2");
-    let arr = hstack_spacers(
-        vec![Box::new(arr0), Box::new(arr1), Box::new(arr2)],
-        ds,
-        sep_height,
-    );
-    let box_arr = box_around(&arr, ds);
-    let box_arr_coll = stack(vec![Box::new(arr), Box::new(box_arr)]);
-    let t1 = text_in_box("x".into(), d);
-    let t2 = text_in_box("0".into(), d);
-    let spaced = hstack_spacers(vec![Box::new(t1), Box::new(t2)], ds, sep_height);
-    let document = render(&box_arr_coll);
-
-    save("image.svg", &document).unwrap();
+    #[arg(long, help = "Whether to show code snippet in output", default_value_t = true)]
+    show_code: bool,
 }
 
 fn values_display_array(v: &Vec<MValue>) -> String {
@@ -61,7 +37,6 @@ fn abbrv_values_display(v: &AbbreviatedMValue) -> String {
         AbbreviatedMValue::All { value } => values_display_array(value),
         AbbreviatedMValue::Only { value } => values_display_array(&value.0),
         // TODO: what is the second part single value? we just ignore it here
-        _ => panic!("Illegal AbbreviatedMValue: Only"),
     }
 }
 
@@ -127,22 +102,9 @@ fn value_display(v: &MValue) -> String {
         MValue::Float { value } => format!("{:?}", value),
         MValue::Array { value } => abbrv_values_display(&value),
         MValue::Tuple { value } => values_display_tuple(&value),
-        MValue::Unallocated { value } => "*".into(),
+        MValue::Unallocated { value: _ } => "*".into(),
         MValue::Pointer { value } => format!("ptr({})", ptr_display(&value)),
         MValue::Adt { value } => format!("{}{}", adt_name(value), adt_fields(&value.fields)),
-    }
-}
-
-fn strip_off(v: &MValue, name: &str) -> MValue {
-    match v {
-        MValue::Adt { value } => {
-            if value.name == name {
-                value.fields[0].1.clone()
-            } else {
-                v.clone()
-            }
-        }
-        _ => v.clone(),
     }
 }
 
@@ -189,7 +151,6 @@ fn strip_off_mult_rec(v: &MValue, names: Vec<&str>) -> MValue {
                         Box::new(strip_off_mult_rec(&value.1, names.clone()))
                     )
                 },
-                _ => panic!("Illegal AbbreviatedMValue: Only"),
             },
         },
         _ => strip_off_mult(&v, names),
@@ -209,24 +170,6 @@ fn simplify_vec(v: &MValue) -> MValue {
 
 fn simplify_string(v: &MValue) -> MValue {
     strip_off_mult_rec(&v, vec!["String", "Vec", "RawVec", "RawVecInner", "Unique", "NonNull"])
-}
-
-fn extract_pointers(v: &MValue, out: &mut Vec<MValuePointer>) {
-    match v {
-        MValue::Tuple { value } => value
-                .iter()
-                .map(|x| extract_pointers(x, out))
-                .collect(),
-        MValue::Array { value } => match value {
-            AbbreviatedMValue::All { value } => value
-                .iter()
-                .map(|x| extract_pointers(x, out))
-                .collect(),
-            _ => panic!("Illegal AbbreviatedMValue: Only"),
-        },
-        MValue::Pointer { value } => out.push(value.clone()),
-        _ => (),
-    }
 }
 
 fn tag_code(txt: &str, loc: &CharPos, tag: &str) -> String {

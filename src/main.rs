@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 mod mtrace;
 mod svg_draw;
-use mtrace::{AbbreviatedMValue, MPath, MTrace, MValue, MValuePointer, CharRange, CharPos};
+use mtrace::{AbbreviatedMValue, MPath, MTrace, MValue, MValuePointer, CharRange, CharPos, MMemorySegment};
 use svg_draw::{box_around, hstack_spacers, render, stack, text, text_in_box};
 
 #[derive(Parser)]
@@ -76,7 +76,7 @@ fn value_display(v: &MValue) -> String {
         MValue::Array { value } => abbrv_values_display(&value),
         MValue::Tuple { value } => values_display_tuple(&value),
         MValue::Unallocated { value } => "*".into(),
-        //        MValue::Pointer { value } => "PTR".into(),
+        MValue::Pointer { value } => format!("ptr({:?})", value),
         //        MValue::Adt { value } => "ADT".into(),
         _ => format!("VALUE[{:?}]", &v).into(),
     }
@@ -183,6 +183,64 @@ fn tag_code_multi(txt: &str, tags: Vec<(String, CharPos)>) -> String {
     result
 }
 
+fn is_heap(p: &MValuePointer) -> bool {
+    match p.path.segment {
+        MMemorySegment::Heap { .. } => true,
+        _ => false,
+    }
+}
+
+fn is_base_stack(p: &MValuePointer) -> bool {
+    match p.path.segment {
+        MMemorySegment::Heap { .. } => false,
+        MMemorySegment::Stack { .. } => false,
+    }
+}
+
+fn values_display_extra_array(v: &Vec<MValue>, map: &HashMap<MValuePointer, String>) -> String {
+    let inner = v
+        .iter()
+        .map(|x| value_display_extra(&x, &map))
+        .collect::<Vec<String>>()
+        .join(", ");
+    format!("[{}]", inner)
+}
+
+fn values_display_extra_tuple(v: &Vec<MValue>, map: &HashMap<MValuePointer, String>) -> String {
+    let inner = v
+        .iter()
+        .map(|x| value_display_extra(&x, &map))
+        .collect::<Vec<String>>()
+        .join(", ");
+    format!("[{}]", inner)
+}
+
+fn abbrv_values_display_extra(v: &AbbreviatedMValue, map: &HashMap<MValuePointer, String>) -> String {
+    match v {
+        AbbreviatedMValue::All { value } => values_display_extra_array(value, &map),
+        _ => panic!("Illegal AbbreviatedMValue: Only"),
+    }
+}
+
+fn value_display_extra(v: &MValue, map: &HashMap<MValuePointer, String>) -> String {
+    match v {
+        MValue::Bool { value } => format!("{:?}", value),
+        MValue::Char { value } => format!(
+            "'{}'",
+            std::char::from_u32(*value).expect("Characters must be UTF-8")
+        ),
+        MValue::Uint { value } => format!("{:?}", value),
+        MValue::Int { value } => format!("{:?}", value),
+        MValue::Float { value } => format!("{:?}", value),
+        MValue::Array { value } => abbrv_values_display(&value),
+        MValue::Tuple { value } => values_display_tuple(&value),
+        MValue::Unallocated { value } => "*".into(),
+        MValue::Pointer { value } => format!("ptr({:?})", value),
+        //        MValue::Adt { value } => "ADT".into(),
+        _ => format!("VALUE[{:?}]", &v).into(),
+    }
+}
+
 fn main() {
     let args = Args::parse();
     let content = fs::read_to_string(&args.input).expect("Failed to read input file");
@@ -205,11 +263,12 @@ fn main() {
     // Pointer map
     let mut pointer_map: HashMap<MValuePointer, String> = HashMap::new();
     // Fill in pointer map with arbitrary names
-    let mut pcnt = 0;
+    let mut h_cnt = 0;
+    let mut s_cnt = 0;
     for pntr in pntrs {
         if pointer_map.get(&pntr).is_none() {
-            pointer_map.insert(pntr.clone(), format!("P{}", pcnt));
-            pcnt += 1;
+            pointer_map.insert(pntr.clone(), format!("P{}", h_cnt));
+            h_cnt += 1;
         }
     }
     println!("POINTER MAP\n------\n{:?}", pointer_map);

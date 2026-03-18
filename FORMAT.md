@@ -90,21 +90,17 @@ Syntax rules:
 * Lines that start with `#` start new steps
 * If we are in `#` and not in any deeper headers, then text becomes annotations for current step
 * Lines that start with `##` begin memory regions (stacks and heaps)
-* If the line ends with `##` then it is nameless, otherwise labels are shown as names in diagram
-* Subheads `###` are rendered as lables below enclosing `##` memory region (can also be nameless or named)
+* Subheads `###` are rendered as lables below enclosing `##` memory region
 * Labels are text followed by `:`
+* Lines are optional label, then value
 * Values can be:
     * Number
-    * `[` optionally labelled values, `,` separated, `]` (array)
-    * `(` optionally labelled values, `,` separated, `)` (tuple)
-    * `*` to indicate invalid
+    * `[` values, `,` separated, `]` (array)
+    * `(` values, `,` separated, `)` (tuple)
+    * `*` to indicate invalid value
     * `***` to indicate invalid and accessed (will be drawn red)
     * `ptr(` label `)`, label can be to any memory region in current step
-    * name `{` optionally labelled values, `,` separated, `}` (structs)
+    * Also, `ptr` label can have suffix of any number of `.` number or `.` name to find spots
+    * name `{` name `:` value, `,` separated `}` (structs)
+    * For stack variable name shadowing, to target, suffix lable with `'` skips one match (can be repeated)
 * Anything can be escaped with backticks, that way you can put weird stuff in names
-
-
-What about structs? Just allow `{}` syntax, let user figure it out.
-
-
-

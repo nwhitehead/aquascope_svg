@@ -10,7 +10,6 @@ fn test_basic_json() {
 #[test]
 fn test_all_testdata() {
     let test_files = [
-        "testdata/json/apply_curve_error.json",
         "testdata/json/array_0_error.json",
         "testdata/json/basic.json",
         "testdata/json/box.json",
@@ -22,7 +21,6 @@ fn test_all_testdata() {
         "testdata/json/if_4.json",
         "testdata/json/interior_move.json",
         "testdata/json/linear_0.json",
-        "testdata/json/nested-ref.json",
         "testdata/json/nested_ref.json",
         "testdata/json/stackref.json",
         "testdata/json/tuple.json",

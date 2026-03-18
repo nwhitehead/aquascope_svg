@@ -59,6 +59,8 @@ fn values_display_tuple(v: &Vec<MValue>) -> String {
 fn abbrv_values_display(v: &AbbreviatedMValue) -> String {
     match v {
         AbbreviatedMValue::All { value } => values_display_array(value),
+        AbbreviatedMValue::Only { value } => values_display_array(&value.0),
+        // TODO: what is the second part single value? we just ignore it here
         _ => panic!("Illegal AbbreviatedMValue: Only"),
     }
 }
@@ -126,10 +128,8 @@ fn value_display(v: &MValue) -> String {
         MValue::Array { value } => abbrv_values_display(&value),
         MValue::Tuple { value } => values_display_tuple(&value),
         MValue::Unallocated { value } => "*".into(),
-        //MValue::Pointer { value } => format!("ptr({:?})", value),
         MValue::Pointer { value } => format!("ptr({})", ptr_display(&value)),
         MValue::Adt { value } => format!("{}{}", adt_name(value), adt_fields(&value.fields)),
-        _ => format!("VALUE[{:?}]", &v).into(),
     }
 }
 
@@ -178,6 +178,16 @@ fn strip_off_mult_rec(v: &MValue, names: Vec<&str>) -> MValue {
                         .iter()
                         .map(|x| strip_off_mult_rec(x, names.clone()))
                         .collect(),
+                },
+                AbbreviatedMValue::Only { value } => AbbreviatedMValue::Only {
+                    value: (
+                        value.0
+                            .iter()
+                            .map(|x| strip_off_mult_rec(x, names.clone()))
+                            .collect(),
+                        // TODO: what is second value? we recurse into it here but what is it?
+                        Box::new(strip_off_mult_rec(&value.1, names.clone()))
+                    )
                 },
                 _ => panic!("Illegal AbbreviatedMValue: Only"),
             },

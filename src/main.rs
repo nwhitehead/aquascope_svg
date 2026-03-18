@@ -195,19 +195,34 @@ fn simplify_string(v: &MValue) -> MValue {
     )
 }
 
-fn tag_code(txt: &str, loc: &CharPos, tag: &str) -> String {
-    let mut lines: Vec<String> = txt.split('\n').map(|x| x.to_string()).collect();
-    let endloc = &loc;
-    lines[endloc.line as usize].insert_str(endloc.column as usize, tag);
-    lines.join("\n")
-}
-
 fn tag_code_multi(txt: &str, tags: Vec<(String, CharPos)>) -> String {
-    let mut result = txt.to_string();
-    for tag in tags.iter().rev() {
-        result = tag_code(&result, &tag.1, &tag.0);
+    // This implements "Katia's Algorithm"
+    let mut lines: Vec<String> = txt.split('\n').map(|x| x.to_string()).collect();
+    let mut result: Vec<String> = vec![];
+    let mut row = 0;
+    for line in lines {
+        let mut col = 0;
+        let mut tagged_line = String::new();
+        for c in line.chars() {
+            tagged_line.push(c);
+            // Try all tags, put in the ones that match the location (without updating col)
+            for (tag, pos) in &tags {
+                if pos.line == row && pos.column == col {
+                    tagged_line.push_str(&tag);
+                }
+            }
+            col += 1;
+        }
+        // Make sure any tags for the current line that haven't triggered trigger now
+        for (tag, pos) in &tags {
+            if pos.line == row && pos.column >= col {
+                tagged_line.push_str(&tag);
+            }
+        }
+        result.push(tagged_line);
+        row += 1;
     }
-    result
+    result.join("\n")
 }
 
 fn main() {

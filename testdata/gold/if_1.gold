@@ -1,0 +1,76 @@
+```rust
+fn main() /* L0 */  {
+  let mut s1 = String::from(""); /* L1 */ 
+  let mut s2 = String::from(""); /* L2 */ 
+
+  let b;
+
+  if true {
+    b = &mut s1;
+  } else {
+    b = &mut s2;
+  } /* L3 */ 
+
+  b.push_str("ok"); /* L4 */ 
+
+  s1.push_str("done"); /* L5 */ 
+  s2.push_str("done"); /* L6 */ 
+} /* L7 */ 
+```
+
+```states
+# L0
+## Stack
+### main
+
+# L1
+## Stack
+### main
+s1: *
+
+# L2
+## Stack
+### main
+s1: *
+s2: *
+
+# L3
+## Stack
+### main
+s1: *
+s2: *
+b: ptr(s1)
+
+# L4
+## Stack
+### main
+s1: ptr(H0.0)
+s2: *
+b: ptr(s1)
+## Heap
+H0: ['o', 'k']
+
+# L5
+## Stack
+### main
+s1: ptr(H0.0)
+s2: *
+b: ptr(s1)
+## Heap
+H0: ['o', 'k', 'd', 'o', 'n', 'e']
+
+# L6
+## Stack
+### main
+s1: ptr(H0.0)
+s2: ptr(H1.0)
+b: ptr(s1)
+## Heap
+H0: ['o', 'k', 'd', 'o', 'n', 'e']
+H1: ['d', 'o', 'n', 'e']
+
+# L7
+## Stack
+### main
+
+```

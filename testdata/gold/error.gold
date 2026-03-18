@@ -1,0 +1,45 @@
+```rust
+fn main() /* L0 */  {
+  let mut v = vec![1, 2, 3]; /* L1 */ 
+  let y = &v[0]; /* L2 */ 
+  v.push(0); /* L3 */ 
+  let n = *y; /* L4 */ 
+}```
+
+```states
+# L0
+## Stack
+### main
+
+# L1
+## Stack
+### main
+v: ptr(H0.0)
+## Heap
+H0: [1, 2, 3]
+
+# L2
+## Stack
+### main
+v: ptr(H0.0)
+y: ptr(H0.0)
+## Heap
+H0: [1, 2, 3]
+
+# L3
+## Stack
+### main
+v: ptr(H0.0)
+y: *
+## Heap
+H0: [1, 2, 3, 0]
+
+# L4
+## Stack
+### main
+v: ptr(H0.0)
+y: *
+## Heap
+H0: [1, 2, 3, 0]
+
+```

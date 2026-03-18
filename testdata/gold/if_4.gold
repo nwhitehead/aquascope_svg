@@ -1,0 +1,77 @@
+```rust
+fn foo(mut b: i32) /* L3 */  {
+  let a = &mut b; /* L4 */ 
+
+  if {
+    *a += 1;
+    let z = *a * 2;
+    let q = *a / 2;
+    (z + q - *a) * 3 > 100
+  } {
+    println!("{a}");
+  } else {
+    println!("{b}");
+  } /* L5 */ 
+} /* L6 */ 
+
+fn main() /* L0 */  {
+  let x = 12; /* L1 */ 
+  foo(x); /* L2 */  /* L3 */  /* L4 */  /* L5 */  /* L6 */  /* L7 */ 
+} /* L8 */ 
+```
+
+```states
+# L0
+## Stack
+### main
+
+# L1
+## Stack
+### main
+x: 12
+
+# L2
+## Stack
+### main
+x: 12
+
+# L3
+## Stack
+### main
+x: 12
+### foo
+b: 12
+
+# L4
+## Stack
+### main
+x: 12
+### foo
+b: 12
+a: ptr(b)
+
+# L5
+## Stack
+### main
+x: 12
+### foo
+b: 13
+a: ptr(b)
+
+# L6
+## Stack
+### main
+x: 12
+### foo
+b: 13
+
+# L7
+## Stack
+### main
+x: 12
+
+# L8
+## Stack
+### main
+
+```

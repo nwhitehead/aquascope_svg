@@ -1,0 +1,62 @@
+```rust
+fn main() /* L0 */  {
+
+fn with_string() /* L2 */  {
+   // a[_] doesn't have O
+   let a = [String::from("a")]; /* L3 */ 
+
+   let s = a[0]; /* L4 */ 
+} /* L5 */ 
+
+fn with_int() {
+   // a[_] doesn't have O
+   let a = [0];
+
+   let i = a[0];
+
+   drop(i);
+}
+
+   with_string(); /* L1 */  /* L2 */  /* L3 */  /* L4 */  /* L5 */ 
+   with_int();
+}
+```
+
+```states
+# L0
+## Stack
+### main
+
+# L1
+## Stack
+### main
+
+# L2
+## Stack
+### main
+### main::with_string
+
+# L3
+## Stack
+### main
+### main::with_string
+a: [ptr(H0)]
+## Heap
+H0: ['a']
+
+# L4
+## Stack
+### main
+### main::with_string
+a: [ptr(H0)]
+s: ptr(H0)
+## Heap
+H0: ['a']
+
+# L5
+## Stack
+### main
+### main::with_string
+a: [*]
+
+```

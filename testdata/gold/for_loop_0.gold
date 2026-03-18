@@ -1,0 +1,75 @@
+```rust
+fn main() /* L0 */  {
+  let mut s1 = String::from(""); /* L1 */ 
+  let b = &mut s1; /* L2 */ 
+  let mut v = vec![0, 1, 2, 3]; /* L3 */ 
+
+  for _ in v.iter() {
+    b.push_str("yay!");
+  } /* L4 */ 
+
+  v.push(4); /* L5 */ 
+  s1.push_str("done"); /* L6 */ 
+} /* L7 */ 
+```
+
+```states
+# L0
+## Stack
+### main
+
+# L1
+## Stack
+### main
+s1: *
+
+# L2
+## Stack
+### main
+s1: *
+b: ptr(s1)
+
+# L3
+## Stack
+### main
+s1: *
+b: ptr(s1)
+v: ptr(H0.0)
+## Heap
+H0: [0, 1, 2, 3]
+
+# L4
+## Stack
+### main
+s1: ptr(H0.0)
+b: ptr(s1)
+v: ptr(H1.0)
+## Heap
+H0: ['y', 'a', 'y', '!', 'y', 'a', 'y', '!', 'y', 'a', 'y']
+H1: [0, 1, 2, 3]
+
+# L5
+## Stack
+### main
+s1: ptr(H0.0)
+b: ptr(s1)
+v: ptr(H1.0)
+## Heap
+H0: ['y', 'a', 'y', '!', 'y', 'a', 'y', '!', 'y', 'a', 'y']
+H1: [0, 1, 2, 3, 4]
+
+# L6
+## Stack
+### main
+s1: ptr(H0.0)
+b: ptr(s1)
+v: ptr(H1.0)
+## Heap
+H0: ['y', 'a', 'y', '!', 'y', 'a', 'y', '!', 'y', 'a', 'y']
+H1: [0, 1, 2, 3, 4]
+
+# L7
+## Stack
+### main
+
+```

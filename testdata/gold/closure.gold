@@ -1,0 +1,56 @@
+```rust
+fn main() /* L0 */  {
+  let x = 0; /* L1 */ 
+  let f = || /* /* L2 */  L4 */  x /* L5 */ ;
+  let y = f(); /* L3 */  /* L4 */  /* L5 */  /* L6 */   
+} /* L7 */ ```
+
+```states
+# L0
+## Stack
+### main
+
+# L1
+## Stack
+### main
+x: 0
+
+# L2
+## Stack
+### main
+x: 0
+f: `main::{closure#0}`{x: ptr(x)}
+
+# L3
+## Stack
+### main
+x: 0
+f: `main::{closure#0}`{x: ptr(x)}
+
+# L4
+## Stack
+### main
+x: 0
+f: `main::{closure#0}`{x: ptr(x)}
+### main::{closure#0}
+
+# L5
+## Stack
+### main
+x: 0
+f: `main::{closure#0}`{x: ptr(x)}
+### main::{closure#0}
+(return): 0
+
+# L6
+## Stack
+### main
+x: 0
+f: `main::{closure#0}`{x: ptr(x)}
+y: 0
+
+# L7
+## Stack
+### main
+
+```

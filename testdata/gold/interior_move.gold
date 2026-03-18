@@ -1,0 +1,64 @@
+```rust
+fn main() /* L0 */  {
+  let mut t = (String::from("1"), String::from("2")); /* L1 */ 
+
+  let s = t.0; /* L2 */ 
+
+  std::mem::drop(s); /* L3 */ 
+
+  t.0 = String::from("viola"); /* L4 */ 
+
+  std::mem::drop(t); /* L5 */ 
+} /* L6 */ 
+```
+
+```states
+# L0
+## Stack
+### main
+
+# L1
+## Stack
+### main
+t: [ptr(H0), ptr(H1)]
+## Heap
+H0: ['1']
+H1: ['2']
+
+# L2
+## Stack
+### main
+t: [ptr(H0), ptr(H1)]
+s: ptr(H0)
+## Heap
+H0: ['1']
+H1: ['2']
+
+# L3
+## Stack
+### main
+t: [*, ptr(H0)]
+s: *
+## Heap
+H0: ['2']
+
+# L4
+## Stack
+### main
+t: [ptr(H0.0), ptr(H1)]
+s: *
+## Heap
+H0: ['v', 'i', 'o', 'l', 'a']
+H1: ['2']
+
+# L5
+## Stack
+### main
+t: [*, *]
+s: *
+
+# L6
+## Stack
+### main
+
+```

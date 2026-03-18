@@ -19,6 +19,12 @@ struct Args {
         default_value_t = true
     )]
     show_code: bool,
+    #[arg(
+        long,
+        help = "Whether add comments in code with locations",
+        default_value_t = true
+    )]
+    show_locations: bool,
 }
 
 fn values_display_array(v: &Vec<MValue>) -> String {
@@ -220,9 +226,17 @@ fn main() {
         }
     }
 
-    // Show code tagged with labels
-    println!("{}", tag_code_multi(&code, tags));
+    // Optionally show code, optionally tagged with labels
+    if args.show_code {
+        let code_txt = if args.show_locations {
+            tag_code_multi(&code, tags)
+        } else {
+            code.clone()
+        };
+        println!("```rust\n{}```\n", code_txt);
+    }
 
+    println!("```states");
     for (step_idx, step) in json.steps.iter().enumerate() {
         println!("# L{}", step_idx);
 
@@ -240,9 +254,10 @@ fn main() {
             println!("## Heap");
         }
         for (heap_idx, heap_val) in step.heap.locations.iter().enumerate() {
-            println!("Heap[{}]: {}", heap_idx, value_display(&heap_val));
+            println!("H{}: {}", heap_idx, value_display(&heap_val));
         }
         // Add blank line before starting next Ln part
         println!("");
     }
+    println!("```");
 }

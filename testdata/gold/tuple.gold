@@ -1,0 +1,30 @@
+```rust
+fn main() /* L0 */  {
+  let mut x = (0, String::from("Hello")); /* L1 */ 
+  x.0 += 1; /* L2 */ 
+} /* L3 */ ```
+
+```states
+# L0
+## Stack
+### main
+
+# L1
+## Stack
+### main
+x: [0, ptr(H0.0)]
+## Heap
+H0: ['H', 'e', 'l', 'l', 'o']
+
+# L2
+## Stack
+### main
+x: [1, ptr(H0.0)]
+## Heap
+H0: ['H', 'e', 'l', 'l', 'o']
+
+# L3
+## Stack
+### main
+
+```

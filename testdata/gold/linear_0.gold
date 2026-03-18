@@ -1,0 +1,74 @@
+```rust
+fn dummy_use(_n: &i32) /* L6 */  {}
+
+fn main() /* L0 */  {
+  let mut x: i32 = 0; /* L1 */ 
+
+  let mut y: i32 = 0; /* L2 */ 
+
+  let z = &mut x; /* L3 */ 
+
+  *z = y; /* L4 */ 
+
+  dummy_use(&z); /* L5 */  /* L6 */  /* L7 */ 
+} /* L8 */ 
+```
+
+```states
+# L0
+## Stack
+### main
+
+# L1
+## Stack
+### main
+x: 0
+
+# L2
+## Stack
+### main
+x: 0
+y: 0
+
+# L3
+## Stack
+### main
+x: 0
+y: 0
+z: ptr(x)
+
+# L4
+## Stack
+### main
+x: 0
+y: 0
+z: ptr(x)
+
+# L5
+## Stack
+### main
+x: 0
+y: 0
+z: ptr(x)
+
+# L6
+## Stack
+### main
+x: 0
+y: 0
+z: ptr(x)
+### dummy_use
+_n: ptr(x)
+
+# L7
+## Stack
+### main
+x: 0
+y: 0
+z: ptr(x)
+
+# L8
+## Stack
+### main
+
+```

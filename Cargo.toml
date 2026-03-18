@@ -13,4 +13,4 @@ assert_cmd = "2.0"
 
 [[bin]]
 name = "aquascope_json_to_states"
-path = "src/main.rs"
+path = "src/json_to_states.rs"

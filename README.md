@@ -7,12 +7,8 @@ non-interative SVG diagrams suitable for publication online or in print.
 
 The general flow:
 
-```mermaid
-flowchart TD
-    A(Rust code)
-    -->|Aquascope CLI| B(JSON)
-    -->|Aquascope states| C(STATES)
-    -->|drawStates| D(SVG)
+```
+Rust --> JSON --> STATES --> SVG
 ```
 
 The [Aquascope](https://github.com/cognitive-engineering-lab/aquascope) project
@@ -25,13 +21,14 @@ The Rust code analysis can be saved as JSON data using the `aquascope_cli` tool
 in [this fork](https://github.com/nwhitehead/aquascope). You give it a short
 Rust program filename and it outputs the JSON data to `stdout`.
 
-Next, this project has a tool for converting the JSON format to a new custom
-diagram representation format `STATES`. This is a human-readable text format
-that uses some Markdown conventions and encodes program state at various points.
+Next, this project has a tool `aquascope_json_to_states` for converting the JSON
+format to a new custom diagram representation format `STATES`. This is a
+human-readable text format that uses some Markdown conventions and encodes
+program state at various points.
 
-This project has a tool for rendering `STATES` diagrams into SVG. Usually this
-will be called from some sort of document preparation system (e.g. during
-Markdown rendering).
+This project has a tool `render_states` for rendering `STATES` diagrams into
+SVG. Usually this will be called from some sort of document preparation system
+(e.g. during Markdown rendering).
 
 ### Code blocks
 

@@ -3,37 +3,35 @@ from lark import Lark
 l = Lark(open('grammar.lark').read())
 
 def main():
-    print( l.parse("""
+    tree = l.parse("""
 # L0
 ## Stack
 ### main
+x: 5
 
 # L1
 ## Stack
 ### main
-x: ptr(H0)
+x: 5
+y: 2
 ## Heap
-H0: 0
+H0: 5
 
 # L2
 ## Stack
 ### main
-x: ptr(H0)
 ## Heap
-H0: 1
 
 # L3
 ## Stack
 ### main
-x: ptr(H0)
-y: ptr(H0)
 ## Heap
-H0: 1
 
 # L4
 ## Stack
 ### main
-""") )
+""")
+    print(tree.pretty())
 
 if __name__ == "__main__":
     main()

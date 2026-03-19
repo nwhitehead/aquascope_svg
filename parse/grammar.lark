@@ -3,6 +3,7 @@
 %import common.NEWLINE
 %import common.C_COMMENT
 %import common.CPP_COMMENT
+%import common.SIGNED_NUMBER
 
 // Ignore inline whitespace (but keep newlines)
 %ignore WS_INLINE
@@ -15,7 +16,19 @@
 
 TEXT: /[^\n]+/
 EOL: NEWLINE+
+UNESCAPED_LABEL: CNAME
+ESCAPED_LABEL: "`" /[^`]+/ "`"
+
+label: UNESCAPED_LABEL | ESCAPED_LABEL
 
 start: [EOL] step*
 
-step: "#" TEXT EOL
+step: "# " TEXT EOL location*
+
+location: "## " TEXT EOL ( region* | def* )
+
+region: "### " TEXT EOL def*
+
+def: label ":" value EOL
+
+value: SIGNED_NUMBER

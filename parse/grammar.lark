@@ -13,43 +13,9 @@
 
 %import common.CNAME
 
-TEXT: /[^\n]*/
+TEXT: /[^\n]+/
+EOL: NEWLINE+
 
-start: step*
+start: [EOL] step*
 
-step: STEP_HEADER name EOL region*
-
-region: REGION_HEADER name EOL (subregion | lvalue)*
-
-subregion: SUBREGION_HEADER name EOL lvalue*
-
-lvalue: label ":" value EOL
-
-label: ESCAPED_LABEL | UNESCAPED_LABEL
-
-ESCAPED_LABEL: "`" /[^`]+/` "`"
-UNESCAPED_LABEL: /[a-zA-Z_][a-zA-Z0-9_\-+=!@$%^&()|{}]*/
-
-value: "*"
-      | "[" value ("," value)* "]"
-      | "(" value ("," value)* ")"
-      | "ptr(" destination ")"
-      | INTEGER
-      | FLOAT
-      | "'" CHAR "'"
-      | label "{" (label ":" value ("," label ":" value)*)? "}"
-
-destination: label (ACCESS)* BORROWS
-ACCESS: "." INTEGER
-BORROWS: "'"*
-
-LOCATION_HEADER: "#" /[^\n]+/
-REGION_HEADER: "##" /[^\n]+/
-SUBREGION_HEADER: "###" /[^\n]+/
-
-INTEGER: /-?\d+/
-FLOAT: /-?\d+\.\d+([eE][+-]?\d+)?/
-CHAR: /[^'\\]|\\./
-
-EOL: "\n"
-BLANK: EOL
+step: "#" TEXT EOL

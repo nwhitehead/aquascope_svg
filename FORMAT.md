@@ -1,9 +1,8 @@
 # STATES Diagram Format
 
-The STATES format is a text format for representing the stack and heap
-states of programs at different points of execution. It is designed to
-work with many different languages and have enough functionality to work
-with Rust programs.
+The STATES format is a text format for representing the stack and heap states of
+programs at different points of execution. It is designed to work with many
+different languages and have enough functionality to work with Rust programs.
 
 ## Specification
 
@@ -14,15 +13,19 @@ The STATES format is a text format with the following rules:
 * Whitespace (except for newlines) in general is ignored.
 * Comments are C++ style.
 * The high level contents are a sequence of zero or more location data.
-* Each location data starts with a Markdown-style header beginning with `#` and then name.
+* Each location data starts with a Markdown-style header beginning with `#` and
+  then name.
 * A location data consists of zero or more regions.
-* A region is a Markdown style header beginning with `##` and then a name.
 * A region may be optionally dividied into subregions with Markdown style headers with `###`.
-* If a region has subregions then all content of the region must be in subregions.
+* A region is a Markdown style header beginning with `##` and then a name.
+* If a region has subregions then all content of the region must be in
+  subregions.
 * The contents of a region or subregion are zero or more lvalues.
 * An lvalue is a label, `:`, then a value, then end of line.
-* Labels can be any alphanumeric text starting with non-numbers, including `_-+=!@$%^&()|{}`.
-* Labels can optionaly be escaped with backticks to allow arbitrary text inside (except backticks).
+* Labels can be any alphanumeric text starting with non-numbers, including
+  `_-+=!@$%^&()|{}`.
+* Labels can optionaly be escaped with backticks to allow arbitrary text inside
+  (except backticks).
 * Values can be:
     * `*`
     * `[`, a comma separated list of values, `]`
@@ -32,7 +35,8 @@ The STATES format is a text format with the following rules:
     * a floating point number
     * `'`, a character, `'`
     * a label, `{`, then a comma separated list of label, `:`, value, `}`
-* A destination is a label followed by zero or more copies of `.` and natural numbers.
+* A destination is a label followed by zero or more copies of `.` and natural
+  numbers.
 * A destination can also be followed by zero or more `'`.
 
 ## Example

@@ -34,11 +34,12 @@ start: [_EOL] step*
 
 step: "# " TEXT _EOL location*
 
-location: "## " TEXT _EOL ( region* | def* )
+location: "## " TEXT _EOL ( region* | defln_* )
 
-region: "### " TEXT _EOL def*
+region: "### " TEXT _EOL defln_*
 
-def: label ":" value _EOL
+def_ : label ":" value
+?defln_: def_ _EOL
 
 destination: label ("." DIGITS)* borrow
 borrow: "'"*
@@ -48,11 +49,29 @@ borrow: "'"*
 | "[" value ("," value)* "]" -> array_value
 | "(" value ("," value)* ")" -> tuple_value
 | "'" /[^']/ "'" -> char_value
-| label "{" (label ":" value ("," label ":" value)*)? "}" -> struct_value
+| label "{" (def_ ("," def_)*)? "}" -> struct_value
 | "ptr" "(" destination ")" -> ptr_value
 | "*" -> invalid_value
 
 """)
+
+class NamedStruct:
+    def __init__(self, name, data):
+        self.name = name
+        self.data = data
+    def __repr__(self):
+        inner = ", ".join([f"{n}: {repr(v)}" for (n, v) in self.data])
+        return f'{self.name }{{{inner}}}'
+
+class Ptr:
+    def __init__(self, name, selectors, borrow):
+        self.name = name
+        self.selectors = selectors
+        self.borrow = borrow
+    def __repr__(self):
+        access = "".join([f".{str(x)}" for x in self.selectors])
+        borrows = "'" * self.borrow
+        return f'ptr({self.name}{access}{borrows})'
 
 class MyTransformer(Transformer):
     def float(self, x):
@@ -63,10 +82,35 @@ class MyTransformer(Transformer):
         return n[0]
     def label(self, n):
         return n[0]
+    def def_(self, n):
+        return [n[0][0], n[1]]
+    start = list
+    step = list
+    location = list
+    region = list
     array_value = list
     tuple_value = tuple
+    TEXT = str
+    UNESCAPED_LABEL = str
+    ESCAPED_LABEL = str
+    def DIGITS(self, n):
+        return int(n)
     def char_value(self, n):
+        return str(n[0])
+    def invalid_value(self, n):
+        return '*'
+    def struct_value(self, n):
+        return NamedStruct(n[0], n[1:])
+    def destination(self, n):
+        borrows = 0
+        while len(n) > 1 and n[-1] == 'B':
+            borrows += 1
+            del n[-1]
+        return Ptr(n[0], n[1:], borrows)
+    def ptr_value(self, n):
         return n[0]
+    def borrow(self, n):
+        return 'B'
 
 def main():
     tree = l.parse("""
@@ -94,15 +138,19 @@ H0: 5
 x: foo{i: 3, j: `bar`{}}
 y: *
 ## Heap
-H0: ptr( H0.1.0.0' )
+H0: ptr( H0.1.10.0' )
 
 # L4
 ## Stack
 ### main
 """)
     tree = MyTransformer().transform(tree)
-    print(tree.pretty())
+    pprint(tree)
     # pprint(tree, indent=2, width=80)
+    ns = NamedStruct('foo', [('bar', 5), ('x', '*')])
+    print(ns)
+    ptr = Ptr('H', [0, 1], 2)
+    print(ptr)
 
 if __name__ == "__main__":
     main()

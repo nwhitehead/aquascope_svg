@@ -31,4 +31,14 @@ region: "### " TEXT EOL def*
 
 def: label ":" value EOL
 
+array_value: "[" value ("," value)* "]"
+tuple_value: "(" value ("," value)* ")"
+char_value: "'" /[^']/ "'"
+struct_value: label "{" (label ":" value ("," label ":" value)*)? "}"
+
 value: SIGNED_NUMBER
+| array_value
+| tuple_value
+| char_value
+| struct_value
+| "*"

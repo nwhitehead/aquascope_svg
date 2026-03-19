@@ -7,13 +7,13 @@ def main():
 # L0
 ## Stack
 ### main
-x: 5
+x: 'h'
 
 # L1
 ## Stack
 ### main
-x: 5
-y: 2
+x: [5, 1]
+y: (2, 1)
 ## Heap
 H0: 5
 
@@ -25,6 +25,8 @@ H0: 5
 # L3
 ## Stack
 ### main
+x: foo{i: 3, j: bar{}}
+y: *
 ## Heap
 
 # L4

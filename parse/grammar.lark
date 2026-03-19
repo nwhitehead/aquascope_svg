@@ -18,6 +18,7 @@ TEXT: /[^\n]+/
 EOL: NEWLINE+
 UNESCAPED_LABEL: CNAME
 ESCAPED_LABEL: "`" /[^`]+/ "`"
+DIGITS: /[\d]+/
 
 label: UNESCAPED_LABEL | ESCAPED_LABEL
 
@@ -35,10 +36,15 @@ array_value: "[" value ("," value)* "]"
 tuple_value: "(" value ("," value)* ")"
 char_value: "'" /[^']/ "'"
 struct_value: label "{" (label ":" value ("," label ":" value)*)? "}"
+ptr_value: "ptr" "(" destination ")"
+
+destination: label ("." DIGITS)* borrow
+borrow: "'"*
 
 value: SIGNED_NUMBER
 | array_value
 | tuple_value
 | char_value
 | struct_value
+| ptr_value
 | "*"

@@ -25,9 +25,10 @@ H0: 5
 # L3
 ## Stack
 ### main
-x: foo{i: 3, j: bar{}}
+x: foo{i: 3, j: `bar`{}}
 y: *
 ## Heap
+H0: ptr( H0.1.0.0' )
 
 # L4
 ## Stack

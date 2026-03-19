@@ -1,54 +1,45 @@
-# Diagram Format
+# STATES Diagram Format
 
-This is notes about a format for representing the JSON output of aquascope in a
-human readable and editable way. The idea is to migrate from verbose JSON to
-this human readable format for workflow for publishing rust diagrams.
+The STATES format is a text format for representing the stack and heap
+states of programs at different points of execution. It is designed to
+work with many different languages and have enough functionality to work
+with Rust programs.
 
-## Examples
+## Specification
 
-The diagrams should be in fenced code blocks, so no markdown styles are needed
-(but can be used). Should be easy to parse, unambiguous.
+The STATES format is a text format with the following rules:
 
-First try:
-```
-L1:
-# Stack
-## main
-s0: v | ptr(h0)
-n | ptr(h0)
-# Heap
-h0: [1, 2, 3]
-5
----
-L2:
-# Stack
-## main
-v | ptr(h0)
-n | *
-# Heap
-h0: [1, 2, 3, 0]
-5
----
-L3: undefined behavior
-# Stack
-## main
-v | ptr(h0)
-n | ***
-# Heap
-h0: [1, 2, 3, 0]
-5
-```
+* Newlines are significant.
+* Blank lines are ignored.
+* Whitespace (except for newlines) in general is ignored.
+* Comments are C++ style.
+* The high level contents are a sequence of zero or more location data.
+* Each location data starts with a Markdown-style header beginning with `#` and then name.
+* A location data consists of zero or more regions.
+* A region is a Markdown style header beginning with `##` and then a name.
+* A region may be optionally dividied into subregions with Markdown style headers with `###`.
+* If a region has subregions then all content of the region must be in subregions.
+* The contents of a region or subregion are zero or more lvalues.
+* An lvalue is a label, `:`, then a value, then end of line.
+* Labels can be any alphanumeric text starting with non-numbers, including `_-+=!@$%^&()|{}`.
+* Labels can optionaly be escaped with backticks to allow arbitrary text inside (except backticks).
+* Values can be:
+    * `*`
+    * `[`, a comma separated list of values, `]`
+    * `(`, a comma separated list of values, `)`
+    * `ptr(`, a destination, `)`
+    * an integer number
+    * a floating point number
+    * `'`, a character, `'`
+    * a label, `{`, then a comma separated list of label, `:`, value, `}`
+* A destination is a label followed by zero or more copies of `.` and natural numbers.
+* A destination can also be followed by zero or more `'`.
 
-Some features:
-* Allows empty stack frames (will be annotated as empty)
-* Pointers can go anywhere to anywhere that is labelled
-* Labels can be inside values
+## Example
 
-Removing bars from stack, let's just use labels.
+This is a small example.
 
-Removing special `---` syntax, just use headers.
-
-```
+```states
 # L0
 ## Stack
 ### main
@@ -56,51 +47,64 @@ Removing special `---` syntax, just use headers.
 # L1
 ## Stack
 ### main
-v: ptr(h0)
-n: ptr(h0)
-## Heap ##
-h0: [1, 2, 3]
-h1: 5
-## Arena ##
-h2: [0, 0, 0]
-h3: ptr(h2)
+x: ptr(H0)
+## Heap
+H0: 0
 
 # L2
 ## Stack
 ### main
-v: ptr(h0)
-n: *
-## Heap ##
-h0: [1, h1: 2, 3, 0]
-5
+x: ptr(H0)
+## Heap
+H0: 1
 
 # L3
-undefined behavior
 ## Stack
 ### main
-v: ptr(h0)
-tpl: (1, 4, ptr(v))
-n: ***
-## Heap ##
-h0: [1, 2, 3, 0]
-h1: 5
+x: ptr(H0)
+y: ptr(H0)
+## Heap
+H0: 1
+
+# L4
+## Stack
+### main
 ```
 
-Syntax rules:
-* Lines that start with `#` start new steps
-* If we are in `#` and not in any deeper headers, then text becomes annotations for current step
-* Lines that start with `##` begin memory regions (stacks and heaps)
-* Subheads `###` are rendered as lables below enclosing `##` memory region
-* Labels are text followed by `:`
-* Lines are optional label, then value
-* Values can be:
-    * Number
-    * `[` values, `,` separated, `]` (array)
-    * `(` values, `,` separated, `)` (tuple)
-    * `*` to indicate invalid value
-    * `***` to indicate invalid and accessed (will be drawn red)
-    * `ptr(` label `)`, label can be to any memory region in current step
-    * Also, `ptr` label can have suffix of any number of `.` number or `.` name to find spots
-    * name `{` name `:` value, `,` separated `}` (structs)
-    * For stack variable name shadowing, to target, suffix lable with `'` skips one match (can be repeated)
-* Anything can be escaped with backticks, that way you can put weird stuff in names
+Here is another example.
+```states
+# L0
+## Stack
+### main
+
+# L1
+## Stack
+### main
+v: ptr(H0.0)
+## Heap
+H0: [1, 2, 3]
+
+# L2
+## Stack
+### main
+v: ptr(H0.0)
+y: ptr(H0.0)
+## Heap
+H0: [1, 2, 3]
+
+# L3
+## Stack
+### main
+v: ptr(H0.0)
+y: *
+## Heap
+H0: [1, 2, 3, 0]
+
+# L4
+## Stack
+### main
+v: ptr(H0.0)
+y: *
+## Heap
+H0: [1, 2, 3, 0]
+```

@@ -1,5 +1,6 @@
 import argparse
-from lark import Lark
+from pprint import pprint
+from lark import Lark, Transformer
 
 l = Lark(r"""
 
@@ -19,27 +20,28 @@ l = Lark(r"""
 %import common.CNAME
 
 TEXT: /[^\n]+/
-EOL: NEWLINE+
+_EOL: NEWLINE+
 UNESCAPED_LABEL: CNAME
 ESCAPED_LABEL: "`" /[^`]+/ "`"
 DIGITS: /[\d]+/
 
 label: UNESCAPED_LABEL | ESCAPED_LABEL
 
-start: [EOL] step*
+start: [_EOL] step*
 
-step: "# " TEXT EOL location*
+step: "# " TEXT _EOL location*
 
-location: "## " TEXT EOL ( region* | def* )
+location: "## " TEXT _EOL ( region* | def* )
 
-region: "### " TEXT EOL def*
+region: "### " TEXT _EOL def*
 
-def: label ":" value EOL
+def: label ":" value _EOL
 
 destination: label ("." DIGITS)* borrow
 borrow: "'"*
 
-value: SIGNED_NUMBER
+?value:
+| SIGNED_NUMBER -> number
 | "[" value ("," value)* "]" -> array_value
 | "(" value ("," value)* ")" -> tuple_value
 | "'" /[^']/ "'" -> char_value
@@ -48,6 +50,9 @@ value: SIGNED_NUMBER
 | "*" -> invalid_value
 
 """)
+
+class MyTransformer(Transformer):
+    start = list
 
 def main():
     tree = l.parse("""
@@ -81,7 +86,9 @@ H0: ptr( H0.1.0.0' )
 ## Stack
 ### main
 """)
-    print(tree.pretty())
+    print(tree)
+    # tree = MyTransformer().transform(tree)
+    # pprint(tree, indent=2, width=80)
 
 if __name__ == "__main__":
     main()

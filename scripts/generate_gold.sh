@@ -4,8 +4,8 @@ for file in ../testdata/json/*; do
     path=${file%/*}
     base=${file##*/}
     name=${base%%.*}
-    gold=$path/../gold/$name.gold
-    bare=$path/../gold/$name.bare.gold
+    gold=$path/../gold/$name.states
+    bare=$path/../bare/$name.states
     resultFile=$gold
     echo $file "->" $resultFile
     cargo run --bin aquascope_json_to_states -- --show-code --show-locations $file > $resultFile

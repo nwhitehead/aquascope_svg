@@ -16,13 +16,13 @@ struct Args {
     #[arg(
         long,
         help = "Whether to show code snippet in output",
-        default_value_t = true
+        default_value_t = false,
     )]
     show_code: bool,
     #[arg(
         long,
         help = "Whether add comments in code with locations",
-        default_value_t = true
+        default_value_t = false,
     )]
     show_locations: bool,
 }
@@ -249,7 +249,6 @@ fn main() {
         println!("```rust\n{}```\n", code_txt);
     }
 
-    println!("```states");
     for (step_idx, step) in json.steps.iter().enumerate() {
         println!("# L{}", step_idx);
 
@@ -271,5 +270,4 @@ fn main() {
         // Add blank line before starting next Ln part
         println!();
     }
-    println!("```");
 }

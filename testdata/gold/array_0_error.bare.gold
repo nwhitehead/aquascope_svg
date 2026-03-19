@@ -1,0 +1,36 @@
+# L0
+## Stack
+### main
+
+# L1
+## Stack
+### main
+
+# L2
+## Stack
+### main
+### main::with_string
+
+# L3
+## Stack
+### main
+### main::with_string
+a: [ptr(H0)]
+## Heap
+H0: ['a']
+
+# L4
+## Stack
+### main
+### main::with_string
+a: [ptr(H0)]
+s: ptr(H0)
+## Heap
+H0: ['a']
+
+# L5
+## Stack
+### main
+### main::with_string
+a: [*]
+

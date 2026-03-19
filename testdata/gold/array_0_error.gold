@@ -22,7 +22,6 @@ fn with_int() {
 }
 ```
 
-```states
 # L0
 ## Stack
 ### main
@@ -59,4 +58,3 @@ H0: ['a']
 ### main::with_string
 a: [*]
 
-```

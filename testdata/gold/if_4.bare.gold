@@ -1,0 +1,53 @@
+# L0
+## Stack
+### main
+
+# L1
+## Stack
+### main
+x: 12
+
+# L2
+## Stack
+### main
+x: 12
+
+# L3
+## Stack
+### main
+x: 12
+### foo
+b: 12
+
+# L4
+## Stack
+### main
+x: 12
+### foo
+b: 12
+a: ptr(b)
+
+# L5
+## Stack
+### main
+x: 12
+### foo
+b: 13
+a: ptr(b)
+
+# L6
+## Stack
+### main
+x: 12
+### foo
+b: 13
+
+# L7
+## Stack
+### main
+x: 12
+
+# L8
+## Stack
+### main
+

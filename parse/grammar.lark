@@ -1,0 +1,55 @@
+
+%import common.WS_INLINE
+%import common.NEWLINE
+%import common.C_COMMENT
+%import common.CPP_COMMENT
+
+// Ignore inline whitespace (but keep newlines)
+%ignore WS_INLINE
+
+// Allow C and C++ style comments
+%ignore C_COMMENT
+%ignore CPP_COMMENT
+
+%import common.CNAME
+
+TEXT: /[^\n]*/
+
+start: step*
+
+step: STEP_HEADER name EOL region*
+
+region: REGION_HEADER name EOL (subregion | lvalue)*
+
+subregion: SUBREGION_HEADER name EOL lvalue*
+
+lvalue: label ":" value EOL
+
+label: ESCAPED_LABEL | UNESCAPED_LABEL
+
+ESCAPED_LABEL: "`" /[^`]+/` "`"
+UNESCAPED_LABEL: /[a-zA-Z_][a-zA-Z0-9_\-+=!@$%^&()|{}]*/
+
+value: "*"
+      | "[" value ("," value)* "]"
+      | "(" value ("," value)* ")"
+      | "ptr(" destination ")"
+      | INTEGER
+      | FLOAT
+      | "'" CHAR "'"
+      | label "{" (label ":" value ("," label ":" value)*)? "}"
+
+destination: label (ACCESS)* BORROWS
+ACCESS: "." INTEGER
+BORROWS: "'"*
+
+LOCATION_HEADER: "#" /[^\n]+/
+REGION_HEADER: "##" /[^\n]+/
+SUBREGION_HEADER: "###" /[^\n]+/
+
+INTEGER: /-?\d+/
+FLOAT: /-?\d+\.\d+([eE][+-]?\d+)?/
+CHAR: /[^'\\]|\\./
+
+EOL: "\n"
+BLANK: EOL

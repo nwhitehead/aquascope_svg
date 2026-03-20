@@ -2,61 +2,6 @@ import argparse
 from pprint import pprint
 from lark import Lark, Transformer
 
-l = Lark(r"""
-
-%import common.WS_INLINE
-%import common.NEWLINE
-%import common.C_COMMENT
-%import common.CPP_COMMENT
-%import common.FLOAT
-%import common.INT
-
-// Ignore inline whitespace (but keep newlines)
-%ignore WS_INLINE
-
-// Allow C and C++ style comments
-%ignore C_COMMENT
-%ignore CPP_COMMENT
-
-%import common.CNAME
-
-TEXT: /[^\n]+/
-_EOL: NEWLINE+
-UNESCAPED_LABEL: CNAME
-ESCAPED_LABEL: "`" /[^`]+/ "`"
-DIGITS: /[\d]+/
-BORROW: /'/
-unsigned_number: FLOAT -> float | INT -> int
-number: ["+"|"-"] unsigned_number
-
-RETURN_LABEL: "(return)"
-label: UNESCAPED_LABEL | ESCAPED_LABEL | RETURN_LABEL
-
-start: [_EOL] step*
-
-step: "# " TEXT _EOL location*
-
-location: "## " TEXT _EOL ( region* | defln_* )
-
-region: "### " TEXT _EOL defln_*
-
-def_ : label ":" value
-?defln_: def_ _EOL
-
-destination: label ("." DIGITS)* borrow
-borrow: BORROW*
-         
-?value:
-| number
-| "[" value ("," value)* "]" -> array_value
-| "(" value ("," value)* ")" -> tuple_value
-| "'" /[^']/ "'" -> char_value
-| label "{" (def_ ("," def_)*)? "}" -> struct_value
-| "ptr" "(" destination ")" -> ptr_value
-| "*" -> invalid_value
-
-""")
-
 class NamedStruct:
     def __init__(self, name, data):
         self.name = name
@@ -117,44 +62,100 @@ class MyTransformer(Transformer):
     borrow = list
 
 
-def test():
-    tree = l.parse("""
-# L0
-## Stack
-### main
-x: 'h'
+l = Lark(r"""
 
-# L1
-## Stack
-### main
-x: [5.2, 1]
-y: (2, 1)
-## Heap
-H0: 5
+%import common.WS_INLINE
+%import common.NEWLINE
+%import common.C_COMMENT
+%import common.CPP_COMMENT
+%import common.FLOAT
+%import common.INT
 
-# L2
-## Stack
-### main
-## Heap
+// Ignore inline whitespace (but keep newlines)
+%ignore WS_INLINE
 
-# L3
-## Stack
-### main
-x: foo{i: 3, j: `bar`{}}
-y: *
-## Heap
-H0: ptr( H0.1.10.0 )
+// Allow C and C++ style comments
+%ignore C_COMMENT
+%ignore CPP_COMMENT
 
-# L4
-## Stack
-### main
-""")
-    tree = MyTransformer().transform(tree)
-    pprint(tree)
-    ns = NamedStruct('foo', [('bar', 5), ('x', '*')])
-    print(ns)
-    ptr = Ptr('H', [0, 1], 2)
-    print(ptr)
+%import common.CNAME
+
+TEXT: /[^\n]+/
+_EOL: NEWLINE+
+UNESCAPED_LABEL: CNAME
+ESCAPED_LABEL: "`" /[^`]+/ "`"
+DIGITS: /[\d]+/
+BORROW: /'/
+unsigned_number: FLOAT -> float | INT -> int
+number: ["+"|"-"] unsigned_number
+
+RETURN_LABEL: "(return)"
+label: UNESCAPED_LABEL | ESCAPED_LABEL | RETURN_LABEL
+
+start: [_EOL] step*
+
+step: "# " TEXT _EOL location*
+
+location: "## " TEXT _EOL ( region* | defln_* )
+
+region: "### " TEXT _EOL defln_*
+
+def_ : label ":" value
+?defln_: def_ _EOL
+
+destination: label ("." DIGITS)* borrow
+borrow: BORROW*
+         
+?value:
+| number
+| "[" value ("," value)* "]" -> array_value
+| "(" value ("," value)* ")" -> tuple_value
+| "'" /[^']/ "'" -> char_value
+| label "{" (def_ ("," def_)*)? "}" -> struct_value
+| "ptr" "(" destination ")" -> ptr_value
+| "*" -> invalid_value
+
+""", parser='lalr', transformer=MyTransformer())
+
+
+# def test():
+#     tree = l.parse("""
+# # L0
+# ## Stack
+# ### main
+# x: 'h'
+
+# # L1
+# ## Stack
+# ### main
+# x: [5.2, 1]
+# y: (2, 1)
+# ## Heap
+# H0: 5
+
+# # L2
+# ## Stack
+# ### main
+# ## Heap
+
+# # L3
+# ## Stack
+# ### main
+# x: foo{i: 3, j: `bar`{}}
+# y: *
+# ## Heap
+# H0: ptr( H0.1.10.0 )
+
+# # L4
+# ## Stack
+# ### main
+# """)
+#     tree = MyTransformer().transform(tree)
+#     pprint(tree)
+#     ns = NamedStruct('foo', [('bar', 5), ('x', '*')])
+#     print(ns)
+#     ptr = Ptr('H', [0, 1], 2)
+#     print(ptr)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -162,7 +163,6 @@ def main():
     args = parser.parse_args()
     contents = open(args.filename).read()
     tree = l.parse(contents)
-    tree = MyTransformer().transform(tree)
     pprint(tree)
 
 if __name__ == "__main__":

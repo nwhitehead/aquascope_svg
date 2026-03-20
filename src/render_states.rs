@@ -1,5 +1,6 @@
 mod parser;
 mod states;
+mod render;
 
 use anyhow::Result;
 use clap::Parser;
@@ -29,6 +30,7 @@ fn main() -> Result<()> {
         println!("{:#?}", program);
         return Ok(());
     }
-    println!("Not implemented yet");
+    let output = render::render(&program)?;
+    println!("{}", output);
     Ok(())
 }

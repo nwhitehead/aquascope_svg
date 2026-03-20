@@ -2,8 +2,14 @@ use assert_cmd::prelude::*;
 use std::process::Command;
 
 #[test]
+fn test_parse_states() {
+    let mut cmd = Command::cargo_bin("parse_states").unwrap();
+    cmd.arg("testdata/test.states").assert().success();
+}
+
+#[test]
 fn test_basic_json() {
-    let mut cmd = Command::cargo_bin("aquascope_svg").unwrap();
+    let mut cmd = Command::cargo_bin("aquascope_json_to_states").unwrap();
     cmd.arg("testdata/json/basic.json").assert().success();
 }
 
@@ -28,7 +34,7 @@ fn test_all_testdata() {
     ];
 
     for file in test_files {
-        let mut cmd = Command::cargo_bin("aquascope_svg").unwrap();
+        let mut cmd = Command::cargo_bin("aquascope_json_to_states").unwrap();
         cmd.arg(file).assert().success();
     }
 }

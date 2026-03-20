@@ -1,0 +1,48 @@
+WHITESPACE = _{ " " | "\t" }
+COMMENT = _{ ("//" ~ (!"\n" ~ ANY)*) | ("/*" ~ (!"*/" ~ ANY)* ~ "*/") }
+
+EOL = _{ ("\n" | "\r" ~ "\n")+ }
+
+CNAME = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHA | "_" | ASCII_DIGIT)* }
+
+TEXT = @{ (!"\n" ~ ANY)+ }
+DIGITS = @{ ASCII_DIGIT+ }
+ESCAPED_LABEL = @{ "`" ~ (!"`" ~ ANY)* ~ "`" }
+RETURN_LABEL = { "(return)" }
+BORROW = { "'" }
+
+integer = @{ ASCII_DIGIT+ }
+decimal = @{ ASCII_DIGIT* ~ "." ~ ASCII_DIGIT+ }
+exponent = @{ ( "e" | "E" ) ~ ( "+" | "-" )? ~ ASCII_DIGIT+ }
+float_number = @{ decimal ~ exponent? | ASCII_DIGIT+ ~ exponent }
+INT = @{ integer }
+FLOAT = @{ float_number }
+
+start = { (EOL)? ~ step* }
+
+step = { "# " ~ TEXT ~ EOL ~ location* }
+
+location = { "## " ~ TEXT ~ EOL ~ location_content }
+
+location_content = { ( region | defln_ )* }
+
+region = { "### " ~ TEXT ~ EOL ~ defln_* }
+
+def_ = { label ~ ":" ~ value }
+defln_ = { def_ ~ EOL }
+
+destination = { label ~ ("." ~ DIGITS)* ~ borrow }
+borrow = { BORROW* }
+
+value = { number | array_value | tuple_value | char_value | struct_value | ptr_value | invalid_value }
+
+array_value = { "[" ~ value ~ ("," ~ value)* ~ "]" }
+tuple_value = { "(" ~ value ~ ("," ~ value)* ~ ")" }
+char_value = { "'" ~ !("'") ~ ANY ~ "'" }
+struct_value = { label ~ "{" ~ (def_ ~ ("," ~ def_)*)? ~ "}" }
+ptr_value = { "ptr" ~ "(" ~ destination ~ ")" }
+invalid_value = { "*" }
+
+number = { ( "+" | "-" )? ~ (FLOAT | INT) }
+
+label = { ESCAPED_LABEL | RETURN_LABEL | CNAME }

@@ -107,38 +107,38 @@ pub fn render(prg: &Program, format: Format) -> Result<String> {
 fn render_program(prg: &Program) -> Result<String> {
     let mut res = String::new();
     res.push_str("<div class=\"program\">");
-    for step in &prg.0 {
-        let piece = render_step(&step)?;
+    for (idx, step) in prg.0.iter().enumerate() {
+        let piece = render_step(&step, &format!("L{}", idx))?;
         res.push_str(&piece);
     }
     res.push_str("</div>");
     Ok(res)
 }
 
-fn render_step(step: &Step) -> Result<String> {
+fn render_step(step: &Step, id_prefix: &str) -> Result<String> {
     let mut res = String::new();
     res.push_str("<div class=\"step\">");
     res.push_str(&format!("<span class=\"header\">{}</span>", &step.label));
     for location in &step.locations {
-        let piece = render_location(&location)?;
+        let piece = render_location(&location, &id_prefix)?;
         res.push_str(&piece);
     }
     res.push_str("</div>");
     Ok(res)
 }
 
-fn render_location(loc: &Location) -> Result<String> {
+fn render_location(loc: &Location, id_prefix: &str) -> Result<String> {
     let mut res = String::new();
     res.push_str("<div class=\"location\">");
     res.push_str(&format!("<span class=\"header\">{}</span>", &loc.name));
     // A location either has definitions itself (and no regions) OR it has regions and no definitions
     assert!(loc.definitions.is_empty() || loc.regions.is_empty());
     if !loc.definitions.is_empty() {
-        let piece = render_definitions(&loc.definitions)?;
+        let piece = render_definitions(&loc.definitions, &id_prefix)?;
         res.push_str(&piece);
     } else {
         for region in &loc.regions {
-            let piece = render_region(&region)?;
+            let piece = render_region(&region, &id_prefix)?;
             res.push_str(&piece);
         }
     }
@@ -146,66 +146,66 @@ fn render_location(loc: &Location) -> Result<String> {
     Ok(res)
 }
 
-fn render_region(region: &Region) -> Result<String> {
+fn render_region(region: &Region, id_prefix: &str) -> Result<String> {
     let mut res = String::new();
     res.push_str("<div class=\"region\">");
     res.push_str(&format!("<span class=\"header\">{}</span>", &region.name));
-    let pieces = render_definitions(&region.definitions)?;
+    let pieces = render_definitions(&region.definitions, &id_prefix)?;
     res.push_str(&pieces);
     res.push_str("</div>");
     Ok(res)
 }
 
-fn render_definitions(definitions: &[Def]) -> Result<String> {
+fn render_definitions(definitions: &[Def], id_prefix: &str) -> Result<String> {
     let mut res = String::new();
     for definition in definitions {
-        let piece = render_definition(&definition)?;
+        let piece = render_definition(&definition, &id_prefix)?;
         res.push_str(&piece);
     }
     Ok(res)
 }
 
-fn render_definition(definition: &Def) -> Result<String> {
+fn render_definition(definition: &Def, id_prefix: &str) -> Result<String> {
     let mut res = String::new();
     res.push_str("<div class=\"definition\">");
     res.push_str(&format!("<span class=\"label\">{}</span>", &definition.label));
     res.push_str(&"<span class=\"separator\">:</span>");
-    let v = render_value(&definition.value)?;
+    let v = render_value(&definition.value, &format!("{}.{}", &id_prefix, &definition.label))?;
     res.push_str(&v);
     res.push_str("</div>");
     Ok(res)
 }
 
-fn render_value(value: &Value) -> Result<String> {
+fn render_value(value: &Value, id_prefix: &str) -> Result<String> {
     match value {
-        Value::Number(v) => Ok(format!("<span class=\"value number\">{}</span>", v)),
+        Value::Number(v) => Ok(format!("<span id=\"{}\" class=\"value number\">{}</span>", &id_prefix, v)),
         Value::Array(v) => {
             let mut res = String::new();
-            res.push_str("<div class=\"value array\">");
-            res.push_str(&render_values("array_child", &v)?);
+            res.push_str(&format!("<div id=\"{}\" class=\"value array\">", &id_prefix));
+            res.push_str(&render_values("array_child", &v, &id_prefix)?);
             res.push_str("</div>");
             Ok(res)
         },
         Value::Tuple(v) => {
             let mut res = String::new();
-            res.push_str("<div class=\"value tuple\">");
-            res.push_str(&render_values("tuple_child", &v)?);
+            res.push_str(&format!("<div id=\"{}\" class=\"value tuple\">", &id_prefix));
+            res.push_str(&render_values("tuple_child", &v, &id_prefix)?);
             res.push_str("</div>");
             Ok(res)
         },
-        Value::Char(v) => Ok(format!("<span class=\"value char\">'{}'</span>", v)),
-        Value::Struct(v) => render_struct(&v.name, &v.fields),
+        Value::Char(v) => Ok(format!("<span id=\"{}\" class=\"value char\">'{}'</span>", &id_prefix, v)),
+        Value::Struct(v) => render_struct(&v.name, &v.fields, &id_prefix),
         Value::Invalid => {
-            Ok("<span class=\"value invalid\">*</span>".into())
+            Ok(format!("<span id=\"{}\" class=\"value invalid\">*</span>", &id_prefix))
         },
         _ => Ok("value".into()),
     }
 }
 
-fn render_values(inner_tag: &str, values: &[Value]) -> Result<String> {
+fn render_values(inner_tag: &str, values: &[Value], id_prefix: &str) -> Result<String> {
     let mut res = String::new();
-    for value in values {
-        let piece = render_value(&value)?;
+    for (idx, value) in values.into_iter().enumerate() {
+        let piece = render_value(&value, &format!("{}.{}", &id_prefix, idx))?;
         res.push_str(&format!("<div class=\"{}\">", inner_tag));
         res.push_str(&piece);
         res.push_str("</div>");
@@ -213,24 +213,24 @@ fn render_values(inner_tag: &str, values: &[Value]) -> Result<String> {
     Ok(res)
 }
 
-fn render_struct(name: &str, fields: &[(String, Value)]) -> Result<String> {
+fn render_struct(name: &str, fields: &[(String, Value)], id_prefix: &str) -> Result<String> {
     let mut res = String::new();
-    res.push_str("<div class=\"value struct\">");
+    res.push_str(&format!("<div id=\"{}\" class=\"value struct\">", &id_prefix));
     res.push_str(&format!("<span class=\"name\">{}</span>", &name));
-    for (label, value) in fields {
-        let v = render_field(&label, &value)?;
+    for (idx, (label, value)) in fields.into_iter().enumerate() {
+        let v = render_field(&label, &value, &format!("{}.{}", &id_prefix, idx))?;
         res.push_str(&v);
     }
     res.push_str("</div>");
     Ok(res)
 }
 
-fn render_field(label: &str, value: &Value) -> Result<String> {
+fn render_field(label: &str, value: &Value, id_prefix: &str) -> Result<String> {
     let mut res = String::new();
     res.push_str("<div class=\"field\">");
     res.push_str(&format!("<span class=\"label\">{}</span>", &label));
     res.push_str(&"<span class=\"separator\">:</span>");
-    let v = render_value(&value)?;
+    let v = render_value(&value, &id_prefix)?;
     res.push_str(&v);
     res.push_str("</div>");
     Ok(res)

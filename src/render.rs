@@ -1,4 +1,4 @@
-use crate::states::{Def, Location, NamedStruct, Program, Ptr, Region, Step, Value};
+use crate::states::{Def, Location, Program, Region, Step, Value};
 
 use anyhow::Result;
 
@@ -222,16 +222,19 @@ fn render_value(value: &Value, id_prefix: &str, step_index: usize) -> Result<Str
         Value::Struct(v) => render_struct(&v.name, &v.fields, &id_prefix, step_index),
         Value::Pointer(v) => {
             let mut dst = String::new();
+            dst.push_str(&format!("L{}.{}", step_index, &v.name));
+            for selector in &v.selectors {
+                dst.push_str(&format!(".{}", selector));
+            }
             Ok(format!(
-                "<span id=\"{}\" class=\"value pointer\">●</span>",
-                &id_prefix
+                "<span id=\"{}\" class=\"value pointer\">●{}</span>",
+                &id_prefix, &dst
             ))
         }
         Value::Invalid => Ok(format!(
             "<span id=\"{}\" class=\"value invalid\">*</span>",
             &id_prefix
         )),
-        _ => Ok("value".into()),
     }
 }
 

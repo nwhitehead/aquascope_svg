@@ -29,7 +29,8 @@ BORROW: /'/
 unsigned_number: FLOAT -> float | INT -> int
 number: ["+"|"-"] unsigned_number
 
-label: UNESCAPED_LABEL | ESCAPED_LABEL
+RETURN_LABEL: "(return)"
+label: UNESCAPED_LABEL | ESCAPED_LABEL | RETURN_LABEL
 
 start: [_EOL] step*
 
@@ -84,7 +85,7 @@ class MyTransformer(Transformer):
     def label(self, n):
         return n[0]
     def def_(self, n):
-        return [n[0][0], n[1]]
+        return [n[0], n[1]]
     start = list
     step = list
     location = list
@@ -92,7 +93,10 @@ class MyTransformer(Transformer):
     array_value = list
     tuple_value = tuple
     TEXT = str
-    UNESCAPED_LABEL = str
+    def UNESCAPED_LABEL(self, n):
+        return str(n)
+    def RETURN_LABEL(self, n):
+        return str(n)
     ESCAPED_LABEL = str
     def DIGITS(self, n):
         return int(n)

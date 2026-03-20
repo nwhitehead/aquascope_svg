@@ -74,7 +74,8 @@ div {
 pub fn render(prg: &Program, format: Format) -> Result<String> {
     let prg = render_program(&prg)?;
     let output = match format {
-        Format::Html => format!(r#"
+        Format::Html => format!(
+            r#"
 <!DOCTYPE html>
 <html>
 <head>
@@ -85,8 +86,11 @@ pub fn render(prg: &Program, format: Format) -> Result<String> {
 <script src="https://cdn.jsdelivr.net/npm/leader-line@1.0.7/leader-line.min.js"></script>
 </body>
 </html>
-"#, CSS_STYLE, prg),
-        Format::Svg => format!(r#"
+"#,
+            CSS_STYLE, prg
+        ),
+        Format::Svg => format!(
+            r#"
 <svg viewBox="0 0 2000 2000" xmlns="http://www.w3.org/2000/svg">
   <style>
 {}
@@ -99,7 +103,9 @@ pub fn render(prg: &Program, format: Format) -> Result<String> {
     </script>
   </foreignObject>
 </svg>
-"#, CSS_STYLE, prg),
+"#,
+            CSS_STYLE, prg
+        ),
     };
     Ok(output)
 }
@@ -168,9 +174,16 @@ fn render_definitions(definitions: &[Def], id_prefix: &str, step_index: usize) -
 fn render_definition(definition: &Def, id_prefix: &str, step_index: usize) -> Result<String> {
     let mut res = String::new();
     res.push_str("<div class=\"definition\">");
-    res.push_str(&format!("<span class=\"label\">{}</span>", &definition.label));
+    res.push_str(&format!(
+        "<span class=\"label\">{}</span>",
+        &definition.label
+    ));
     res.push_str(&"<span class=\"separator\">:</span>");
-    let v = render_value(&definition.value, &format!("{}.{}", &id_prefix, &definition.label), step_index)?;
+    let v = render_value(
+        &definition.value,
+        &format!("{}.{}", &id_prefix, &definition.label),
+        step_index,
+    )?;
     res.push_str(&v);
     res.push_str("</div>");
     Ok(res)
@@ -178,35 +191,56 @@ fn render_definition(definition: &Def, id_prefix: &str, step_index: usize) -> Re
 
 fn render_value(value: &Value, id_prefix: &str, step_index: usize) -> Result<String> {
     match value {
-        Value::Number(v) => Ok(format!("<span id=\"{}\" class=\"value number\">{}</span>", &id_prefix, v)),
+        Value::Number(v) => Ok(format!(
+            "<span id=\"{}\" class=\"value number\">{}</span>",
+            &id_prefix, v
+        )),
         Value::Array(v) => {
             let mut res = String::new();
-            res.push_str(&format!("<div id=\"{}\" class=\"value array\">", &id_prefix));
+            res.push_str(&format!(
+                "<div id=\"{}\" class=\"value array\">",
+                &id_prefix
+            ));
             res.push_str(&render_values("array_child", &v, &id_prefix, step_index)?);
             res.push_str("</div>");
             Ok(res)
-        },
+        }
         Value::Tuple(v) => {
             let mut res = String::new();
-            res.push_str(&format!("<div id=\"{}\" class=\"value tuple\">", &id_prefix));
+            res.push_str(&format!(
+                "<div id=\"{}\" class=\"value tuple\">",
+                &id_prefix
+            ));
             res.push_str(&render_values("tuple_child", &v, &id_prefix, step_index)?);
             res.push_str("</div>");
             Ok(res)
-        },
-        Value::Char(v) => Ok(format!("<span id=\"{}\" class=\"value char\">'{}'</span>", &id_prefix, v)),
+        }
+        Value::Char(v) => Ok(format!(
+            "<span id=\"{}\" class=\"value char\">'{}'</span>",
+            &id_prefix, v
+        )),
         Value::Struct(v) => render_struct(&v.name, &v.fields, &id_prefix, step_index),
         Value::Pointer(v) => {
             let mut dst = String::new();
-            Ok(format!("<span id=\"{}\" class=\"value pointer\">●</span>", &id_prefix))
-        },
-        Value::Invalid => {
-            Ok(format!("<span id=\"{}\" class=\"value invalid\">*</span>", &id_prefix))
-        },
+            Ok(format!(
+                "<span id=\"{}\" class=\"value pointer\">●</span>",
+                &id_prefix
+            ))
+        }
+        Value::Invalid => Ok(format!(
+            "<span id=\"{}\" class=\"value invalid\">*</span>",
+            &id_prefix
+        )),
         _ => Ok("value".into()),
     }
 }
 
-fn render_values(inner_tag: &str, values: &[Value], id_prefix: &str, step_index: usize) -> Result<String> {
+fn render_values(
+    inner_tag: &str,
+    values: &[Value],
+    id_prefix: &str,
+    step_index: usize,
+) -> Result<String> {
     let mut res = String::new();
     for (idx, value) in values.into_iter().enumerate() {
         let piece = render_value(&value, &format!("{}.{}", &id_prefix, idx), step_index)?;
@@ -217,12 +251,25 @@ fn render_values(inner_tag: &str, values: &[Value], id_prefix: &str, step_index:
     Ok(res)
 }
 
-fn render_struct(name: &str, fields: &[(String, Value)], id_prefix: &str, step_index: usize) -> Result<String> {
+fn render_struct(
+    name: &str,
+    fields: &[(String, Value)],
+    id_prefix: &str,
+    step_index: usize,
+) -> Result<String> {
     let mut res = String::new();
-    res.push_str(&format!("<div id=\"{}\" class=\"value struct\">", &id_prefix));
+    res.push_str(&format!(
+        "<div id=\"{}\" class=\"value struct\">",
+        &id_prefix
+    ));
     res.push_str(&format!("<span class=\"name\">{}</span>", &name));
     for (idx, (label, value)) in fields.into_iter().enumerate() {
-        let v = render_field(&label, &value, &format!("{}.{}", &id_prefix, idx), step_index)?;
+        let v = render_field(
+            &label,
+            &value,
+            &format!("{}.{}", &id_prefix, idx),
+            step_index,
+        )?;
         res.push_str(&v);
     }
     res.push_str("</div>");

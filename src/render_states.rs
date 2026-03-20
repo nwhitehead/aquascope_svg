@@ -1,12 +1,12 @@
 mod parser;
-mod states;
 mod render;
+mod states;
 
 use anyhow::Result;
 use clap::Parser;
-use std::fs;
-use render::{render, Format};
 use parser::parse;
+use render::{Format, render};
+use std::fs;
 
 #[derive(Debug, Parser)]
 #[command(name = "render_states")]
@@ -18,11 +18,7 @@ struct Args {
         default_value_t = false
     )]
     show_parse: bool,
-    #[arg(
-        help = "Output an HTML fragment",
-        long,
-        default_value_t = false
-    )]
+    #[arg(help = "Output an HTML fragment", long, default_value_t = false)]
     output_html: bool,
     #[arg(help = "Output filename", long)]
     output: Option<String>,
@@ -32,7 +28,11 @@ struct Args {
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    let format = if args.output_html { Format::Html } else { Format::Svg };
+    let format = if args.output_html {
+        Format::Html
+    } else {
+        Format::Svg
+    };
     let contents = fs::read_to_string(&args.input)?;
     let program = parse(&contents)?;
     if args.show_parse {

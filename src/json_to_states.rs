@@ -21,7 +21,7 @@ struct Args {
     show_code: bool,
     #[arg(
         long,
-        help = "Whether add comments in code with locations",
+        help = "Whether to add comments in code with locations",
         default_value_t = false,
     )]
     show_locations: bool,

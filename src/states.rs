@@ -1,3 +1,6 @@
+//! Rust data structure matching STATES diagram format for parsing
+
+#![allow(dead_code)]
 
 #[derive(Debug, Clone)]
 pub enum Value {

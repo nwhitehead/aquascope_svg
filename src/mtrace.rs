@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
+//! This describes the Aquascope JSON format in Rust types
 
-// #[derive(Eq, Hash, PartialEq)]
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CharPos {

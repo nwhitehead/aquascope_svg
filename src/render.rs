@@ -48,10 +48,19 @@ div {
    display: flex;
    flex-direction: column;
 }
-div.value.array {
+.value.array {
     background-color: #00f;
     padding: 5px;
-    display: flex;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid #888;
+    justify-content: start;
+}
+.value.struct {
+    background-color: #0f0;
+    padding: 5px;
+    display: inline-flex;
     align-items: center;
     gap: 10px;
     border: 1px solid #888;
@@ -167,14 +176,25 @@ fn render_definition(definition: &Def) -> Result<String> {
 fn render_value(value: &Value) -> Result<String> {
     match value {
         Value::Number(v) => Ok(format!("<span class=\"value number\">{}</span>", v)),
-        Value::Char(v) => Ok(format!("<span class=\"value char\">'{}'</span>", v)),
         Value::Array(v) => {
             let mut res = String::new();
             res.push_str("<div class=\"value array\">");
             res.push_str(&render_values("array_child", &v)?);
             res.push_str("</div>");
             Ok(res)
-        }
+        },
+        Value::Tuple(v) => {
+            let mut res = String::new();
+            res.push_str("<div class=\"value tuple\">");
+            res.push_str(&render_values("tuple_child", &v)?);
+            res.push_str("</div>");
+            Ok(res)
+        },
+        Value::Char(v) => Ok(format!("<span class=\"value char\">'{}'</span>", v)),
+        Value::Struct(v) => render_struct(&v.name, &v.fields),
+        Value::Invalid => {
+            Ok("<span class=\"value invalid\">*</span>".into())
+        },
         _ => Ok("value".into()),
     }
 }
@@ -187,5 +207,28 @@ fn render_values(inner_tag: &str, values: &[Value]) -> Result<String> {
         res.push_str(&piece);
         res.push_str("</div>");
     }
+    Ok(res)
+}
+
+fn render_struct(name: &str, fields: &[(String, Value)]) -> Result<String> {
+    let mut res = String::new();
+    res.push_str("<div class=\"value struct\">");
+    res.push_str(&format!("<span class=\"name\">{}</span>", &name));
+    for (label, value) in fields {
+        let v = render_field(&label, &value)?;
+        res.push_str(&v);
+    }
+    res.push_str("</div>");
+    Ok(res)
+}
+
+fn render_field(label: &str, value: &Value) -> Result<String> {
+    let mut res = String::new();
+    res.push_str("<div class=\"field\">");
+    res.push_str(&format!("<span class=\"label\">{}</span>", &label));
+    res.push_str(&"<span class=\"separator\">:</span>");
+    let v = render_value(&value)?;
+    res.push_str(&v);
+    res.push_str("</div>");
     Ok(res)
 }

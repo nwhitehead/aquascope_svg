@@ -21,14 +21,16 @@ const TEST_FILES: [&str; 15] = [
 
 #[test]
 fn test_parse_states() {
-    let mut cmd = Command::cargo_bin("parse_states").unwrap();
+    let mut cmd = Command::cargo_bin("render_states").unwrap();
+    cmd.arg("--show-parse");
     cmd.arg("testdata/test.states").assert().success();
 }
 
 #[test]
 fn test_parse_all_states() {
     for file in TEST_FILES {
-        let mut cmd = Command::cargo_bin("parse_states").unwrap();
+        let mut cmd = Command::cargo_bin("render_states").unwrap();
+        cmd.arg("--show-parse");
         cmd.arg(file).assert().success();
     }
 }

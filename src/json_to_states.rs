@@ -16,13 +16,13 @@ struct Args {
     #[arg(
         long,
         help = "Whether to show code snippet in output",
-        default_value_t = false,
+        default_value_t = false
     )]
     show_code: bool,
     #[arg(
         long,
         help = "Whether to add comments in code with locations",
-        default_value_t = false,
+        default_value_t = false
     )]
     show_locations: bool,
 }
@@ -175,10 +175,7 @@ fn simplify_box(v: &MValue) -> MValue {
 }
 
 fn simplify_vec(v: &MValue) -> MValue {
-    strip_off_mult_rec(
-        v,
-        vec!["Vec", "RawVec", "RawVecInner", "Unique", "NonNull"],
-    )
+    strip_off_mult_rec(v, vec!["Vec", "RawVec", "RawVecInner", "Unique", "NonNull"])
 }
 
 fn simplify_string(v: &MValue) -> MValue {

@@ -1,5 +1,5 @@
-use pest::iterators::Pair;
 use pest::Parser;
+use pest::iterators::Pair;
 use pest_derive::Parser;
 
 use crate::states::{Def, Location, NamedStruct, Program, Ptr, Region, Step, Value};

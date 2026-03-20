@@ -25,6 +25,7 @@ _EOL: NEWLINE+
 UNESCAPED_LABEL: CNAME
 ESCAPED_LABEL: "`" /[^`]+/ "`"
 DIGITS: /[\d]+/
+BORROW: /'/
 unsigned_number: FLOAT -> float | INT -> int
 number: ["+"|"-"] unsigned_number
 
@@ -42,8 +43,8 @@ def_ : label ":" value
 ?defln_: def_ _EOL
 
 destination: label ("." DIGITS)* borrow
-borrow: "'"*
-
+borrow: BORROW*
+         
 ?value:
 | number
 | "[" value ("," value)* "]" -> array_value
@@ -102,17 +103,17 @@ class MyTransformer(Transformer):
     def struct_value(self, n):
         return NamedStruct(n[0], n[1:])
     def destination(self, n):
-        borrows = 0
-        while len(n) > 1 and n[-1] == 'B':
-            borrows += 1
-            del n[-1]
+        borrows = len(n[-1])
+        del n[-1]
         return Ptr(n[0], n[1:], borrows)
     def ptr_value(self, n):
         return n[0]
-    def borrow(self, n):
+    def BORROW(self, n):
         return 'B'
+    borrow = list
 
-def main():
+
+def test():
     tree = l.parse("""
 # L0
 ## Stack
@@ -138,7 +139,7 @@ H0: 5
 x: foo{i: 3, j: `bar`{}}
 y: *
 ## Heap
-H0: ptr( H0.1.10.0' )
+H0: ptr( H0.1.10.0 )
 
 # L4
 ## Stack
@@ -146,11 +147,19 @@ H0: ptr( H0.1.10.0' )
 """)
     tree = MyTransformer().transform(tree)
     pprint(tree)
-    # pprint(tree, indent=2, width=80)
     ns = NamedStruct('foo', [('bar', 5), ('x', '*')])
     print(ns)
     ptr = Ptr('H', [0, 1], 2)
     print(ptr)
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('filename')
+    args = parser.parse_args()
+    contents = open(args.filename).read()
+    tree = l.parse(contents)
+    tree = MyTransformer().transform(tree)
+    pprint(tree)
 
 if __name__ == "__main__":
     main()

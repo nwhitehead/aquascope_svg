@@ -104,5 +104,25 @@ fn render_region(region: &Region) -> Result<String> {
 }
 
 fn render_definitions(definitions: &[Def]) -> Result<String> {
-    Ok("[defns]".into())
+    let mut res = String::new();
+    for definition in definitions {
+        let piece = render_definition(&definition)?;
+        res.push_str(&piece);
+    }
+    Ok(res)
+}
+
+fn render_definition(definition: &Def) -> Result<String> {
+    let mut res = String::new();
+    res.push_str("<div class=\"definition\">");
+    res.push_str(&format!("<span class=\"definition_label\">{}</span>", &definition.label));
+    res.push_str(&"<span class=\"definition_separator\">:</span>");
+    let v = render_value(&definition.value)?;
+    res.push_str(&v);
+    res.push_str("</div>");
+    Ok(res)
+}
+
+fn render_value(value: &Value) -> Result<String> {
+    Ok("value".into())
 }

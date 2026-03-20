@@ -82,18 +82,21 @@ pub fn render(prg: &Program, format: Format) -> Result<String> {
 </head>
 <body>
 {}
+<script src="https://cdn.jsdelivr.net/npm/leader-line@1.0.7/leader-line.min.js"></script>
 </body>
 </html>
 "#, CSS_STYLE, prg),
         Format::Svg => format!(r#"
-<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 2000 2000" xmlns="http://www.w3.org/2000/svg">
   <style>
 {}
   </style>
-  <foreignObject x="0" y="0" width="200" height="200">
+  <foreignObject x="0" y="0" width="2000" height="2000">
     <div xmlns="http://www.w3.org/1999/xhtml">
       <pre>{}</pre>
     </div>
+    <script>console.log('hi from svg');
+    </script>
   </foreignObject>
 </svg>
 "#, CSS_STYLE, prg),

@@ -2,47 +2,48 @@ use crate::states::{Def, Location, NamedStruct, Program, Ptr, Region, Step, Valu
 
 use anyhow::Result;
 
-pub fn render(prg: &Program) -> Result<String> {
-    let output = render_program(&prg)?;
+pub enum Format {
+    Svg,
+    Html,
+}
+
+pub fn render(prg: &Program, format: Format) -> Result<String> {
+    let output = render_program(&prg, format)?;
     Ok(output)
 }
 
-fn render_program(prg: &Program) -> Result<String> {
+fn render_program(prg: &Program, format: Format) -> Result<String> {
     let mut res = String::new();
     for step in &prg.0 {
         let piece = render_step(&step)?;
         res.push_str(&piece);
     }
-    Ok(format!(r#"<?xml version="1.0" standalone="yes"?>
-<svg width="4in" height="3in"
- xmlns = 'http://www.w3.org/2000/svg'>
-  <desc>This example uses the 'switch' element to provide a
-        fallback graphical representation of an paragraph, if
-        XMHTML is not supported.</desc>
-  <!-- The 'switch' element will process the first child element
-       whose testing attributes evaluate to true.-->
-  <switch>
-    <!-- Process the embedded XHTML if the requiredExtensions attribute
-         evaluates to true (i.e., the user agent supports XHTML
-         embedded within SVG). -->
-    <foreignObject width="100" height="50"
-                   requiredExtensions="http://example.com/SVGExtensions/EmbeddedXHTML">
-      <!-- XHTML content goes here -->
-      <body xmlns="http://www.w3.org/1999/xhtml">
-        <p>Here is a paragraph that requires word wrap</p>
-      </body>
-    </foreignObject>
-    <!-- Else, process the following alternate SVG.
-         Note that there are no testing attributes on the 'text' element.
-         If no testing attributes are provided, it is as if there
-         were testing attributes and they evaluated to true.-->
-    <text font-size="10" font-family="Verdana">
-      <tspan x="10" y="10">Here is a paragraph that</tspan>
-      <tspan x="10" y="20">requires word wrap.</tspan>
-    </text>
-  </switch>
+    let output = match format {
+        Format::Html => format!(r#"
+<!DOCTYPE html>
+<html>
+    {}
+</html>
+"#, res),
+        Format::Svg => format!(r#"
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    div {{
+      color: white;
+      font: 18px serif;
+      height: 100%;
+      overflow: auto;
+    }}
+  </style>
+  <foreignObject x="0" y="0" width="200" height="200">
+    <div xmlns="http://www.w3.org/1999/xhtml">
+      <pre>{}</pre>
+    </div>
+  </foreignObject>
 </svg>
-"#/*, res*/))
+"#, res),
+    };
+    Ok(output)
 }
 
 fn render_step(step: &Step) -> Result<String> {

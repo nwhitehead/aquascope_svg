@@ -249,7 +249,12 @@ fn parse_struct_value(pair: Pair<Rule>) -> Value {
 }
 
 fn parse_ptr_value(pair: Pair<Rule>) -> Value {
-    let mut res = Ptr { name: "".into(), selectors: vec![], borrow: 0, help: vec![] };
+    let mut res = Ptr {
+        name: "".into(),
+        selectors: vec![],
+        borrow: 0,
+        help: vec![],
+    };
     let mut valid = false;
     for inner in pair.into_inner() {
         if inner.as_rule() == Rule::destination {

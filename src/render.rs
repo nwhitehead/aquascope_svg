@@ -1,9 +1,9 @@
 use crate::states::{Def, Location, Program, Region, Step, Value};
-use serde_json::json;
-use handlebars::Handlebars;
 use anyhow::Result;
-use std::rc::Rc;
+use handlebars::Handlebars;
+use serde_json::json;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 pub enum Format {
     Svg,
@@ -15,6 +15,7 @@ const LEADER_LINE_JS: &[u8] = include_bytes!("./leader-line-v1.0.7.min.js");
 const INDEX_HBS: &[u8] = include_bytes!("./index.hbs");
 const SVG_HBS: &[u8] = include_bytes!("./svg.hbs");
 const NUM_ARROW_COLORS: usize = 6;
+const DEBUG_ARROWS: bool = false;
 
 #[derive(Clone, Debug)]
 struct ArrowInfo {
@@ -22,6 +23,7 @@ struct ArrowInfo {
     dst: String,
     src_help: String,
     dst_help: String,
+    path: String,
 }
 
 #[derive(Clone, Debug)]
@@ -29,6 +31,12 @@ struct RenderState {
     id_prefix: String,
     step_index: usize,
     arrows: Rc<RefCell<Vec<ArrowInfo>>>,
+}
+
+fn chop_first(txt: &str) -> &str {
+    let mut chars = txt.chars();
+    chars.next();
+    chars.as_str()
 }
 
 impl RenderState {
@@ -49,34 +57,50 @@ impl RenderState {
     fn with_step_index(&self, step_index: usize) -> Self {
         Self {
             id_prefix: format!("L{}", step_index),
-            step_index: step_index,
+            step_index,
             arrows: self.arrows.clone(),
         }
     }
     fn add_arrow(&mut self, src: &str, dst: &str, help: &Vec<String>) {
         let mut src_help = String::new();
         let mut dst_help = String::new();
+        let mut path = String::new();
         for h in help {
             match h.as_str() {
-                ".sn" => src_help.push_str("n"),
-                ".se" => src_help.push_str("e"),
-                ".sw" => src_help.push_str("w"),
-                ".ss" => src_help.push_str("s"),
-                ".dn" => dst_help.push_str("n"),
-                ".de" => dst_help.push_str("e"),
-                ".dw" => dst_help.push_str("w"),
-                ".ds" => dst_help.push_str("s"),
+                ".sn" => src_help.push('n'),
+                ".se" => src_help.push('e'),
+                ".sw" => src_help.push('w'),
+                ".ss" => src_help.push('s'),
+                ".dn" => dst_help.push('n'),
+                ".de" => dst_help.push('e'),
+                ".dw" => dst_help.push('w'),
+                ".ds" => dst_help.push('s'),
+                ".straight" | ".arc" | ".fluid" | ".magnet" | ".grid" => {
+                    path = chop_first(h.as_str()).to_string();
+                }
                 _ => println!("WARNING: unknown ptr help found, {}", &h),
             }
         }
-        self.arrows.borrow_mut().push(ArrowInfo { src: src.to_string(), dst: dst.to_string(), src_help, dst_help });
+        self.arrows.borrow_mut().push(ArrowInfo {
+            src: src.to_string(),
+            dst: dst.to_string(),
+            src_help,
+            dst_help,
+            path,
+        });
     }
 }
 
 pub fn render(prg: &Program, format: Format, inline_js: bool, show_heap: bool) -> Result<String> {
-    let (prg, arrows) = render_program(&prg, !show_heap)?;
+    let (prg, arrows) = render_program(prg, !show_heap)?;
+    if DEBUG_ARROWS {
+        println!("arrows = {:?}", &arrows);
+    }
     let leader = if inline_js {
-        &format!("<script>{}</script>", String::from_utf8(LEADER_LINE_JS.to_vec())?)
+        &format!(
+            "<script>{}</script>",
+            String::from_utf8(LEADER_LINE_JS.to_vec())?
+        )
     } else {
         r#"<script src="https://cdn.jsdelivr.net/npm/leader-line@1.0.7/leader-line.min.js"></script>"#
     };
@@ -86,7 +110,17 @@ pub fn render(prg: &Program, format: Format, inline_js: bool, show_heap: bool) -
     let reg = Handlebars::new();
 
     let mut arrow_txt = String::new();
-    for (idx, ArrowInfo { src, dst, src_help, dst_help }) in arrows.iter().enumerate() {
+    for (
+        idx,
+        ArrowInfo {
+            src,
+            dst,
+            src_help,
+            dst_help,
+            path,
+        },
+    ) in arrows.iter().enumerate()
+    {
         let start_socket = match src_help.as_str() {
             "a" => "auto",
             "n" => "top",
@@ -94,7 +128,8 @@ pub fn render(prg: &Program, format: Format, inline_js: bool, show_heap: bool) -
             "w" => "left",
             "e" => "right",
             _ => "auto",
-        }.to_string();
+        }
+        .to_string();
         let end_socket = match dst_help.as_str() {
             "a" => "auto",
             "n" => "top",
@@ -102,7 +137,13 @@ pub fn render(prg: &Program, format: Format, inline_js: bool, show_heap: bool) -
             "w" => "left",
             "e" => "right",
             _ => "auto",
-        }.to_string();
+        }
+        .to_string();
+        let path = match path.as_str() {
+            "" => "fluid",
+            s => s,
+        }
+        .to_string();
         // check for loops on one element, must be handled specially
         if src != dst {
             arrow_txt.push_str(&format!(
@@ -118,8 +159,16 @@ pub fn render(prg: &Program, format: Format, inline_js: bool, show_heap: bool) -
                         outlineSize: 0.3,
                         outlineColor: 'var(--arrow_outline)',
                         endPlugSize: 0.6,
+                        path: '{}',
                     }}
-                );\n", src, dst, start_socket, end_socket, idx % NUM_ARROW_COLORS));
+                );\n",
+                src,
+                dst,
+                start_socket,
+                end_socket,
+                idx % NUM_ARROW_COLORS,
+                path
+            ));
         } else {
             arrow_txt.push_str(&format!(
                 "new LeaderLine(
@@ -134,18 +183,32 @@ pub fn render(prg: &Program, format: Format, inline_js: bool, show_heap: bool) -
                     outlineSize: 0.3,
                     outlineColor: 'var(--arrow_outline)',
                     endPlugSize: 0.6,
+                    path: '{}',
                   }},
-                );\n", src, dst, start_socket, end_socket, idx % NUM_ARROW_COLORS));
+                );\n",
+                src,
+                dst,
+                start_socket,
+                end_socket,
+                idx % NUM_ARROW_COLORS,
+                path
+            ));
         }
     }
     let output = match format {
-        Format::Html => reg.render_template(&index_hbs, &json!({
-            "style": css_style,
-            "content": prg,
-            "script": leader,
-            "arrows": &arrow_txt,
-        }))?,
-        Format::Svg => reg.render_template(&svg_hbs, &json!({"style": css_style, "content": prg, "script": leader}))?,
+        Format::Html => reg.render_template(
+            &index_hbs,
+            &json!({
+                "style": css_style,
+                "content": prg,
+                "script": leader,
+                "arrows": &arrow_txt,
+            }),
+        )?,
+        Format::Svg => reg.render_template(
+            &svg_hbs,
+            &json!({"style": css_style, "content": prg, "script": leader}),
+        )?,
     };
     Ok(output)
 }
@@ -156,7 +219,7 @@ fn render_program(prg: &Program, hide_heap: bool) -> Result<(String, Vec<ArrowIn
     let state = RenderState::new(0);
     for (idx, step) in prg.0.iter().enumerate() {
         let mut st = state.with_step_index(idx);
-        let piece = render_step(&step, &mut st, hide_heap)?;
+        let piece = render_step(step, &mut st, hide_heap)?;
         res.push_str(&piece);
     }
     res.push_str("</div>");
@@ -168,8 +231,8 @@ fn render_step(step: &Step, state: &mut RenderState, hide_heap: bool) -> Result<
     let mut res = String::new();
     res.push_str("<div class=\"step\">");
     res.push_str(&format!("<span class=\"header\">{}</span>", &step.label));
-    for (idx, location) in step.locations.iter().enumerate() {
-        let piece = render_location(&location, state, hide_heap)?;
+    for location in &step.locations {
+        let piece = render_location(location, state, hide_heap)?;
         res.push_str(&piece);
     }
     res.push_str("</div>");
@@ -187,7 +250,7 @@ fn render_location(loc: &Location, state: &mut RenderState, hide_labels: bool) -
         res.push_str(&piece);
     } else {
         for region in &loc.regions {
-            let piece = render_region(&region, state, hide_labels)?;
+            let piece = render_region(region, state, hide_labels)?;
             res.push_str(&piece);
         }
     }
@@ -205,30 +268,35 @@ fn render_region(region: &Region, state: &mut RenderState, hide_labels: bool) ->
     Ok(res)
 }
 
-fn render_definitions(definitions: &[Def], state: &mut RenderState, hide_labels: bool) -> Result<String> {
+fn render_definitions(
+    definitions: &[Def],
+    state: &mut RenderState,
+    hide_labels: bool,
+) -> Result<String> {
     let mut res = String::new();
     for definition in definitions {
-        let piece = render_definition(&definition, state, hide_labels)?;
+        let piece = render_definition(definition, state, hide_labels)?;
         res.push_str(&piece);
     }
     Ok(res)
 }
 
-fn render_definition(definition: &Def, state: &mut RenderState, hide_label: bool) -> Result<String> {
+fn render_definition(
+    definition: &Def,
+    state: &mut RenderState,
+    hide_label: bool,
+) -> Result<String> {
     let mut res = String::new();
     res.push_str("<div class=\"definition\">");
-    if !hide_label || !definition.label.starts_with(&['H']) {
+    if !hide_label || !definition.label.starts_with(['H']) {
         res.push_str(&format!(
             "<span class=\"label\">{}</span>",
             &definition.label
         ));
-        res.push_str(&"<span class=\"separator\">:</span>");
+        res.push_str("<span class=\"separator\">:</span>");
     }
     let mut st = state.extend_id(&definition.label);
-    let v = render_value(
-        &definition.value,
-        &mut st
-    )?;
+    let v = render_value(&definition.value, &mut st)?;
     res.push_str(&format!("<div class=\"defvalue\">{}</div>", &v));
     res.push_str("</div>");
     Ok(res)
@@ -246,7 +314,7 @@ fn render_value(value: &Value, state: &mut RenderState) -> Result<String> {
                 "<div id=\"{}\" class=\"value array\">",
                 &state.id_prefix
             ));
-            res.push_str(&render_values("array_child", &v, state)?);
+            res.push_str(&render_values("array_child", v, state)?);
             res.push_str("</div>");
             Ok(res)
         }
@@ -256,7 +324,7 @@ fn render_value(value: &Value, state: &mut RenderState) -> Result<String> {
                 "<div id=\"{}\" class=\"value tuple\">",
                 &state.id_prefix
             ));
-            res.push_str(&render_values("tuple_child", &v, state)?);
+            res.push_str(&render_values("tuple_child", v, state)?);
             res.push_str("</div>");
             Ok(res)
         }
@@ -285,15 +353,11 @@ fn render_value(value: &Value, state: &mut RenderState) -> Result<String> {
     }
 }
 
-fn render_values(
-    inner_tag: &str,
-    values: &[Value],
-    state: &mut RenderState,
-) -> Result<String> {
+fn render_values(inner_tag: &str, values: &[Value], state: &mut RenderState) -> Result<String> {
     let mut res = String::new();
-    for (idx, value) in values.into_iter().enumerate() {
+    for (idx, value) in values.iter().enumerate() {
         let mut state_p = state.extend_id(&format!("{}", idx));
-        let piece = render_value(&value, &mut state_p)?;
+        let piece = render_value(value, &mut state_p)?;
         res.push_str(&format!("<div class=\"{}\">", inner_tag));
         res.push_str(&piece);
         res.push_str("</div>");
@@ -312,12 +376,8 @@ fn render_struct(
         &state.id_prefix
     ));
     res.push_str(&format!("<span class=\"name\">{}</span>", &name));
-    for (idx, (label, value)) in fields.into_iter().enumerate() {
-        let v = render_field(
-            &label,
-            &value,
-            &mut state.extend_id(&format!("{}", idx))
-        )?;
+    for (idx, (label, value)) in fields.iter().enumerate() {
+        let v = render_field(label, value, &mut state.extend_id(&format!("{}", idx)))?;
         res.push_str(&v);
     }
     res.push_str("</div>");
@@ -328,8 +388,8 @@ fn render_field(label: &str, value: &Value, state: &mut RenderState) -> Result<S
     let mut res = String::new();
     res.push_str("<div class=\"field\">");
     res.push_str(&format!("<span class=\"label\">{}</span>", &label));
-    res.push_str(&"<span class=\"separator\">:</span>");
-    let v = render_value(&value, state)?;
+    res.push_str("<span class=\"separator\">:</span>");
+    let v = render_value(value, state)?;
     res.push_str(&v);
     res.push_str("</div>");
     Ok(res)

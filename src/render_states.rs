@@ -20,9 +20,17 @@ struct Args {
     show_parse: bool,
     #[arg(help = "Output an HTML fragment", long, default_value_t = false)]
     output_html: bool,
-    #[arg(help = "Inline JS dependencies (default is to reference a cdn)", long, default_value_t = false)]
+    #[arg(
+        help = "Inline JS dependencies (default is to reference a cdn)",
+        long,
+        default_value_t = false
+    )]
     inline_js: bool,
-    #[arg(help = "Show labels starting with H (heap)", long, default_value_t = false)]
+    #[arg(
+        help = "Show labels starting with H (heap)",
+        long,
+        default_value_t = false
+    )]
     show_heap: bool,
     #[arg(help = "Output filename, required (use - for stdout)", long)]
     output: String,

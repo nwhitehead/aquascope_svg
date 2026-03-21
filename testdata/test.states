@@ -9,7 +9,7 @@ x: 'h'
 x: [5.2, 1]
 y: (2, 1)
 ## Heap
-H0: 5
+H0: ptr(x.1)
 
 # L2
 ## Stack
@@ -23,6 +23,7 @@ x: foo{i: 3, j: `bar`{}}
 y: *
 ## Heap
 H0: ptr( x.1 )
+H1: ptr(H1)
 
 # L4
 ## Stack

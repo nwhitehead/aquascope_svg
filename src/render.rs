@@ -49,7 +49,7 @@ impl RenderState {
 }
 
 pub fn render(prg: &Program, format: Format, inline_js: bool) -> Result<String> {
-    let prg = render_program(&prg)?;
+    let (prg, arrows) = render_program(&prg)?;
     let leader = if inline_js {
         &format!("<script>{}</script>", String::from_utf8(LEADER_LINE_JS.to_vec())?)
     } else {
@@ -60,14 +60,24 @@ pub fn render(prg: &Program, format: Format, inline_js: bool) -> Result<String> 
     let svg_hbs = String::from_utf8(SVG_HBS.to_vec())?;
     let reg = Handlebars::new();
 
+    let mut arrow_txt = String::new();
+    for (src, dst) in arrows {
+        arrow_txt.push_str(&format!(
+            "new LeaderLine(document.getElementById('{}'), document.getElementById('{}'));\n", src, dst));
+    }
     let output = match format {
-        Format::Html => reg.render_template(&index_hbs, &json!({"style": css_style, "content": prg, "script": leader}))?,
+        Format::Html => reg.render_template(&index_hbs, &json!({
+            "style": css_style,
+            "content": prg,
+            "script": leader,
+            "arrows": &arrow_txt,
+        }))?,
         Format::Svg => reg.render_template(&svg_hbs, &json!({"style": css_style, "content": prg, "script": leader}))?,
     };
     Ok(output)
 }
 
-fn render_program(prg: &Program) -> Result<String> {
+fn render_program(prg: &Program) -> Result<(String, Vec<(String, String)>)> {
     let mut res = String::new();
     res.push_str("<div class=\"program\">");
     let state = RenderState::new(0);
@@ -77,8 +87,8 @@ fn render_program(prg: &Program) -> Result<String> {
         res.push_str(&piece);
     }
     res.push_str("</div>");
-    println!("arrows = {:?}", state.arrows.borrow());
-    Ok(res)
+    let arrows = state.arrows.borrow().clone();
+    Ok((res, arrows))
 }
 
 fn render_step(step: &Step, state: &mut RenderState) -> Result<String> {
@@ -189,8 +199,8 @@ fn render_value(value: &Value, state: &mut RenderState) -> Result<String> {
             let src = state.id_prefix.clone();
             state.add_arrow(&src, &dst);
             Ok(format!(
-                "<span id=\"{}\" class=\"value pointer\">●{}</span>",
-                &state.id_prefix, &dst
+                "<span id=\"{}\" class=\"value pointer\">●</span>",
+                &state.id_prefix,
             ))
         }
         Value::Invalid => Ok(format!(

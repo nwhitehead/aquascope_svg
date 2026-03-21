@@ -62,8 +62,26 @@ pub fn render(prg: &Program, format: Format, inline_js: bool) -> Result<String> 
 
     let mut arrow_txt = String::new();
     for (src, dst) in arrows {
-        arrow_txt.push_str(&format!(
-            "new LeaderLine(document.getElementById('{}'), document.getElementById('{}'));\n", src, dst));
+        if src != dst {
+            arrow_txt.push_str(&format!(
+                "new LeaderLine(
+                    document.getElementById('{}'),
+                    document.getElementById('{}'),
+                    {{
+                        startSocket: 'right',
+                    }}
+                );\n", src, dst));
+        } else {
+            arrow_txt.push_str(&format!(
+                "new LeaderLine(
+                  document.getElementById('{}'),
+                  document.getElementById('{}').getElementsByClassName('dummy')[0],
+                  {{
+                    startSocket: 'right',
+                    endSocket: 'top',
+                  }},
+                );\n", src, dst));
+        }
     }
     let output = match format {
         Format::Html => reg.render_template(&index_hbs, &json!({
@@ -199,7 +217,7 @@ fn render_value(value: &Value, state: &mut RenderState) -> Result<String> {
             let src = state.id_prefix.clone();
             state.add_arrow(&src, &dst);
             Ok(format!(
-                "<span id=\"{}\" class=\"value pointer\">●</span>",
+                "<span id=\"{}\" class=\"value pointer\">●<div class=\"dummy\"></div></span>",
                 &state.id_prefix,
             ))
         }

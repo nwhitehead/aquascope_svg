@@ -16,6 +16,7 @@ const SVG_HBS: &[u8] = include_bytes!("./svg.hbs");
 struct RenderState {
     id_prefix: String,
     step_index: usize,
+    arrows: Vec<(String, String)>,
 }
 
 impl RenderState {
@@ -23,19 +24,22 @@ impl RenderState {
         Self {
             id_prefix: format!("L{}", step_index),
             step_index,
+            arrows: vec![],
         }
     }
-    fn extend_id(&self, txt: &str) -> Self {
+    fn extend_id(&mut self, txt: &str) -> Self {
         Self {
             id_prefix: format!("{}.{}", &self.id_prefix, txt),
             step_index: self.step_index,
+            arrows: self.arrows.clone(),
         }
     }
-    fn with_step_index(&self, step_index: usize) -> Self {
-        Self {
-            id_prefix: self.id_prefix.clone(),
-            step_index,
-        }
+    fn with_step_index(&mut self, step_index: usize) -> &Self {
+        self.step_index = step_index;
+        self
+    }
+    fn add_arrow(&mut self, src: &str, dest: &str) {
+        self.arrows.push((src.into(), dest.into()));
     }
 }
 
@@ -62,37 +66,37 @@ fn render_program(prg: &Program) -> Result<String> {
     let mut res = String::new();
     res.push_str("<div class=\"program\">");
     for (idx, step) in prg.0.iter().enumerate() {
-        let piece = render_step(&step, &RenderState::new(idx))?;
+        let piece = render_step(&step, &mut RenderState::new(idx))?;
         res.push_str(&piece);
     }
     res.push_str("</div>");
     Ok(res)
 }
 
-fn render_step(step: &Step, state: &RenderState) -> Result<String> {
+fn render_step(step: &Step, state: &mut RenderState) -> Result<String> {
     let mut res = String::new();
     res.push_str("<div class=\"step\">");
     res.push_str(&format!("<span class=\"header\">{}</span>", &step.label));
     for location in &step.locations {
-        let piece = render_location(&location, &state)?;
+        let piece = render_location(&location, state)?;
         res.push_str(&piece);
     }
     res.push_str("</div>");
     Ok(res)
 }
 
-fn render_location(loc: &Location, state: &RenderState) -> Result<String> {
+fn render_location(loc: &Location, state: &mut RenderState) -> Result<String> {
     let mut res = String::new();
     res.push_str("<div class=\"location\">");
     res.push_str(&format!("<span class=\"header\">{}</span>", &loc.name));
     // A location either has definitions itself (and no regions) OR it has regions and no definitions
     assert!(loc.definitions.is_empty() || loc.regions.is_empty());
     if !loc.definitions.is_empty() {
-        let piece = render_definitions(&loc.definitions, &state)?;
+        let piece = render_definitions(&loc.definitions, state)?;
         res.push_str(&piece);
     } else {
         for region in &loc.regions {
-            let piece = render_region(&region, &state)?;
+            let piece = render_region(&region, state)?;
             res.push_str(&piece);
         }
     }
@@ -100,26 +104,26 @@ fn render_location(loc: &Location, state: &RenderState) -> Result<String> {
     Ok(res)
 }
 
-fn render_region(region: &Region, state: &RenderState) -> Result<String> {
+fn render_region(region: &Region, state: &mut RenderState) -> Result<String> {
     let mut res = String::new();
     res.push_str("<div class=\"region\">");
     res.push_str(&format!("<span class=\"header\">{}</span>", &region.name));
-    let pieces = render_definitions(&region.definitions, &state)?;
+    let pieces = render_definitions(&region.definitions, state)?;
     res.push_str(&pieces);
     res.push_str("</div>");
     Ok(res)
 }
 
-fn render_definitions(definitions: &[Def], state: &RenderState) -> Result<String> {
+fn render_definitions(definitions: &[Def], state: &mut RenderState) -> Result<String> {
     let mut res = String::new();
     for definition in definitions {
-        let piece = render_definition(&definition, &state)?;
+        let piece = render_definition(&definition, state)?;
         res.push_str(&piece);
     }
     Ok(res)
 }
 
-fn render_definition(definition: &Def, state: &RenderState) -> Result<String> {
+fn render_definition(definition: &Def, state: &mut RenderState) -> Result<String> {
     let mut res = String::new();
     res.push_str("<div class=\"definition\">");
     res.push_str(&format!(
@@ -127,16 +131,17 @@ fn render_definition(definition: &Def, state: &RenderState) -> Result<String> {
         &definition.label
     ));
     res.push_str(&"<span class=\"separator\">:</span>");
+    let mut st = state.extend_id(&definition.label);
     let v = render_value(
         &definition.value,
-        &state.extend_id(&definition.label)
+        &mut st
     )?;
     res.push_str(&v);
     res.push_str("</div>");
     Ok(res)
 }
 
-fn render_value(value: &Value, state: &RenderState) -> Result<String> {
+fn render_value(value: &Value, state: &mut RenderState) -> Result<String> {
     match value {
         Value::Number(v) => Ok(format!(
             "<span id=\"{}\" class=\"value number\">{}</span>",
@@ -148,7 +153,7 @@ fn render_value(value: &Value, state: &RenderState) -> Result<String> {
                 "<div id=\"{}\" class=\"value array\">",
                 &state.id_prefix
             ));
-            res.push_str(&render_values("array_child", &v, &state)?);
+            res.push_str(&render_values("array_child", &v, state)?);
             res.push_str("</div>");
             Ok(res)
         }
@@ -158,7 +163,7 @@ fn render_value(value: &Value, state: &RenderState) -> Result<String> {
                 "<div id=\"{}\" class=\"value tuple\">",
                 &state.id_prefix
             ));
-            res.push_str(&render_values("tuple_child", &v, &state)?);
+            res.push_str(&render_values("tuple_child", &v, state)?);
             res.push_str("</div>");
             Ok(res)
         }
@@ -166,7 +171,7 @@ fn render_value(value: &Value, state: &RenderState) -> Result<String> {
             "<span id=\"{}\" class=\"value char\">'{}'</span>",
             &state.id_prefix, v
         )),
-        Value::Struct(v) => render_struct(&v.name, &v.fields, &state),
+        Value::Struct(v) => render_struct(&v.name, &v.fields, state),
         Value::Pointer(v) => {
             let mut dst = String::new();
             dst.push_str(&format!("L{}.{}", state.step_index, &v.name));
@@ -188,12 +193,12 @@ fn render_value(value: &Value, state: &RenderState) -> Result<String> {
 fn render_values(
     inner_tag: &str,
     values: &[Value],
-    state: &RenderState,
+    state: &mut RenderState,
 ) -> Result<String> {
     let mut res = String::new();
     for (idx, value) in values.into_iter().enumerate() {
-        let state_p = state.extend_id(&format!("{}", idx));
-        let piece = render_value(&value, &state_p)?;
+        let mut state_p = state.extend_id(&format!("{}", idx));
+        let piece = render_value(&value, &mut state_p)?;
         res.push_str(&format!("<div class=\"{}\">", inner_tag));
         res.push_str(&piece);
         res.push_str("</div>");
@@ -204,7 +209,7 @@ fn render_values(
 fn render_struct(
     name: &str,
     fields: &[(String, Value)],
-    state: &RenderState,
+    state: &mut RenderState,
 ) -> Result<String> {
     let mut res = String::new();
     res.push_str(&format!(
@@ -216,7 +221,7 @@ fn render_struct(
         let v = render_field(
             &label,
             &value,
-            &state.extend_id(&format!("{}", idx))
+            &mut state.extend_id(&format!("{}", idx))
         )?;
         res.push_str(&v);
     }
@@ -224,12 +229,12 @@ fn render_struct(
     Ok(res)
 }
 
-fn render_field(label: &str, value: &Value, state: &RenderState) -> Result<String> {
+fn render_field(label: &str, value: &Value, state: &mut RenderState) -> Result<String> {
     let mut res = String::new();
     res.push_str("<div class=\"field\">");
     res.push_str(&format!("<span class=\"label\">{}</span>", &label));
     res.push_str(&"<span class=\"separator\">:</span>");
-    let v = render_value(&value, &state)?;
+    let v = render_value(&value, state)?;
     res.push_str(&v);
     res.push_str("</div>");
     Ok(res)

@@ -71,8 +71,15 @@ div {
 }
 "#;
 
-pub fn render(prg: &Program, format: Format) -> Result<String> {
+const LEADER_LINE_JS: &[u8] = include_bytes!("./leader-line-v1.0.7.min.js");
+
+pub fn render(prg: &Program, format: Format, inline_js: bool) -> Result<String> {
     let prg = render_program(&prg)?;
+    let leader = if inline_js {
+        &format!("<script>{}</script>", String::from_utf8(LEADER_LINE_JS.to_vec())?)
+    } else {
+        r#"<script src="https://cdn.jsdelivr.net/npm/leader-line@1.0.7/leader-line.min.js"></script>"#
+    };
     let output = match format {
         Format::Html => format!(
             r#"
@@ -83,7 +90,7 @@ pub fn render(prg: &Program, format: Format) -> Result<String> {
 </head>
 <body>
 {}
-<script src="https://cdn.jsdelivr.net/npm/leader-line@1.0.7/leader-line.min.js"></script>
+{}
 <script>
 // Wait for HTML document to get ready
 window.addEventListener('load', function() {{ // NOT `DOMContentLoaded`
@@ -97,7 +104,7 @@ window.addEventListener('load', function() {{ // NOT `DOMContentLoaded`
 </body>
 </html>
 "#,
-            CSS_STYLE, prg
+            CSS_STYLE, leader, prg
         ),
         Format::Svg => format!(
             r#"

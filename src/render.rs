@@ -38,8 +38,8 @@ impl RenderState {
     }
     fn with_step_index(&self, step_index: usize) -> Self {
         Self {
-            id_prefix: self.id_prefix.clone(),
-            step_index,
+            id_prefix: format!("L{}", step_index),
+            step_index: step_index,
             arrows: self.arrows.clone(),
         }
     }
@@ -70,8 +70,10 @@ pub fn render(prg: &Program, format: Format, inline_js: bool) -> Result<String> 
 fn render_program(prg: &Program) -> Result<String> {
     let mut res = String::new();
     res.push_str("<div class=\"program\">");
+    let state = RenderState::new(0);
     for (idx, step) in prg.0.iter().enumerate() {
-        let piece = render_step(&step, &mut RenderState::new(idx))?;
+        let mut st = state.with_step_index(idx);
+        let piece = render_step(&step, &mut st)?;
         res.push_str(&piece);
     }
     res.push_str("</div>");
@@ -183,6 +185,8 @@ fn render_value(value: &Value, state: &mut RenderState) -> Result<String> {
             for selector in &v.selectors {
                 dst.push_str(&format!(".{}", selector));
             }
+            let src = state.id_prefix.clone();
+            state.add_arrow(&src, &dst);
             Ok(format!(
                 "<span id=\"{}\" class=\"value pointer\">●{}</span>",
                 &state.id_prefix, &dst

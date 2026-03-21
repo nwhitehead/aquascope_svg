@@ -69,6 +69,7 @@ pub fn render(prg: &Program, format: Format, inline_js: bool) -> Result<String> 
                     document.getElementById('{}'),
                     {{
                         startSocket: 'right',
+                        color: 'var(--arrow)',
                     }}
                 );\n", src, dst));
         } else {
@@ -79,6 +80,7 @@ pub fn render(prg: &Program, format: Format, inline_js: bool) -> Result<String> 
                   {{
                     startSocket: 'right',
                     endSocket: 'top',
+                    color: 'var(--arrow)',
                   }},
                 );\n", src, dst));
         }
@@ -174,7 +176,7 @@ fn render_definition(definition: &Def, state: &mut RenderState, hide_label: bool
         &definition.value,
         &mut st
     )?;
-    res.push_str(&v);
+    res.push_str(&format!("<div class=\"defvalue\">{}</div>", &v));
     res.push_str("</div>");
     Ok(res)
 }

@@ -14,6 +14,7 @@ const CSS_STYLE: &[u8] = include_bytes!("./style.css");
 const LEADER_LINE_JS: &[u8] = include_bytes!("./leader-line-v1.0.7.min.js");
 const INDEX_HBS: &[u8] = include_bytes!("./index.hbs");
 const SVG_HBS: &[u8] = include_bytes!("./svg.hbs");
+const NUM_ARROW_COLORS: usize = 6;
 
 #[derive(Clone, Debug)]
 struct ArrowInfo {
@@ -85,8 +86,7 @@ pub fn render(prg: &Program, format: Format, inline_js: bool) -> Result<String> 
     let reg = Handlebars::new();
 
     let mut arrow_txt = String::new();
-    println!("arrows = {:?}", arrows);
-    for ArrowInfo { src, dst, src_help, dst_help } in arrows {
+    for (idx, ArrowInfo { src, dst, src_help, dst_help }) in arrows.iter().enumerate() {
         let start_socket = match src_help.as_str() {
             "a" => "auto",
             "n" => "top",
@@ -103,6 +103,7 @@ pub fn render(prg: &Program, format: Format, inline_js: bool) -> Result<String> 
             "e" => "right",
             _ => "auto",
         }.to_string();
+        // check for loops on one element, must be handled specially
         if src != dst {
             arrow_txt.push_str(&format!(
                 "new LeaderLine(
@@ -111,20 +112,30 @@ pub fn render(prg: &Program, format: Format, inline_js: bool) -> Result<String> 
                     {{
                         startSocket: '{}',
                         endSocket: '{}',
-                        color: 'var(--arrow)',
+                        color: 'var(--arrow{})',
+                        size: 8,
+                        outline: true,
+                        outlineSize: 0.3,
+                        outlineColor: 'var(--arrow_outline)',
+                        endPlugSize: 0.6,
                     }}
-                );\n", src, dst, start_socket, end_socket));
+                );\n", src, dst, start_socket, end_socket, idx % NUM_ARROW_COLORS));
         } else {
             arrow_txt.push_str(&format!(
                 "new LeaderLine(
-                  document.getElementById('{}'),
                   document.getElementById('{}').getElementsByClassName('dummy')[0],
+                  document.getElementById('{}'),
                   {{
-                    startSocket: 'right',
-                    endSocket: 'top',
-                    color: 'var(--arrow)',
+                    startSocket: '{}',
+                    endSocket: '{}',
+                    color: 'var(--arrow{})',
+                    size: 8,
+                    outline: true,
+                    outlineSize: 0.3,
+                    outlineColor: 'var(--arrow_outline)',
+                    endPlugSize: 0.6,
                   }},
-                );\n", src, dst));
+                );\n", src, dst, start_socket, end_socket, idx % NUM_ARROW_COLORS));
         }
     }
     let output = match format {

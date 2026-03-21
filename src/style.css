@@ -16,6 +16,19 @@
     --brace: #f3dc22;
     --number: #bccfa9;
     --arrow: var(--brace);
+
+    --arrow_first: #f3dc22ff;
+    --arrow_last: #f34320ff;
+    --arrow_outline: #000;
+}
+:root {
+    --arrow0: color-mix(in oklab, var(--arrow_first) 100%, var(--arrow_last));
+    --arrow1: color-mix(in oklab, var(--arrow_first) 80%, var(--arrow_last));
+    --arrow2: color-mix(in oklab, var(--arrow_first) 60%, var(--arrow_last));
+    --arrow3: color-mix(in oklab, var(--arrow_first) 40%, var(--arrow_last));
+    --arrow4: color-mix(in oklab, var(--arrow_first) 20%, var(--arrow_last));
+    --arrow5: color-mix(in oklab, var(--arrow_first) 0%, var(--arrow_last));
+
 }
 body {
     background-color: var(--bg);
@@ -37,6 +50,7 @@ span {
 .header {
     font-family: serif;
     color: var(--fg);
+    min-height: 1lh;
 }
 .program {
     display: flex;

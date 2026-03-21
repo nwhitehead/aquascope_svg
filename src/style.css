@@ -133,9 +133,16 @@ div.step > .header {
     border-radius: 0;
     padding-left: 5px;
 }
+.pointer {
+    position: relative;
+}
 .dummy {
-    width: 1px;
-    height: 1px;
+    width: 1em;
+    height: 1.5lh;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
 }
 .definition {
     margin-top: 8px;

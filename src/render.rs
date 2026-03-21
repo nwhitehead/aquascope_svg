@@ -52,8 +52,23 @@ impl RenderState {
             arrows: self.arrows.clone(),
         }
     }
-    fn add_arrow(&mut self, src: &str, dst: &str) {
-        self.arrows.borrow_mut().push(ArrowInfo { src: src.to_string(), dst: dst.to_string(), src_help: "".into(), dst_help: "".into() });
+    fn add_arrow(&mut self, src: &str, dst: &str, help: &Vec<String>) {
+        let mut src_help = String::new();
+        let mut dst_help = String::new();
+        for h in help {
+            match h.as_str() {
+                ".sn" => src_help.push_str("n"),
+                ".se" => src_help.push_str("e"),
+                ".sw" => src_help.push_str("w"),
+                ".ss" => src_help.push_str("s"),
+                ".dn" => dst_help.push_str("n"),
+                ".de" => dst_help.push_str("e"),
+                ".dw" => dst_help.push_str("w"),
+                ".ds" => dst_help.push_str("s"),
+                _ => println!("WARNING: unknown ptr help found, {}", &h),
+            }
+        }
+        self.arrows.borrow_mut().push(ArrowInfo { src: src.to_string(), dst: dst.to_string(), src_help, dst_help });
     }
 }
 
@@ -70,16 +85,35 @@ pub fn render(prg: &Program, format: Format, inline_js: bool) -> Result<String> 
     let reg = Handlebars::new();
 
     let mut arrow_txt = String::new();
-    for ArrowInfo { src, dst, .. } in arrows {
+    println!("arrows = {:?}", arrows);
+    for ArrowInfo { src, dst, src_help, dst_help } in arrows {
+        let start_socket = match src_help.as_str() {
+            "a" => "auto",
+            "n" => "top",
+            "s" => "bottom",
+            "w" => "left",
+            "e" => "right",
+            _ => "auto",
+        }.to_string();
+        let end_socket = match dst_help.as_str() {
+            "a" => "auto",
+            "n" => "top",
+            "s" => "bottom",
+            "w" => "left",
+            "e" => "right",
+            _ => "auto",
+        }.to_string();
         if src != dst {
             arrow_txt.push_str(&format!(
                 "new LeaderLine(
                     document.getElementById('{}'),
                     document.getElementById('{}'),
                     {{
+                        startSocket: '{}',
+                        endSocket: '{}',
                         color: 'var(--arrow)',
                     }}
-                );\n", src, dst));
+                );\n", src, dst, start_socket, end_socket));
         } else {
             arrow_txt.push_str(&format!(
                 "new LeaderLine(
@@ -227,7 +261,7 @@ fn render_value(value: &Value, state: &mut RenderState) -> Result<String> {
                 dst.push_str(&format!(".{}", selector));
             }
             let src = state.id_prefix.clone();
-            state.add_arrow(&src, &dst);
+            state.add_arrow(&src, &dst, &v.help);
             Ok(format!(
                 "<span id=\"{}\" class=\"value pointer\">●<div class=\"dummy\"></div></span>",
                 &state.id_prefix,

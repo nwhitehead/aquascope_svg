@@ -16,7 +16,8 @@ The STATES format is a text format with the following rules:
 * Each location data starts with a Markdown-style header beginning with `#` and
   then name.
 * A location data consists of zero or more regions.
-* A region may be optionally dividied into subregions with Markdown style headers with `###`.
+* A region may be optionally dividied into subregions with Markdown style
+  headers with `###`.
 * A region is a Markdown style header beginning with `##` and then a name.
 * If a region has subregions then all content of the region must be in
   subregions.
@@ -30,7 +31,8 @@ The STATES format is a text format with the following rules:
     * `*`
     * `[`, a comma separated list of values, `]`
     * `(`, a comma separated list of values, `)`
-    * `ptr(`, a destination, `)`
+    * `ptr(`, a destination, `)`, followed by optional "help" of the form ".",
+      then identifier, repeated any number of times
     * an integer number
     * a floating point number
     * `'`, a character, `'`
@@ -38,6 +40,15 @@ The STATES format is a text format with the following rules:
 * A destination is a label followed by zero or more copies of `.` and natural
   numbers.
 * A destination can also be followed by zero or more `'`.
+
+## Help
+
+The "help" part of `ptr` is for layout and drawing. Let's you pick properties of
+the pointer.
+```
+.sn .se .sw .ss         Start at north side, east side, ...
+.dn .de .dw .ds         End destination on north side, east side, ...
+```
 
 ## Example
 

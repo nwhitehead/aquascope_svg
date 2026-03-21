@@ -15,10 +15,19 @@ const LEADER_LINE_JS: &[u8] = include_bytes!("./leader-line-v1.0.7.min.js");
 const INDEX_HBS: &[u8] = include_bytes!("./index.hbs");
 const SVG_HBS: &[u8] = include_bytes!("./svg.hbs");
 
+#[derive(Clone, Debug)]
+struct ArrowInfo {
+    src: String,
+    dst: String,
+    src_help: String,
+    dst_help: String,
+}
+
+#[derive(Clone, Debug)]
 struct RenderState {
     id_prefix: String,
     step_index: usize,
-    arrows: Rc<RefCell<Vec<(String, String)>>>,
+    arrows: Rc<RefCell<Vec<ArrowInfo>>>,
 }
 
 impl RenderState {
@@ -43,8 +52,8 @@ impl RenderState {
             arrows: self.arrows.clone(),
         }
     }
-    fn add_arrow(&mut self, src: &str, dest: &str) {
-        self.arrows.borrow_mut().push((src.into(), dest.into()));
+    fn add_arrow(&mut self, src: &str, dst: &str) {
+        self.arrows.borrow_mut().push(ArrowInfo { src: src.to_string(), dst: dst.to_string(), src_help: "".into(), dst_help: "".into() });
     }
 }
 
@@ -61,7 +70,7 @@ pub fn render(prg: &Program, format: Format, inline_js: bool) -> Result<String> 
     let reg = Handlebars::new();
 
     let mut arrow_txt = String::new();
-    for (src, dst) in arrows {
+    for ArrowInfo { src, dst, .. } in arrows {
         if src != dst {
             arrow_txt.push_str(&format!(
                 "new LeaderLine(
@@ -96,7 +105,7 @@ pub fn render(prg: &Program, format: Format, inline_js: bool) -> Result<String> 
     Ok(output)
 }
 
-fn render_program(prg: &Program) -> Result<(String, Vec<(String, String)>)> {
+fn render_program(prg: &Program) -> Result<(String, Vec<ArrowInfo>)> {
     let mut res = String::new();
     res.push_str("<div class=\"program\">");
     let state = RenderState::new(0);

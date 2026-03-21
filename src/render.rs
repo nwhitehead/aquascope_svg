@@ -84,6 +84,16 @@ pub fn render(prg: &Program, format: Format) -> Result<String> {
 <body>
 {}
 <script src="https://cdn.jsdelivr.net/npm/leader-line@1.0.7/leader-line.min.js"></script>
+<script>
+// Wait for HTML document to get ready
+window.addEventListener('load', function() {{ // NOT `DOMContentLoaded`
+  // Do something about HTML document
+  var line = new LeaderLine(
+    document.getElementById('L3.H0'),
+    document.getElementById('L3.x.1')
+  );
+}});
+</script>
 </body>
 </html>
 "#,

@@ -1,5 +1,6 @@
 use crate::states::{Def, Location, Program, Region, Step, Value};
-
+use serde_json::json;
+use handlebars::Handlebars;
 use anyhow::Result;
 
 pub enum Format {
@@ -8,8 +9,8 @@ pub enum Format {
 }
 
 const CSS_STYLE: &[u8] = include_bytes!("./style.css");
-
 const LEADER_LINE_JS: &[u8] = include_bytes!("./leader-line-v1.0.7.min.js");
+const INDEX_HBS: &[u8] = include_bytes!("./index.hbs");
 
 pub fn render(prg: &Program, format: Format, inline_js: bool) -> Result<String> {
     let prg = render_program(&prg)?;
@@ -19,32 +20,11 @@ pub fn render(prg: &Program, format: Format, inline_js: bool) -> Result<String> 
         r#"<script src="https://cdn.jsdelivr.net/npm/leader-line@1.0.7/leader-line.min.js"></script>"#
     };
     let css_style = String::from_utf8(CSS_STYLE.to_vec())?;
+    let index_hbs = String::from_utf8(INDEX_HBS.to_vec())?;
+    let mut reg = Handlebars::new();
+
     let output = match format {
-        Format::Html => format!(
-            r#"
-<!DOCTYPE html>
-<html>
-<head>
-<style>{}</style>
-</head>
-<body>
-{}
-{}
-<script>
-// Wait for HTML document to get ready
-window.addEventListener('load', function() {{ // NOT `DOMContentLoaded`
-  // Do something about HTML document
-  var line = new LeaderLine(
-    document.getElementById('L3.H0'),
-    document.getElementById('L3.x.1')
-  );
-}});
-</script>
-</body>
-</html>
-"#,
-            css_style, leader, prg
-        ),
+        Format::Html => reg.render_template(&index_hbs, &json!({"style": css_style, "content": prg, "script": leader}))?,
         Format::Svg => format!(
             r#"
 <svg viewBox="0 0 2000 2000" xmlns="http://www.w3.org/2000/svg">

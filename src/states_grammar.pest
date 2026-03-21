@@ -22,13 +22,13 @@ FLOAT = @{ float_number }
 
 start = { (EOL)? ~ step* }
 
-step = { "# " ~ TEXT? ~ EOL ~ location* }
+step = { "#" ~ TEXT? ~ EOL ~ location* }
 
-location = { "## " ~ TEXT? ~ EOL ~ location_content }
+location = { "##" ~ TEXT? ~ EOL ~ location_content }
 
 location_content = { ( region | defln_ )* }
 
-region = { "### " ~ TEXT? ~ EOL ~ defln_* }
+region = { "###" ~ TEXT? ~ EOL ~ defln_* }
 
 def_ = { label ~ ":" ~ value }
 defln_ = { def_ ~ EOL }

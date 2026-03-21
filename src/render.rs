@@ -279,7 +279,7 @@ fn render_value(value: &Value, state: &mut RenderState) -> Result<String> {
             ))
         }
         Value::Invalid => Ok(format!(
-            "<span id=\"{}\" class=\"value invalid\">*</span>",
+            "<span id=\"{}\" class=\"value invalid\">❌</span>",
             &state.id_prefix
         )),
     }

@@ -22,8 +22,8 @@ struct Args {
     output_html: bool,
     #[arg(help = "Inline JS dependencies (default is to reference a cdn)", long, default_value_t = false)]
     inline_js: bool,
-    #[arg(help = "Output filename", long)]
-    output: Option<String>,
+    #[arg(help = "Output filename, required (use - for stdout)", long)]
+    output: String,
     #[arg(help = "Input filename")]
     input: String,
 }
@@ -42,6 +42,10 @@ fn main() -> Result<()> {
         return Ok(());
     }
     let output = render(&program, format, args.inline_js)?;
-    println!("{}", output);
+    if args.output != "-" {
+        fs::write(args.output, output)?;
+    } else {
+        println!("{}", output);
+    }
     Ok(())
 }

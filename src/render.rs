@@ -77,6 +77,7 @@ fn render_program(prg: &Program) -> Result<String> {
         res.push_str(&piece);
     }
     res.push_str("</div>");
+    println!("arrows = {:?}", state.arrows.borrow());
     Ok(res)
 }
 

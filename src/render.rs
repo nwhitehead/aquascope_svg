@@ -2,6 +2,8 @@ use crate::states::{Def, Location, Program, Region, Step, Value};
 use serde_json::json;
 use handlebars::Handlebars;
 use anyhow::Result;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 pub enum Format {
     Svg,
@@ -16,7 +18,7 @@ const SVG_HBS: &[u8] = include_bytes!("./svg.hbs");
 struct RenderState {
     id_prefix: String,
     step_index: usize,
-    arrows: Vec<(String, String)>,
+    arrows: Rc<RefCell<Vec<(String, String)>>>,
 }
 
 impl RenderState {
@@ -24,22 +26,25 @@ impl RenderState {
         Self {
             id_prefix: format!("L{}", step_index),
             step_index,
-            arrows: vec![],
+            arrows: Rc::new(RefCell::new(vec![])),
         }
     }
-    fn extend_id(&mut self, txt: &str) -> Self {
+    fn extend_id(&self, txt: &str) -> Self {
         Self {
             id_prefix: format!("{}.{}", &self.id_prefix, txt),
             step_index: self.step_index,
             arrows: self.arrows.clone(),
         }
     }
-    fn with_step_index(&mut self, step_index: usize) -> &Self {
-        self.step_index = step_index;
-        self
+    fn with_step_index(&self, step_index: usize) -> Self {
+        Self {
+            id_prefix: self.id_prefix.clone(),
+            step_index,
+            arrows: self.arrows.clone(),
+        }
     }
     fn add_arrow(&mut self, src: &str, dest: &str) {
-        self.arrows.push((src.into(), dest.into()));
+        self.arrows.borrow_mut().push((src.into(), dest.into()));
     }
 }
 

@@ -22,6 +22,8 @@ struct Args {
     output_html: bool,
     #[arg(help = "Inline JS dependencies (default is to reference a cdn)", long, default_value_t = false)]
     inline_js: bool,
+    #[arg(help = "Show labels starting with H (heap)", long, default_value_t = false)]
+    show_heap: bool,
     #[arg(help = "Output filename, required (use - for stdout)", long)]
     output: String,
     #[arg(help = "Input filename")]
@@ -41,7 +43,7 @@ fn main() -> Result<()> {
         println!("{:#?}", program);
         return Ok(());
     }
-    let output = render(&program, format, args.inline_js)?;
+    let output = render(&program, format, args.inline_js, args.show_heap)?;
     if args.output != "-" {
         fs::write(args.output, output)?;
     } else {

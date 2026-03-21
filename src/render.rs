@@ -73,8 +73,8 @@ impl RenderState {
     }
 }
 
-pub fn render(prg: &Program, format: Format, inline_js: bool) -> Result<String> {
-    let (prg, arrows) = render_program(&prg)?;
+pub fn render(prg: &Program, format: Format, inline_js: bool, show_heap: bool) -> Result<String> {
+    let (prg, arrows) = render_program(&prg, !show_heap)?;
     let leader = if inline_js {
         &format!("<script>{}</script>", String::from_utf8(LEADER_LINE_JS.to_vec())?)
     } else {
@@ -150,13 +150,13 @@ pub fn render(prg: &Program, format: Format, inline_js: bool) -> Result<String> 
     Ok(output)
 }
 
-fn render_program(prg: &Program) -> Result<(String, Vec<ArrowInfo>)> {
+fn render_program(prg: &Program, hide_heap: bool) -> Result<(String, Vec<ArrowInfo>)> {
     let mut res = String::new();
     res.push_str("<div class=\"program\">");
     let state = RenderState::new(0);
     for (idx, step) in prg.0.iter().enumerate() {
         let mut st = state.with_step_index(idx);
-        let piece = render_step(&step, &mut st)?;
+        let piece = render_step(&step, &mut st, hide_heap)?;
         res.push_str(&piece);
     }
     res.push_str("</div>");
@@ -164,12 +164,12 @@ fn render_program(prg: &Program) -> Result<(String, Vec<ArrowInfo>)> {
     Ok((res, arrows))
 }
 
-fn render_step(step: &Step, state: &mut RenderState) -> Result<String> {
+fn render_step(step: &Step, state: &mut RenderState, hide_heap: bool) -> Result<String> {
     let mut res = String::new();
     res.push_str("<div class=\"step\">");
     res.push_str(&format!("<span class=\"header\">{}</span>", &step.label));
     for (idx, location) in step.locations.iter().enumerate() {
-        let piece = render_location(&location, state, idx > 0)?;
+        let piece = render_location(&location, state, hide_heap)?;
         res.push_str(&piece);
     }
     res.push_str("</div>");
@@ -217,7 +217,7 @@ fn render_definitions(definitions: &[Def], state: &mut RenderState, hide_labels:
 fn render_definition(definition: &Def, state: &mut RenderState, hide_label: bool) -> Result<String> {
     let mut res = String::new();
     res.push_str("<div class=\"definition\">");
-    if !hide_label {
+    if !hide_label || !definition.label.starts_with(&['H']) {
         res.push_str(&format!(
             "<span class=\"label\">{}</span>",
             &definition.label

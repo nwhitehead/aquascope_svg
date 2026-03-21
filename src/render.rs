@@ -7,69 +7,7 @@ pub enum Format {
     Html,
 }
 
-const CSS_STYLE: &str = r#"
-body {
-    background-color: #000;
-    color: white;
-    font: 18px serif;
-    height: 100%;
-    overflow: auto;
-}
-div {
-    display: inline-block;
-    width: fit-content;
-}
-.program {
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
-    background-color: #818;
-}
-.step {
-    display: flex;
-    flex-direction: row;
-    gap: 20px;
-    background-color: #811;
-}
-.step > .header {
-    color: #ff0;
-}
-.location > .header {
-    font-weight: bold;
-}
-.location {
-   display: flex;
-   flex-direction: column;
-}
-.region > .header {
-    font-style: italic;
-}
-.region {
-   display: flex;
-   flex-direction: column;
-}
-.value.array {
-    background-color: #00f;
-    padding: 5px;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    border: 1px solid #888;
-    justify-content: start;
-}
-.value.struct {
-    background-color: #0f0;
-    padding: 5px;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    border: 1px solid #888;
-    justify-content: start;
-}
-.array_child + .array_child {
-    border-left: solid 1px white;
-}
-"#;
+const CSS_STYLE: &[u8] = include_bytes!("./style.css");
 
 const LEADER_LINE_JS: &[u8] = include_bytes!("./leader-line-v1.0.7.min.js");
 
@@ -80,6 +18,7 @@ pub fn render(prg: &Program, format: Format, inline_js: bool) -> Result<String> 
     } else {
         r#"<script src="https://cdn.jsdelivr.net/npm/leader-line@1.0.7/leader-line.min.js"></script>"#
     };
+    let css_style = String::from_utf8(CSS_STYLE.to_vec())?;
     let output = match format {
         Format::Html => format!(
             r#"
@@ -104,7 +43,7 @@ window.addEventListener('load', function() {{ // NOT `DOMContentLoaded`
 </body>
 </html>
 "#,
-            CSS_STYLE, leader, prg
+            css_style, leader, prg
         ),
         Format::Svg => format!(
             r#"
@@ -121,7 +60,7 @@ window.addEventListener('load', function() {{ // NOT `DOMContentLoaded`
   </foreignObject>
 </svg>
 "#,
-            CSS_STYLE, prg
+            css_style, prg
         ),
     };
     Ok(output)

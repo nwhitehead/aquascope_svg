@@ -1,0 +1,61 @@
+body {
+    background-color: #000;
+    color: white;
+    font: 18px serif;
+    height: 100%;
+    overflow: auto;
+}
+div {
+    display: inline-block;
+    width: fit-content;
+}
+.program {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    background-color: #818;
+}
+.step {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    background-color: #811;
+}
+.step > .header {
+    color: #ff0;
+}
+.location > .header {
+    font-weight: bold;
+}
+.location {
+   display: flex;
+   flex-direction: column;
+}
+.region > .header {
+    font-style: italic;
+}
+.region {
+   display: flex;
+   flex-direction: column;
+}
+.value.array {
+    background-color: #00f;
+    padding: 5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid #888;
+    justify-content: start;
+}
+.value.struct {
+    background-color: #0f0;
+    padding: 5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid #888;
+    justify-content: start;
+}
+.array_child + .array_child {
+    border-left: solid 1px white;
+}

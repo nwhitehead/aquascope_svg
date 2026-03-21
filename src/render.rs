@@ -113,26 +113,26 @@ fn render_step(step: &Step, state: &mut RenderState) -> Result<String> {
     let mut res = String::new();
     res.push_str("<div class=\"step\">");
     res.push_str(&format!("<span class=\"header\">{}</span>", &step.label));
-    for location in &step.locations {
-        let piece = render_location(&location, state)?;
+    for (idx, location) in step.locations.iter().enumerate() {
+        let piece = render_location(&location, state, idx > 0)?;
         res.push_str(&piece);
     }
     res.push_str("</div>");
     Ok(res)
 }
 
-fn render_location(loc: &Location, state: &mut RenderState) -> Result<String> {
+fn render_location(loc: &Location, state: &mut RenderState, hide_labels: bool) -> Result<String> {
     let mut res = String::new();
     res.push_str("<div class=\"location\">");
     res.push_str(&format!("<span class=\"header\">{}</span>", &loc.name));
     // A location either has definitions itself (and no regions) OR it has regions and no definitions
     assert!(loc.definitions.is_empty() || loc.regions.is_empty());
     if !loc.definitions.is_empty() {
-        let piece = render_definitions(&loc.definitions, state)?;
+        let piece = render_definitions(&loc.definitions, state, hide_labels)?;
         res.push_str(&piece);
     } else {
         for region in &loc.regions {
-            let piece = render_region(&region, state)?;
+            let piece = render_region(&region, state, hide_labels)?;
             res.push_str(&piece);
         }
     }
@@ -140,33 +140,35 @@ fn render_location(loc: &Location, state: &mut RenderState) -> Result<String> {
     Ok(res)
 }
 
-fn render_region(region: &Region, state: &mut RenderState) -> Result<String> {
+fn render_region(region: &Region, state: &mut RenderState, hide_labels: bool) -> Result<String> {
     let mut res = String::new();
     res.push_str("<div class=\"region\">");
     res.push_str(&format!("<span class=\"header\">{}</span>", &region.name));
-    let pieces = render_definitions(&region.definitions, state)?;
+    let pieces = render_definitions(&region.definitions, state, hide_labels)?;
     res.push_str(&pieces);
     res.push_str("</div>");
     Ok(res)
 }
 
-fn render_definitions(definitions: &[Def], state: &mut RenderState) -> Result<String> {
+fn render_definitions(definitions: &[Def], state: &mut RenderState, hide_labels: bool) -> Result<String> {
     let mut res = String::new();
     for definition in definitions {
-        let piece = render_definition(&definition, state)?;
+        let piece = render_definition(&definition, state, hide_labels)?;
         res.push_str(&piece);
     }
     Ok(res)
 }
 
-fn render_definition(definition: &Def, state: &mut RenderState) -> Result<String> {
+fn render_definition(definition: &Def, state: &mut RenderState, hide_label: bool) -> Result<String> {
     let mut res = String::new();
     res.push_str("<div class=\"definition\">");
-    res.push_str(&format!(
-        "<span class=\"label\">{}</span>",
-        &definition.label
-    ));
-    res.push_str(&"<span class=\"separator\">:</span>");
+    if !hide_label {
+        res.push_str(&format!(
+            "<span class=\"label\">{}</span>",
+            &definition.label
+        ));
+        res.push_str(&"<span class=\"separator\">:</span>");
+    }
     let mut st = state.extend_id(&definition.label);
     let v = render_value(
         &definition.value,

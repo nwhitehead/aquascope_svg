@@ -35,6 +35,7 @@ defln_ = { def_ ~ EOL }
 
 destination = { label ~ ("." ~ DIGITS)* ~ borrow }
 borrow = { BORROW* }
+help = { "." ~ CNAME }
 
 value = { number | array_value | tuple_value | char_value | struct_value | ptr_value | invalid_value }
 
@@ -42,7 +43,7 @@ array_value = { "[" ~ value ~ ("," ~ value)* ~ "]" }
 tuple_value = { "(" ~ value ~ ("," ~ value)* ~ ")" }
 char_value = { "'" ~ !("'") ~ ANY ~ "'" }
 struct_value = { label ~ "{" ~ (def_ ~ ("," ~ def_)*)? ~ "}" }
-ptr_value = { "ptr" ~ "(" ~ destination ~ ")" }
+ptr_value = { "ptr" ~ "(" ~ destination ~ ")" ~ help* }
 invalid_value = { "*" }
 
 number = { ( "+" | "-" )? ~ (FLOAT | INT) }

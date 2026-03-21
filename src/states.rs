@@ -24,6 +24,7 @@ pub struct Ptr {
     pub name: String,
     pub selectors: Vec<u32>,
     pub borrow: usize,
+    pub help: Vec<String>,
 }
 
 #[derive(Debug, Clone)]

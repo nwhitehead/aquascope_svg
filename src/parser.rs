@@ -249,10 +249,18 @@ fn parse_struct_value(pair: Pair<Rule>) -> Value {
 }
 
 fn parse_ptr_value(pair: Pair<Rule>) -> Value {
+    let mut res = Ptr { name: "".into(), selectors: vec![], borrow: 0, help: vec![] };
+    let mut valid = false;
     for inner in pair.into_inner() {
         if inner.as_rule() == Rule::destination {
-            return Value::Pointer(parse_destination(inner));
+            res = parse_destination(inner);
+            valid = true;
+        } else if inner.as_rule() == Rule::help {
+            res.help.push(inner.as_str().to_string());
         }
+    }
+    if valid {
+        return Value::Pointer(res);
     }
     Value::Invalid
 }
@@ -282,6 +290,7 @@ fn parse_destination(pair: Pair<Rule>) -> Ptr {
         name: name.unwrap_or_default(),
         selectors,
         borrow,
+        help: vec![],
     }
 }
 

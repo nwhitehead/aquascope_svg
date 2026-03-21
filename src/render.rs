@@ -68,7 +68,6 @@ pub fn render(prg: &Program, format: Format, inline_js: bool) -> Result<String> 
                     document.getElementById('{}'),
                     document.getElementById('{}'),
                     {{
-                        startSocket: 'right',
                         color: 'var(--arrow)',
                     }}
                 );\n", src, dst));

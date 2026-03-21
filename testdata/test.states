@@ -6,10 +6,10 @@ x: 'h'
 # L1
 ## Stack
 ### main
-x: [5.2, 1]
+x: [5.2, (0, ptr(H0), 1)]
 y: (2, 1)
 ## Heap
-H0: ptr(x.1)
+H0: 1
 
 # L2
 ## Stack
@@ -19,11 +19,10 @@ H0: ptr(x.1)
 # L3
 ## Stack
 ### main
-x: foo{i: 3, j: `bar`{}}
+x: foo{i: 3, j: `bar`{p: ptr(H0)}}
 y: *
 ## Heap
-H0: ptr( x.1 )
-H1: ptr(H1)
+H0: ptr( x ).n
 
 # L4
 ## Stack

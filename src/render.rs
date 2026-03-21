@@ -11,6 +11,7 @@ pub enum Format {
 const CSS_STYLE: &[u8] = include_bytes!("./style.css");
 const LEADER_LINE_JS: &[u8] = include_bytes!("./leader-line-v1.0.7.min.js");
 const INDEX_HBS: &[u8] = include_bytes!("./index.hbs");
+const SVG_HBS: &[u8] = include_bytes!("./svg.hbs");
 
 pub fn render(prg: &Program, format: Format, inline_js: bool) -> Result<String> {
     let prg = render_program(&prg)?;
@@ -21,27 +22,12 @@ pub fn render(prg: &Program, format: Format, inline_js: bool) -> Result<String> 
     };
     let css_style = String::from_utf8(CSS_STYLE.to_vec())?;
     let index_hbs = String::from_utf8(INDEX_HBS.to_vec())?;
-    let mut reg = Handlebars::new();
+    let svg_hbs = String::from_utf8(SVG_HBS.to_vec())?;
+    let reg = Handlebars::new();
 
     let output = match format {
         Format::Html => reg.render_template(&index_hbs, &json!({"style": css_style, "content": prg, "script": leader}))?,
-        Format::Svg => format!(
-            r#"
-<svg viewBox="0 0 2000 2000" xmlns="http://www.w3.org/2000/svg">
-  <style>
-{}
-  </style>
-  <foreignObject x="0" y="0" width="2000" height="2000">
-    <div xmlns="http://www.w3.org/1999/xhtml">
-      <pre>{}</pre>
-    </div>
-    <script>console.log('hi from svg');
-    </script>
-  </foreignObject>
-</svg>
-"#,
-            css_style, prg
-        ),
+        Format::Svg => reg.render_template(&svg_hbs, &json!({"style": css_style, "content": prg, "script": leader}))?,
     };
     Ok(output)
 }

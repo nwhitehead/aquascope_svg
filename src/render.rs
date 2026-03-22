@@ -91,19 +91,12 @@ impl RenderState {
     }
 }
 
-pub fn render(prg: &Program, format: Format, inline_js: bool, show_heap: bool) -> Result<String> {
+pub fn render(prg: &Program, format: Format, show_heap: bool) -> Result<String> {
     let (prg, arrows) = render_program(prg, !show_heap)?;
     if DEBUG_ARROWS {
         println!("arrows = {:?}", &arrows);
     }
-    let leader = if inline_js {
-        &format!(
-            "<script>{}</script>",
-            String::from_utf8(LEADER_LINE_JS.to_vec())?
-        )
-    } else {
-        r#"<script src="https://cdn.jsdelivr.net/npm/leader-line@1.0.7/leader-line.min.js"></script>"#
-    };
+    let leader = &format!("<script>{}</script>", String::from_utf8(LEADER_LINE_JS.to_vec())?);
     let css_style = String::from_utf8(CSS_STYLE.to_vec())?;
     let index_hbs = String::from_utf8(INDEX_HBS.to_vec())?;
     let svg_hbs = String::from_utf8(SVG_HBS.to_vec())?;

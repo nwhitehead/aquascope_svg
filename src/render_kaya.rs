@@ -31,14 +31,8 @@ struct Args {
     )]
     #[arg(help = "Output diagram in PNG", long, default_value_t = false)]
     output_png: bool,
-    #[arg(help = "Set scale factor for PNG, 1.0 is web standard 96 DPI, 3.125 is 300 DPI", long, default_value_t = 1.0)]
-    output_png_scale: f64,
-    #[arg(
-        help = "Inline JS dependencies (default is to reference a CDN)",
-        long,
-        default_value_t = false
-    )]
-    inline_js: bool,
+    #[arg(help = "Set scale factor for PNG, 1.0 is web standard 96 DPI, 3.125 is 300 DPI", long)]
+    output_png_scale: Option<f64>,
     #[arg(
         help = "Show labels starting with H (heap) (default is to hide)",
         long,
@@ -98,9 +92,9 @@ fn main() -> Result<()> {
         println!("{:#?}", program);
         return Ok(());
     }
-    let output = render(&program, format, args.inline_js, args.show_heap)?;
+    let output = render(&program, format, args.show_heap)?;
     if args.output_png {
-        save_png_from(output, args.output, args.output_png_scale)?;
+        save_png_from(output, args.output, args.output_png_scale.unwrap_or(1.0))?;
     } else {
         if args.output != "-" {
             fs::write(args.output, output)?;

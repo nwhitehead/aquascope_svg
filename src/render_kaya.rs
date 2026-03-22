@@ -9,6 +9,8 @@ use render::{Format, render};
 use std::fs;
 use headless_chrome::Browser;
 use headless_chrome::protocol::cdp::Page;
+use headless_chrome::protocol::cdp::Target::CreateTarget;
+use headless_chrome::types::Bounds;
 
 #[derive(Debug, Parser)]
 #[command(name = "render_states")]
@@ -49,14 +51,44 @@ struct Args {
 
 fn save_png_from(content: String, filename: String) -> Result<()> {
     let browser = Browser::default()?;
+    // let tab = browser.new_tab_with_options(CreateTarget {
+    //     url: format!("about:blank"),
+    //     left: None,
+    //     top: None,
+    //     width: Some(1080),
+    //     height: Some(5000),
+    //     window_state: None,
+    //     browser_context_id: None,
+    //     enable_begin_frame_control: None,
+    //     new_window: None,
+    //     background: None,
+    //     for_tab: None,
+    //     hidden: None,
+    // })?;
     let tab = browser.new_tab()?;
+    tab.set_bounds(Bounds::Normal {
+        left: None,
+        top: None,
+        width: Some(2048.0),
+        height: Some(2048.0),
+    })?;
     let data_url = format!("data:text/html;charset=utf-8;base64,{}", base64::encode(&content));
-    tab.navigate_to(data_url.as_str())?;
-    std::thread::sleep(std::time::Duration::from_secs(1)); // Wait
+    let viewport = tab.navigate_to(data_url.as_str())?
+        .wait_until_navigated()?;
+        // .wait_for_element("div.program")?;
+    let element = tab.find_element("div.program")?;
+    element.scroll_into_view()?;
+    let box_model = element.get_box_model()?;
+    let mut viewport = box_model.margin_viewport();
+    viewport.scale = 2.0;
+
+        // .get_box_model()?
+        // .margin_viewport();
+    //std::thread::sleep(std::time::Duration::from_secs(1)); // Wait
     let png_data = tab.capture_screenshot(
         Page::CaptureScreenshotFormatOption::Png,
-        None,
-        None,
+        Some(100),
+        Some(viewport),
         true)?;
     std::fs::write(filename, png_data)?;
     Ok(())

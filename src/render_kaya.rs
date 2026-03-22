@@ -10,7 +10,7 @@ use std::fs;
 
 #[derive(Debug, Parser)]
 #[command(name = "render_states")]
-#[command(about = "A tool for rendering STATES diagrams", long_about = None)]
+#[command(about = "A tool for rendering Kaya diagrams", long_about = None)]
 struct Args {
     #[arg(
         help = "Parse the input and show debug parsing output to stdout",
@@ -21,13 +21,13 @@ struct Args {
     #[arg(help = "Output an HTML fragment", long, default_value_t = false)]
     output_html: bool,
     #[arg(
-        help = "Inline JS dependencies (default is to reference a cdn)",
+        help = "Inline JS dependencies (default is to reference a CDN)",
         long,
         default_value_t = false
     )]
     inline_js: bool,
     #[arg(
-        help = "Show labels starting with H (heap)",
+        help = "Show labels starting with H (heap) (default is to hide)",
         long,
         default_value_t = false
     )]

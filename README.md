@@ -123,6 +123,22 @@ A Markdown plugin doing this is outside the scope of this project.
 
 The `render_kaya` tool has the following options:
 
+```
+A tool for rendering Kaya diagrams
+
+Usage: render_kaya [OPTIONS] --output <OUTPUT> <INPUT>
+
+Arguments:
+  <INPUT>  Input filename
+
+Options:
+      --show-parse       Parse the input and show debug parsing output to stdout
+      --output-html      Output an HTML fragment
+      --inline-js        Inline JS dependencies (default is to reference a CDN)
+      --show-heap        Show labels starting with H (heap) (default is to hide)
+      --output <OUTPUT>  Output filename, required (use - for stdout)
+  -h, --help             Print help
+```
 
 ## Building from source
 

@@ -1,4 +1,4 @@
-//! Rust data structure matching STATES diagram format for parsing
+//! Rust data structure matching Kaya diagram format for parsing
 
 #![allow(dead_code)]
 

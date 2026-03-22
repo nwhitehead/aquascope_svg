@@ -1,4 +1,4 @@
-// pest grammar of STATES diagram format
+// pest grammar of Kaya diagram format
 
 WHITESPACE = _{ " " | "\t" }
 COMMENT = _{ ("//" ~ (!"\n" ~ ANY)*) | ("/*" ~ (!"*/" ~ ANY)* ~ "*/") }

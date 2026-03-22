@@ -5,7 +5,7 @@ use pest_derive::Parser;
 use crate::states::{Def, Location, NamedStruct, Program, Ptr, Region, Step, Value};
 
 #[derive(Parser)]
-#[grammar = "states_grammar.pest"]
+#[grammar = "grammar.pest"]
 struct StatesParser;
 
 pub fn parse(content: &str) -> Result<Program, pest::error::Error<Rule>> {

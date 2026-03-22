@@ -77,8 +77,9 @@ div.step > .header {
     font-weight: bold;
 }
 .location {
-   display: flex;
-   flex-direction: column;
+    margin-right: 40px;
+    display: flex;
+    flex-direction: column;
 }
 .region > .header {
     font-size: 16px;

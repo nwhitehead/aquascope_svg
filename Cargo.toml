@@ -1,8 +1,8 @@
 [package]
-name = "aquascope_svg"
+name = "kaya"
 version = "0.1.0"
 edition = "2024"
-default-run = "render_states"
+default-run = "render_kaya"
 
 [dependencies]
 anyhow = "1.0.102"
@@ -17,9 +17,9 @@ serde_json = "1.0"
 assert_cmd = "2.0"
 
 [[bin]]
-name = "aquascope_json_to_states"
-path = "src/json_to_states.rs"
+name = "aquascope_json_to_kaya"
+path = "src/json_to_kaya.rs"
 
 [[bin]]
-name = "render_states"
-path = "src/render_states.rs"
+name = "render_kaya"
+path = "src/render_kaya.rs"

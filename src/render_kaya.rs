@@ -50,16 +50,9 @@ struct Args {
 fn save_png_from(content: String, filename: String) -> Result<()> {
     let browser = Browser::default()?;
     let tab = browser.new_tab()?;
-    let data = r#"
-    <!DOCTYPE html>
-    <html>
-    <body>
-        <h1>Hello World!</h1>
-    </body>
-    </html>
-    "#;
-    tab.navigate_to(format!("data:text/html;charset=utf-8,{}", content).as_str())?;
-    // Take a screenshot of the entire browser window
+    let data_url = format!("data:text/html;charset=utf-8;base64,{}", base64::encode(&content));
+    tab.navigate_to(data_url.as_str())?;
+    std::thread::sleep(std::time::Duration::from_secs(1)); // Wait
     let png_data = tab.capture_screenshot(
         Page::CaptureScreenshotFormatOption::Png,
         None,

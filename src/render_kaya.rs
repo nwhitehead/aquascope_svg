@@ -31,6 +31,8 @@ struct Args {
     )]
     #[arg(help = "Output diagram in PNG", long, default_value_t = false)]
     output_png: bool,
+    #[arg(help = "Set scale factor for PNG, 1.0 is web standard 96 DPI, 3.125 is 300 DPI", long, default_value_t = 1.0)]
+    output_png_scale: f64,
     #[arg(
         help = "Inline JS dependencies (default is to reference a CDN)",
         long,
@@ -49,22 +51,8 @@ struct Args {
     input: String,
 }
 
-fn save_png_from(content: String, filename: String) -> Result<()> {
+fn save_png_from(content: String, filename: String, scale: f64) -> Result<()> {
     let browser = Browser::default()?;
-    // let tab = browser.new_tab_with_options(CreateTarget {
-    //     url: format!("about:blank"),
-    //     left: None,
-    //     top: None,
-    //     width: Some(1080),
-    //     height: Some(5000),
-    //     window_state: None,
-    //     browser_context_id: None,
-    //     enable_begin_frame_control: None,
-    //     new_window: None,
-    //     background: None,
-    //     for_tab: None,
-    //     hidden: None,
-    // })?;
     let tab = browser.new_tab()?;
     tab.set_bounds(Bounds::Normal {
         left: None,
@@ -72,15 +60,18 @@ fn save_png_from(content: String, filename: String) -> Result<()> {
         width: Some(2048.0),
         height: Some(2048.0),
     })?;
+    // Create data uri that base64 encodes full page
     let data_url = format!("data:text/html;charset=utf-8;base64,{}", base64::encode(&content));
-    let viewport = tab.navigate_to(data_url.as_str())?
-        .wait_until_navigated()?;
-        // .wait_for_element("div.program")?;
+    // Go to uri and wait for it to be ready
+    tab.navigate_to(data_url.as_str())?
+        .wait_until_navigated()?
+        .wait_for_element("div.program")?;
+    // Get viewport for diagram
     let element = tab.find_element("div.program")?;
     element.scroll_into_view()?;
     let box_model = element.get_box_model()?;
     let mut viewport = box_model.margin_viewport();
-    viewport.scale = 2.0;
+    viewport.scale = scale;
 
         // .get_box_model()?
         // .margin_viewport();
@@ -109,7 +100,7 @@ fn main() -> Result<()> {
     }
     let output = render(&program, format, args.inline_js, args.show_heap)?;
     if args.output_png {
-        save_png_from(output, args.output)?;
+        save_png_from(output, args.output, args.output_png_scale)?;
     } else {
         if args.output != "-" {
             fs::write(args.output, output)?;

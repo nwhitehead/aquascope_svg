@@ -7,6 +7,8 @@ use clap::Parser;
 use parser::parse;
 use render::{Format, render};
 use std::fs;
+use headless_chrome::Browser;
+use headless_chrome::protocol::cdp::Page;
 
 #[derive(Debug, Parser)]
 #[command(name = "render_states")]
@@ -25,6 +27,13 @@ struct Args {
         long,
         default_value_t = false
     )]
+    #[arg(help = "Output diagram in PNG", long, default_value_t = false)]
+    output_png: bool,
+    #[arg(
+        help = "Inline JS dependencies (default is to reference a CDN)",
+        long,
+        default_value_t = false
+    )]
     inline_js: bool,
     #[arg(
         help = "Show labels starting with H (heap) (default is to hide)",
@@ -38,9 +47,31 @@ struct Args {
     input: String,
 }
 
+fn save_png_from(content: String, filename: String) -> Result<()> {
+    let browser = Browser::default()?;
+    let tab = browser.new_tab()?;
+    let data = r#"
+    <!DOCTYPE html>
+    <html>
+    <body>
+        <h1>Hello World!</h1>
+    </body>
+    </html>
+    "#;
+    tab.navigate_to(format!("data:text/html;charset=utf-8,{}", content).as_str())?;
+    // Take a screenshot of the entire browser window
+    let png_data = tab.capture_screenshot(
+        Page::CaptureScreenshotFormatOption::Png,
+        None,
+        None,
+        true)?;
+    std::fs::write(filename, png_data)?;
+    Ok(())
+}
+
 fn main() -> Result<()> {
     let args = Args::parse();
-    let format = if args.output_html {
+    let format = if args.output_html || args.output_png {
         Format::Html
     } else {
         Format::Svg
@@ -52,10 +83,14 @@ fn main() -> Result<()> {
         return Ok(());
     }
     let output = render(&program, format, args.inline_js, args.show_heap)?;
-    if args.output != "-" {
-        fs::write(args.output, output)?;
+    if args.output_png {
+        save_png_from(output, args.output)?;
     } else {
-        println!("{}", output);
+        if args.output != "-" {
+            fs::write(args.output, output)?;
+        } else {
+            println!("{}", output);
+        }
     }
     Ok(())
 }

@@ -9,6 +9,7 @@ use render::{Format, render};
 use std::fs;
 use headless_chrome::Browser;
 use headless_chrome::protocol::cdp::Page;
+use headless_chrome::protocol::cdp::DOM::RGBA;
 use headless_chrome::protocol::cdp::Target::CreateTarget;
 use headless_chrome::types::Bounds;
 
@@ -60,6 +61,14 @@ fn save_png_from(content: String, filename: String, scale: f64) -> Result<()> {
     tab.navigate_to(data_url.as_str())?
         .wait_until_navigated()?
         .wait_for_element("div.program")?;
+    // Set background color to transparent so transparency in body shows up in png if desired
+    tab.set_background_color(RGBA {
+        r: 0,
+        g: 0,
+        b: 0,
+        a: Some(0.0), // Fully transparent
+    })?;
+
     // Get viewport for diagram
     let element = tab.find_element("div.program")?;
     element.scroll_into_view()?;

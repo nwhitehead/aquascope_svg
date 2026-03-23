@@ -45,7 +45,7 @@ struct Args {
 
 #[derive(Clone)]
 struct Headless {
-    browser: Browser,
+    _browser: Browser,
     tab: Arc<Tab>,
 }
 
@@ -66,7 +66,7 @@ impl Headless {
             b: 0,
             a: Some(0.0),
         })?;
-        Ok(Self { browser, tab })
+        Ok(Self { _browser: browser, tab })
     }
     fn save_png_from(&mut self, content: String, filename: String, scale: f64) -> Result<()> {
         // Create data uri that base64 encodes full page
@@ -97,7 +97,7 @@ impl Headless {
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    if args.input.len() == 0 {
+    if args.input.is_empty() {
         return Err(anyhow!("At least one input filename is required."));
     }
 
@@ -146,12 +146,10 @@ fn main() -> Result<()> {
                 args.output_png_scale.unwrap_or(1.0),
             )?;
             headless = Some(h.clone());
+        } else if output_filename != "-" {
+            fs::write(output_filename, output)?;
         } else {
-            if output_filename != "-" {
-                fs::write(output_filename, output)?;
-            } else {
-                println!("{}", output);
-            }
+            println!("{}", output);
         }
     }
     Ok(())

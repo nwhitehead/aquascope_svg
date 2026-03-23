@@ -1,7 +1,10 @@
-//! Rust data structure matching Kaya diagram format for parsing
+//! Rust data structures matching Kaya diagram format for parsing
 
 #![allow(dead_code)]
 
+use serde::{Serialize, Deserialize};
+
+#[derive(Serialize, Deserialize)]
 #[derive(Debug, Clone)]
 pub enum Value {
     Number(f64),
@@ -13,12 +16,14 @@ pub enum Value {
     Invalid,
 }
 
+#[derive(Serialize, Deserialize)]
 #[derive(Debug, Clone)]
 pub struct NamedStruct {
     pub name: String,
     pub fields: Vec<(String, Value)>,
 }
 
+#[derive(Serialize, Deserialize)]
 #[derive(Debug, Clone)]
 pub struct Ptr {
     pub name: String,
@@ -27,18 +32,21 @@ pub struct Ptr {
     pub help: Vec<String>,
 }
 
+#[derive(Serialize, Deserialize)]
 #[derive(Debug, Clone)]
 pub struct Def {
     pub label: String,
     pub value: Value,
 }
 
+#[derive(Serialize, Deserialize)]
 #[derive(Debug, Clone)]
 pub struct Region {
     pub name: String,
     pub definitions: Vec<Def>,
 }
 
+#[derive(Serialize, Deserialize)]
 #[derive(Debug, Clone)]
 pub struct Location {
     pub name: String,
@@ -46,11 +54,13 @@ pub struct Location {
     pub definitions: Vec<Def>,
 }
 
+#[derive(Serialize, Deserialize)]
 #[derive(Debug, Clone)]
 pub struct Step {
     pub label: String,
     pub locations: Vec<Location>,
 }
 
+#[derive(Serialize, Deserialize)]
 #[derive(Debug, Clone)]
 pub struct Program(pub Vec<Step>);

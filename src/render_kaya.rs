@@ -2,6 +2,7 @@ mod parser;
 mod render;
 mod states;
 
+use anyhow::anyhow;
 use anyhow::Result;
 use clap::Parser;
 use parser::parse;
@@ -23,10 +24,6 @@ struct Args {
         default_value_t = false
     )]
     show_parse: bool,
-    #[arg(help = "Output an HTML fragment", long, default_value_t = false)]
-    output_html: bool,
-    #[arg(help = "Output diagram in PNG", long, default_value_t = false)]
-    output_png: bool,
     #[arg(help = "Set scale factor for PNG output, 1.0 is web standard 96 DPI, 3.125 is 300 DPI", long)]
     output_png_scale: Option<f64>,
     #[arg(
@@ -84,6 +81,10 @@ fn main() -> Result<()> {
     let args = Args::parse();
     let output_html = args.output.ends_with(".html") || args.output.ends_with(".HTML");
     let output_png = args.output.ends_with(".png");
+    let output_svg = args.output.ends_with(".svg");
+    if !output_html && !output_png && !output_svg {
+        return Err(anyhow!("Not a valid output format."));
+    }
     let format = if output_html || output_png {
         Format::Html
     } else {
@@ -96,7 +97,7 @@ fn main() -> Result<()> {
         return Ok(());
     }
     let output = render(&program, format, args.show_heap)?;
-    if args.output_png {
+    if output_png {
         save_png_from(output, args.output, args.output_png_scale.unwrap_or(1.0))?;
     } else {
         if args.output != "-" {

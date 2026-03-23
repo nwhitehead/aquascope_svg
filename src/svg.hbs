@@ -1,11 +1,27 @@
-<svg viewBox="0 0 2000 2000" xmlns="http://www.w3.org/2000/svg">
-  <style>
-{{ style }}
-  </style>
-  <foreignObject x="0" y="0" width="2000" height="2000">
+<?xml version="1.0" encoding="utf-8"?>
+<svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+  <foreignObject x="0" y="0" width="1000" height="1000">
+    <style>
+    {{{ style }}}
+    </style>
     <div xmlns="http://www.w3.org/1999/xhtml">
-      {{{ contents }}}
+      {{{ content }}}
     </div>
-    {{{ script }}}
+    {{!-- <script src="https://cdn.jsdelivr.net/npm/leader-line@1.0.7/leader-line.min.js" defer></script> --}}
+<script type="application/javascript">
+ <![CDATA[
+    console.log('cdata');
+ ]]>
+</script>
+    <script>
+    function getCssVar(name) {
+        let bodyStyles = window.getComputedStyle(document.body);
+        return bodyStyles.getPropertyValue(`--${name}`);
+    }
+    window.addEventListener('load', function() {
+    });
+    {{{ arrows }}}
+    </script>
+
   </foreignObject>
 </svg>

@@ -12,7 +12,7 @@ use headless_chrome::Browser;
 use headless_chrome::protocol::cdp::Page;
 use headless_chrome::protocol::cdp::DOM::RGBA;
 use headless_chrome::types::Bounds;
-use base64::{engine::general_purpose::URL_SAFE, Engine as _};
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 
 #[derive(Debug, Parser)]
 #[command(name = "render_states")]
@@ -48,7 +48,7 @@ fn save_png_from(content: String, filename: String, scale: f64) -> Result<()> {
         height: Some(2048.0),
     })?;
     // Create data uri that base64 encodes full page
-    let data_url = format!("data:text/html;charset=utf-8;base64,{}", URL_SAFE.encode(&content));
+    let data_url = format!("data:text/html;charset=utf-8;base64,{}", STANDARD.encode(&content));
     // Go to uri and wait for it to be ready
     tab.navigate_to(data_url.as_str())?
         .wait_until_navigated()?

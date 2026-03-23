@@ -149,7 +149,7 @@ pub fn render(prg: &Program, format: Format, show_heap: bool) -> Result<String> 
     if DEBUG_ARROWS {
         println!("arrows = {:?}", &arrows);
     }
-    let leader = &format!("<script>{}</script>", String::from_utf8(LEADER_LINE_JS.to_vec())?);
+    let leader = String::from_utf8(LEADER_LINE_JS.to_vec())?;
     let css_style = String::from_utf8(CSS_STYLE.to_vec())?;
     let index_hbs = String::from_utf8(INDEX_HBS.to_vec())?;
     let svg_hbs = String::from_utf8(SVG_HBS.to_vec())?;
@@ -232,21 +232,18 @@ pub fn render(prg: &Program, format: Format, show_heap: bool) -> Result<String> 
                 );", src, dst, inner));
         }
     }
-    let output = match format {
-        Format::Html => reg.render_template(
-            &index_hbs,
-            &json!({
-                "style": css_style,
-                "content": prg,
-                "script": leader,
-                "arrows": &arrow_txt,
-            }),
-        )?,
-        Format::Svg => reg.render_template(
-            &svg_hbs,
-            &json!({"style": css_style, "content": prg, "script": leader}),
-        )?,
+    let template = match format {
+        Format::Html => &index_hbs,
+        Format::Svg => &svg_hbs,
     };
+    let output = reg.render_template(template,
+        &json!({
+            "style": css_style,
+            "content": prg,
+            "script": leader,
+            "arrows": &arrow_txt,
+        }),
+    )?;
     Ok(output)
 }
 

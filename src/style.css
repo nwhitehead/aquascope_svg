@@ -35,7 +35,7 @@
     --arrow5: color-mix(in oklab, var(--arrow_first) 0%, var(--arrow_last));
 
 }
-body {
+div.program {
     background-color: var(--bg);
     color: var(--fg);
     font: 18px serif;
@@ -77,6 +77,7 @@ div.step > .header {
     padding: 5px;
     padding-right: 15px;
     border-right: solid 1px var(--grid2);
+    border-radius: 0;
 }
 .location > .header {
     font-weight: bold;

@@ -18,9 +18,13 @@ The structure generall follows Markdown with up to 3 levels of nesting.
 * Each step starts with a Markdown-style header beginning with `#` and then a
   name. (For Aquascope these are labelled `L0` and up).
 * Steps may contain zero or more locations.
-* A location starts with a Markdown style header beginning with `##` and then an optional name. (Location names might be `Stack` or `Heap`).
-* Location contents consist of zero or more regions, or zero or more definitions.
-* A region starts with a Markdown style header beginning with `###` and then an optional name. (Regions are used for stack to divide frames, example region name is `main`).
+* A location starts with a Markdown style header beginning with `##` and then an
+  optional name. (Location names might be `Stack` or `Heap`).
+* Location contents consist of zero or more regions, or zero or more
+  definitions.
+* A region starts with a Markdown style header beginning with `###` and then an
+  optional name. (Regions are used for stack to divide frames, example region
+  name is `main`).
 * Region contents consist of zero or more definitions.
 * If a location has regions then all content of the location must be in
   regions (cannot mix definitions and regions inside a location).
@@ -28,7 +32,8 @@ The structure generall follows Markdown with up to 3 levels of nesting.
 The  contents are lists of definitions.
 
 * A definition is a label, `:`, then a value, then end of line.
-* Labels can be any alphanumeric/digits/underscore text starting with a non-digit.
+* Labels can be any alphanumeric/digits/underscore text starting with a
+  non-digit.
 * Labels can optionaly be escaped with backticks to allow arbitrary text inside
   (except backticks).
 * Values can be:
@@ -40,10 +45,12 @@ The  contents are lists of definitions.
     * an integer number
     * a floating point number
     * `'`, a character, `'`
-    * a label, `{`, then a comma separated list of label, `:`, value, `}` (representing struct values)
+    * a label, `{`, then a comma separated list of label, `:`, value, `}`
+      (representing struct values)
 * A destination is a label followed by zero or more copies of `.` and natural
   numbers (indicating paths within values).
-* A destination can also be followed by zero or more `'` (to disambiguate shadowed names).
+* A destination can also be followed by zero or more `'` (to disambiguate
+  shadowed names).
 
 ## Destinations
 
@@ -93,6 +100,13 @@ the pointer arrow.
 
 .straight .arc .fluid   Strategies to draw the arrow.
 .magnet .grid           Default is .fluid.
+
+.svlight                Set gravity of the source, from very light
+.slight                 to very heavy. Higher gravity influences the
+.sheavy                 arrow more.
+.svheavy
+
+.dvlight ...            Set gravity of the destination.
 ```
 
 ## Example

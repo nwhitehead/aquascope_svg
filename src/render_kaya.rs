@@ -6,7 +6,7 @@ use anyhow::anyhow;
 use anyhow::Result;
 use clap::Parser;
 use parser::parse;
-use render::{Format, render};
+use render::render;
 use std::fs;
 use headless_chrome::Browser;
 use headless_chrome::protocol::cdp::Page;
@@ -32,7 +32,7 @@ struct Args {
         default_value_t = false
     )]
     show_heap: bool,
-    #[arg(help = "Output filename, required, (use - for stdout), (HTML/SVG/PNG allowed)", long)]
+    #[arg(help = "Output filename, required, (use - for stdout), (HTML/PNG allowed)", long)]
     output: String,
     #[arg(help = "Input filename")]
     input: String,
@@ -81,22 +81,16 @@ fn main() -> Result<()> {
     let args = Args::parse();
     let output_html = args.output.ends_with(".html") || args.output.ends_with(".HTML");
     let output_png = args.output.ends_with(".png");
-    let output_svg = args.output.ends_with(".svg");
-    if !output_html && !output_png && !output_svg {
+    if !output_html && !output_png {
         return Err(anyhow!("Not a valid output format."));
     }
-    let format = if output_html || output_png {
-        Format::Html
-    } else {
-        Format::Svg
-    };
     let contents = fs::read_to_string(&args.input)?;
     let program = parse(&contents)?;
     if args.show_parse {
         println!("{:#?}", program);
         return Ok(());
     }
-    let output = render(&program, format, args.show_heap)?;
+    let output = render(&program, args.show_heap)?;
     if output_png {
         save_png_from(output, args.output, args.output_png_scale.unwrap_or(1.0))?;
     } else {

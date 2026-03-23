@@ -4,10 +4,10 @@ Kaya is a set of tools for producing beautiful memory state diagrams for small
 example programs.
 
 Kaya introduces a human readable diagram text format that can be used to create
-diagrams for any language. The diagrams created can be in HTML, SVG, or PNG
-format and aim to be high quality for publication online or in print. Kaya can
-also connect to the Aquascope project to automatically analyze Rust code and
-produce diagrams.
+diagrams for any language. The diagrams created can be in HTML or PNG format and
+aim to be high quality for publication online or in print. Kaya can also connect
+to the Aquascope project to automatically analyze Rust code and produce
+diagrams.
 
 ## Kaya Format
 
@@ -83,7 +83,7 @@ in the final rendered Markdown.
 The general flow:
 
 ```
-Rust code --> JSON analysis --> Kaya format --> HTML/SVG/PNG diagram
+Rust code --> JSON analysis --> Kaya format --> HTML/PNG diagram
 ```
 
 #### Details
@@ -103,7 +103,7 @@ Next, this project has a tool `aquascope_json_to_kaya` for converting the JSON
 format to `kaya` format. 
 
 This project has a tool `render_kaya` for rendering `kaya` diagrams into
-HTML/SVG/PNG. Usually this will be called from some sort of document preparation
+HTML/PNG. Usually this will be called from some sort of document preparation
 system (e.g. during Markdown rendering).
 
 #### Markdown plugin
@@ -132,13 +132,16 @@ Arguments:
   <INPUT>  Input filename
 
 Options:
-      --show-parse       Parse the input and show debug parsing output to stdout
-      --output-html      Output an HTML fragment
-      --inline-js        Inline JS dependencies (default is to reference a CDN)
-      --show-heap        Show labels starting with H (heap) (default is to hide)
-      --output <OUTPUT>  Output filename, required (use - for stdout)
-  -h, --help             Print help
-```
+      --show-parse
+          Parse the input and show debug parsing output to stdout
+      --output-png-scale <OUTPUT_PNG_SCALE>
+          Set scale factor for PNG output, 1.0 is web standard 96 DPI, 3.125 is 300 DPI
+      --show-heap
+          Show labels starting with H (heap) (default is to hide)
+      --output <OUTPUT>
+          Output filename, required, (use - for stdout), (HTML/PNG allowed)
+  -h, --help
+          Print help```
 
 ## Building from source
 

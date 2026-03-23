@@ -35,6 +35,9 @@
     --arrow5: color-mix(in oklab, var(--arrow_first) 0%, var(--arrow_last));
 
 }
+body {
+    background-color: var(--bg);
+}
 div.program {
     background-color: var(--bg);
     color: var(--fg);

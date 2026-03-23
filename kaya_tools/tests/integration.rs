@@ -37,14 +37,14 @@ fn test_parse_all_states() {
 
 #[test]
 fn test_basic_json() {
-    let mut cmd = Command::cargo_bin("aquascope_json_to_states").unwrap();
+    let mut cmd = Command::cargo_bin("aquascope_json_to_kaya").unwrap();
     cmd.arg("../testdata/json/basic.json").assert().success();
 }
 
 #[test]
 fn test_all_testdata_json() {
     for file in TEST_FILES {
-        let mut cmd = Command::cargo_bin("aquascope_json_to_states").unwrap();
+        let mut cmd = Command::cargo_bin("aquascope_json_to_kaya").unwrap();
         cmd.arg(file).assert().success();
     }
 }

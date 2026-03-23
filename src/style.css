@@ -1,5 +1,5 @@
 :root {
-    --bg: transparent;
+    --bg: #1f1f1f;
     --grid1: #282828;
     --grid2: #404040;
     --fg: #ccc;
@@ -19,7 +19,12 @@
 
     --arrow_first: #f3dc22ff;
     --arrow_last: #f34320ff;
+
+    --arrow_width: 12.0;
+    --arrow_size: 0.6;
+    --arrow_plug_size: 0.6;
     --arrow_outline: #000;
+    --arrow_outline_size: 0.3;
 }
 :root {
     --arrow0: color-mix(in oklab, var(--arrow_first) 100%, var(--arrow_last));

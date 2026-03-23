@@ -7,6 +7,10 @@
 {{{ content }}}
 {{{ script }}}
 <script>
+function getCssVar(name) {
+    let bodyStyles = window.getComputedStyle(document.body);
+    return bodyStyles.getPropertyValue(`--${name}`);
+}
 window.addEventListener('load', function() {
   {{{ arrows }}}
 });

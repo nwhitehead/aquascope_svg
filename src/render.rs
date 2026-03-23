@@ -10,6 +10,14 @@ pub enum Format {
     Html,
 }
 
+pub enum Theme {
+    Dark,
+    Light,
+    TransparentDark,
+    TransparentLight,
+    TransparentNoColor,
+}
+
 const CSS_STYLE: &[u8] = include_bytes!("./style.css");
 const LEADER_LINE_JS: &[u8] = include_bytes!("./leader-line-v1.0.7.min.js");
 const INDEX_HBS: &[u8] = include_bytes!("./index.hbs");
@@ -138,54 +146,40 @@ pub fn render(prg: &Program, format: Format, show_heap: bool) -> Result<String> 
         }
         .to_string();
         // check for loops on one element, must be handled specially
+        let inner = &format!(
+            r#"{{
+                startSocket: '{}',
+                endSocket: '{}',
+                color: 'var(--arrow{})',
+                size: parseFloat(getCssVar('arrow_width')),
+                endPlugSize: parseFloat(getCssVar('arrow_size')),
+                outline: getCssVar('arrow_outline') !== "",
+                outlineColor: 'var(--arrow_outline)',
+                outlineSize: parseFloat(getCssVar('arrow_outline_size')),
+                endPlugOutline: getCssVar('arrow_plug_outline') !== "",
+                endPlugOutlineColor: 'var(--arrow_plug_outline)',
+                endPlugOutlineSize: parseFloat(getCssVar('arrow_plug_outline_size')),
+                path: '{}',
+            }}"#,
+            start_socket,
+            end_socket,
+            idx % NUM_ARROW_COLORS,
+            path
+        );
         if src != dst {
             arrow_txt.push_str(&format!(
                 "new LeaderLine(
                     document.getElementById('{}'),
                     document.getElementById('{}'),
-                    {{
-                        startSocket: '{}',
-                        endSocket: '{}',
-                        color: 'var(--arrow{})',
-                        size: 8,
-                        outline: true,
-                        outlineSize: 0.3,
-                        outlineColor: 'var(--arrow_outline)',
-                        endPlugSize: 0.6,
-                        path: '{}',
-                    }}
-                );\n",
-                src,
-                dst,
-                start_socket,
-                end_socket,
-                idx % NUM_ARROW_COLORS,
-                path
-            ));
+                    {}
+                );", src, dst, inner));
         } else {
             arrow_txt.push_str(&format!(
                 "new LeaderLine(
                   document.getElementById('{}').getElementsByClassName('dummy')[0],
                   document.getElementById('{}'),
-                  {{
-                    startSocket: '{}',
-                    endSocket: '{}',
-                    color: 'var(--arrow{})',
-                    size: 8,
-                    outline: true,
-                    outlineSize: 0.3,
-                    outlineColor: 'var(--arrow_outline)',
-                    endPlugSize: 0.6,
-                    path: '{}',
-                  }},
-                );\n",
-                src,
-                dst,
-                start_socket,
-                end_socket,
-                idx % NUM_ARROW_COLORS,
-                path
-            ));
+                  {}
+                );", src, dst, inner));
         }
     }
     let output = match format {

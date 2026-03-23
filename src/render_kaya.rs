@@ -25,14 +25,9 @@ struct Args {
     show_parse: bool,
     #[arg(help = "Output an HTML fragment", long, default_value_t = false)]
     output_html: bool,
-    #[arg(
-        help = "Inline JS dependencies (default is to reference a CDN)",
-        long,
-        default_value_t = false
-    )]
     #[arg(help = "Output diagram in PNG", long, default_value_t = false)]
     output_png: bool,
-    #[arg(help = "Set scale factor for PNG, 1.0 is web standard 96 DPI, 3.125 is 300 DPI", long)]
+    #[arg(help = "Set scale factor for PNG output, 1.0 is web standard 96 DPI, 3.125 is 300 DPI", long)]
     output_png_scale: Option<f64>,
     #[arg(
         help = "Show labels starting with H (heap) (default is to hide)",
@@ -40,7 +35,7 @@ struct Args {
         default_value_t = false
     )]
     show_heap: bool,
-    #[arg(help = "Output filename, required (use - for stdout)", long)]
+    #[arg(help = "Output filename, required, (use - for stdout), (HTML/SVG/PNG allowed)", long)]
     output: String,
     #[arg(help = "Input filename")]
     input: String,
@@ -66,7 +61,7 @@ fn save_png_from(content: String, filename: String, scale: f64) -> Result<()> {
         r: 0,
         g: 0,
         b: 0,
-        a: Some(0.0), // Fully transparent
+        a: Some(0.0),
     })?;
 
     // Get viewport for diagram
@@ -74,11 +69,8 @@ fn save_png_from(content: String, filename: String, scale: f64) -> Result<()> {
     element.scroll_into_view()?;
     let box_model = element.get_box_model()?;
     let mut viewport = box_model.margin_viewport();
+    // Set scale which adjusts DPI
     viewport.scale = scale;
-
-        // .get_box_model()?
-        // .margin_viewport();
-    //std::thread::sleep(std::time::Duration::from_secs(1)); // Wait
     let png_data = tab.capture_screenshot(
         Page::CaptureScreenshotFormatOption::Png,
         Some(100),
@@ -90,7 +82,9 @@ fn save_png_from(content: String, filename: String, scale: f64) -> Result<()> {
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    let format = if args.output_html || args.output_png {
+    let output_html = args.output.ends_with(".html") || args.output.ends_with(".HTML");
+    let output_png = args.output.ends_with(".png");
+    let format = if output_html || output_png {
         Format::Html
     } else {
         Format::Svg

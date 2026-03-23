@@ -31,7 +31,10 @@ struct ArrowInfo {
     dst: String,
     src_help: String,
     dst_help: String,
+    src_gravity: String,
+    dst_gravity: String,
     path: String,
+    color: Option<i32>,
 }
 
 #[derive(Clone, Debug)]
@@ -72,7 +75,10 @@ impl RenderState {
     fn add_arrow(&mut self, src: &str, dst: &str, help: &Vec<String>) {
         let mut src_help = String::new();
         let mut dst_help = String::new();
+        let mut src_gravity = String::new();
+        let mut dst_gravity = String::new();
         let mut path = String::new();
+        let mut color = None;
         for h in help {
             match h.as_str() {
                 ".sn" => src_help.push('n'),
@@ -86,6 +92,20 @@ impl RenderState {
                 ".straight" | ".arc" | ".fluid" | ".magnet" | ".grid" => {
                     path = chop_first(h.as_str()).to_string();
                 }
+                ".svl" | ".svlight" => src_gravity = "vlight".to_string(),
+                ".sl" | ".slight" => src_gravity = "light".to_string(),
+                ".sh" | ".sheavy" => src_gravity = "heavy".to_string(),
+                ".svh" | ".svheavy" => src_gravity = "vheavy".to_string(),
+                ".dvl" | ".dvlight" => dst_gravity = "vlight".to_string(),
+                ".dl" | ".dlight" => dst_gravity = "light".to_string(),
+                ".dh" | ".dheavy" => dst_gravity = "heavy".to_string(),
+                ".dvh" | ".dvheavy" => dst_gravity = "vheavy".to_string(),
+                ".c0" => color = Some(0),
+                ".c1" => color = Some(1),
+                ".c2" => color = Some(2),
+                ".c3" => color = Some(3),
+                ".c4" => color = Some(4),
+                ".c5" => color = Some(5),
                 _ => println!("WARNING: unknown ptr help found, {}", &h),
             }
         }
@@ -94,8 +114,33 @@ impl RenderState {
             dst: dst.to_string(),
             src_help,
             dst_help,
+            src_gravity,
+            dst_gravity,
             path,
+            color,
         });
+    }
+}
+
+fn socket_dir_to_option(x: &str) -> String {
+    match x {
+        "a" => "auto".to_string(),
+        "n" => "top".to_string(),
+        "s" => "bottom".to_string(),
+        "w" => "left".to_string(),
+        "e" => "right".to_string(),
+        _ => "auto".to_string(),
+    }
+}
+
+fn socket_gravity_to_option(x: &str) -> i32 {
+    match x {
+        "" => 120,
+        "vlight" => 50,
+        "light" => 80,
+        "heavy" => 160,
+        "vheavy" => 190,
+        _ => panic!("Unknown gravity"),
     }
 }
 
@@ -118,19 +163,14 @@ pub fn render(prg: &Program, format: Format, show_heap: bool) -> Result<String> 
             dst,
             src_help,
             dst_help,
+            src_gravity,
+            dst_gravity,
             path,
+            color,
         },
     ) in arrows.iter().enumerate()
     {
-        let start_socket = match src_help.as_str() {
-            "a" => "auto",
-            "n" => "top",
-            "s" => "bottom",
-            "w" => "left",
-            "e" => "right",
-            _ => "auto",
-        }
-        .to_string();
+        let start_socket = socket_dir_to_option(src_help);
         let end_socket = match dst_help.as_str() {
             "a" => "auto",
             "n" => "top",
@@ -145,12 +185,20 @@ pub fn render(prg: &Program, format: Format, show_heap: bool) -> Result<String> 
             s => s,
         }
         .to_string();
+        let start_socket_gravity = socket_gravity_to_option(src_gravity.as_str());
+        let end_socket_gravity = socket_gravity_to_option(dst_gravity.as_str());
         // check for loops on one element, must be handled specially
+        let color_txt = match color {
+            None => format!("'var(--arrow{})'", idx % NUM_ARROW_COLORS),
+            Some(c) => format!("'var(--arrow{})'", (*c as usize) % NUM_ARROW_COLORS),
+        };
         let inner = &format!(
             r#"{{
                 startSocket: '{}',
                 endSocket: '{}',
-                color: 'var(--arrow{})',
+                startSocketGravity: {},
+                endSocketGravity: {},
+                color: {},
                 size: parseFloat(getCssVar('arrow_width')),
                 endPlugSize: parseFloat(getCssVar('arrow_size')),
                 outline: getCssVar('arrow_outline') !== "",
@@ -163,7 +211,9 @@ pub fn render(prg: &Program, format: Format, show_heap: bool) -> Result<String> 
             }}"#,
             start_socket,
             end_socket,
-            idx % NUM_ARROW_COLORS,
+            start_socket_gravity,
+            end_socket_gravity,
+            color_txt,
             path
         );
         if src != dst {

@@ -6,10 +6,10 @@ x: 'h'
 # L1
 ## Stack
 ### main
-x: [5.2, (0, ptr(H0).sn.magnet, 1)]
+x: [5.2, (0, ptr(H0).sn.slight.dlight.c0, 1)]
 y: (2, 1)
 ## Heap
-H0: (1, ptr(H1))
+H0: (1, ptr(H1).c0)
 ##
 H1: (0, *)
 
@@ -21,10 +21,10 @@ H1: (0, *)
 # L3
 ## Stack
 ### main
-x: foo{i: 3, j: `bar`{p: ptr(H0).sn.dw }}
+x: foo{i: 3, j: `bar`{p: ptr(H0).sn.dw.slight.dlight.c0 }}
 y: *
 ## Heap
-H0: ptr( H0 ).se.ds
+H0: ptr( H0 ).se.ds.c3
 
 # L4
 ## Stack

@@ -821,6 +821,7 @@ dependencies = [
  "clap",
  "handlebars",
  "headless_chrome",
+ "kaya_lib",
  "pest",
  "pest_derive",
  "serde",

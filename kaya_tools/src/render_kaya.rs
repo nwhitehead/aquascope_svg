@@ -1,6 +1,3 @@
-mod parser;
-mod render;
-mod states;
 
 use anyhow::Result;
 use anyhow::anyhow;
@@ -11,8 +8,8 @@ use headless_chrome::browser::tab::Tab;
 use headless_chrome::protocol::cdp::DOM::RGBA;
 use headless_chrome::protocol::cdp::Page;
 use headless_chrome::types::Bounds;
-use parser::parse;
-use render::render;
+use kaya_lib::parser::parse;
+use kaya_lib::render::render;
 use std::fs;
 use std::sync::Arc;
 

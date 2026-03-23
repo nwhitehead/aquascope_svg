@@ -852,7 +852,6 @@ dependencies = [
 name = "kaya_web"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "kaya_lib",
  "serde-wasm-bindgen",
  "wasm-bindgen",

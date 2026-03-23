@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <title>hello-wasm example</title>
+  </head>
+  <body>
+    <iframe id="diagram"></iframe>
+    <script type="module">
+      import init, { parse, render } from "./pkg/kaya_web.js";
+
+      init().then(() => {
+        console.log('WASM init done');
+        const txt = "# L0\n## Stack\nx: 5\n";
+        const prg = parse(txt);
+        console.log(txt);
+        console.log(prg);
+        console.log(JSON.stringify(prg));
+        const out = render(prg);
+        console.log(out);
+        const iframe = document.getElementById('diagram');
+        iframe.srcdoc = out;
+      });
+    </script>
+  </body>
+</html>

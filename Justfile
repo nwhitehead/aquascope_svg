@@ -9,5 +9,13 @@ ci:
     cargo test
     cargo clippy -- --deny=warnings
 
+# Build WASM files from Rust library
 wasm:
     cd kaya_web && wasm-pack build --target=web
+
+# Serve test page locally for testing
+dev:
+    miniserve kaya_web/index.html
+
+
+

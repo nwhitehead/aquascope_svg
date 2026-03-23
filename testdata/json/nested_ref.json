@@ -1,5 +1,5 @@
 {
-  "code": "\nfn main() {\n  let x = [(0, 1), (2, 3)];\n  let y = &x[1].1;\n}",
+  "code": "fn main() {\n  let x = [(0, 1), (2, 3)];\n  let y = &x[1].1;\n}\n",
   "result": {
     "type": "Success"
   },
@@ -14,28 +14,28 @@
             "body_span": {
               "end": {
                 "column": 1,
-                "line": 4
+                "line": 3
               },
               "filename": {
                 "private_use_as_methods_instead": 0
               },
               "start": {
                 "column": 0,
-                "line": 1
+                "line": 0
               }
             },
             "locals": [],
             "location": {
               "end": {
                 "column": 9,
-                "line": 1
+                "line": 0
               },
               "filename": {
                 "private_use_as_methods_instead": 0
               },
               "start": {
                 "column": 0,
-                "line": 1
+                "line": 0
               }
             },
             "name": "main"
@@ -53,14 +53,14 @@
             "body_span": {
               "end": {
                 "column": 1,
-                "line": 4
+                "line": 3
               },
               "filename": {
                 "private_use_as_methods_instead": 0
               },
               "start": {
                 "column": 0,
-                "line": 1
+                "line": 0
               }
             },
             "locals": [
@@ -106,14 +106,14 @@
             "location": {
               "end": {
                 "column": 27,
-                "line": 2
+                "line": 1
               },
               "filename": {
                 "private_use_as_methods_instead": 0
               },
               "start": {
                 "column": 2,
-                "line": 2
+                "line": 1
               }
             },
             "name": "main"
@@ -131,14 +131,14 @@
             "body_span": {
               "end": {
                 "column": 1,
-                "line": 4
+                "line": 3
               },
               "filename": {
                 "private_use_as_methods_instead": 0
               },
               "start": {
                 "column": 0,
-                "line": 1
+                "line": 0
               }
             },
             "locals": [
@@ -213,14 +213,14 @@
             "location": {
               "end": {
                 "column": 18,
-                "line": 3
+                "line": 2
               },
               "filename": {
                 "private_use_as_methods_instead": 0
               },
               "start": {
                 "column": 2,
-                "line": 3
+                "line": 2
               }
             },
             "name": "main"
@@ -238,28 +238,28 @@
             "body_span": {
               "end": {
                 "column": 1,
-                "line": 4
+                "line": 3
               },
               "filename": {
                 "private_use_as_methods_instead": 0
               },
               "start": {
                 "column": 0,
-                "line": 1
+                "line": 0
               }
             },
             "locals": [],
             "location": {
               "end": {
                 "column": 1,
-                "line": 4
+                "line": 3
               },
               "filename": {
                 "private_use_as_methods_instead": 0
               },
               "start": {
                 "column": 0,
-                "line": 4
+                "line": 3
               }
             },
             "name": "main"

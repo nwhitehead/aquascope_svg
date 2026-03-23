@@ -1,8 +1,8 @@
 #!/bin/env bash
 
-: "${AQUASCOPE_CLI:=../../aquascope/target/debug/aquascope_cli}"
+: "${AQUASCOPE_CLI:=../../../aquascope/target/debug/aquascope_cli}"
 
-for file in ../testdata/rust/*; do
+for file in ../../testdata/rust/*; do
     shouldFail=""
     if [[ $file == *"error"* ]]; then
         shouldFail="--should-fail"

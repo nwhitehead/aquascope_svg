@@ -202,12 +202,7 @@ pub fn render(prg: &Program, show_heap: bool) -> Result<String> {
                 endPlugOutlineSize: parseFloat(getCssVar('arrow_plug_outline_size')),
                 path: '{}',
             }}"#,
-            start_socket,
-            end_socket,
-            start_socket_gravity,
-            end_socket_gravity,
-            color_txt,
-            path
+            start_socket, end_socket, start_socket_gravity, end_socket_gravity, color_txt, path
         );
         if src != dst {
             arrow_txt.push_str(&format!(
@@ -215,17 +210,22 @@ pub fn render(prg: &Program, show_heap: bool) -> Result<String> {
                     document.getElementById('{}'),
                     document.getElementById('{}'),
                     {}
-                );", src, dst, inner));
+                );",
+                src, dst, inner
+            ));
         } else {
             arrow_txt.push_str(&format!(
                 "new LeaderLine(
                   document.getElementById('{}').getElementsByClassName('dummy')[0],
                   document.getElementById('{}'),
                   {}
-                );", src, dst, inner));
+                );",
+                src, dst, inner
+            ));
         }
     }
-    let output = reg.render_template(&index_hbs,
+    let output = reg.render_template(
+        &index_hbs,
         &json!({
             "style": css_style,
             "content": prg,

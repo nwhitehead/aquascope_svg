@@ -15,7 +15,7 @@ wasm:
 
 # Serve test page locally for testing
 dev:
-    miniserve kaya_web/index.html
+    cd kaya_web && miniserve .
 
 
 

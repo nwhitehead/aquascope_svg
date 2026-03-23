@@ -2,24 +2,32 @@
 <html lang="en-US">
   <head>
     <meta charset="utf-8" />
-    <title>hello-wasm example</title>
+    <title>Kaya Diagrams</title>
+    <style id="dynstyle">
+    </style>
+    <script src=" https://cdn.jsdelivr.net/npm/leader-line@1.0.8/leader-line.min.js "></script>
   </head>
   <body>
-    <iframe id="diagram"></iframe>
+    <div id="target"></div>
+
     <script type="module">
-      import init, { parse, render } from "./pkg/kaya_web.js";
+      import init, { parse, render, render_parts, get_css } from "./pkg/kaya_web.js";
 
       init().then(() => {
         console.log('WASM init done');
-        const txt = "# L0\n## Stack\nx: 5\n";
+        const txt = "# L0\n## Stack\nx: 5\ny: ptr(x).se.de\n";
         const prg = parse(txt);
         console.log(txt);
         console.log(prg);
         console.log(JSON.stringify(prg));
         const out = render(prg);
         console.log(out);
-        const iframe = document.getElementById('diagram');
-        iframe.srcdoc = out;
+        const dynstyle = document.getElementById('dynstyle');
+        dynstyle.textContent = get_css();
+        const parts = render_parts(prg, false);
+        console.log(parts);
+        const d = document.getElementById('target');
+        d.innerHTML = parts[0];
       });
     </script>
   </body>

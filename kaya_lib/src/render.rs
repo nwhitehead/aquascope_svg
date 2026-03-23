@@ -13,10 +13,10 @@ pub enum Theme {
     TransparentNoColor,
 }
 
-const CSS_STYLE: &[u8] = include_bytes!("./style.css");
-const LEADER_LINE_JS: &[u8] = include_bytes!("./leader-line-v1.0.7.min.js");
-const INDEX_HBS: &[u8] = include_bytes!("./index.hbs");
-const NUM_ARROW_COLORS: usize = 6;
+pub const CSS_STYLE: &[u8] = include_bytes!("./style.css");
+pub const LEADER_LINE_JS: &[u8] = include_bytes!("./leader-line-v1.0.7.min.js");
+pub const INDEX_HBS: &[u8] = include_bytes!("./index.hbs");
+pub const NUM_ARROW_COLORS: usize = 6;
 const DEBUG_ARROWS: bool = false;
 
 #[derive(Clone, Debug)]
@@ -138,15 +138,11 @@ fn socket_gravity_to_option(x: &str) -> i32 {
     }
 }
 
-pub fn render(prg: &Program, show_heap: bool) -> Result<String> {
+pub fn render_parts(prg: &Program, show_heap: bool) -> Result<(String, String)> {
     let (prg, arrows) = render_program(prg, !show_heap)?;
     if DEBUG_ARROWS {
         println!("arrows = {:?}", &arrows);
     }
-    let leader = String::from_utf8(LEADER_LINE_JS.to_vec())?;
-    let css_style = String::from_utf8(CSS_STYLE.to_vec())?;
-    let index_hbs = String::from_utf8(INDEX_HBS.to_vec())?;
-    let reg = Handlebars::new();
 
     let mut arrow_txt = String::new();
     for (
@@ -224,13 +220,24 @@ pub fn render(prg: &Program, show_heap: bool) -> Result<String> {
             ));
         }
     }
+    Ok((prg, arrow_txt))
+}
+
+pub fn render(prg: &Program, show_heap: bool) -> Result<String> {
+    let leader = String::from_utf8(LEADER_LINE_JS.to_vec())?;
+    let css_style = String::from_utf8(CSS_STYLE.to_vec())?;
+    let index_hbs = String::from_utf8(INDEX_HBS.to_vec())?;
+    let reg = Handlebars::new();
+
+    let (prg_txt, arrow_txt) = render_parts(prg, show_heap)?;
+
     let output = reg.render_template(
         &index_hbs,
         &json!({
             "style": css_style,
-            "content": prg,
+            "content": prg_txt,
             "script": leader,
-            "arrows": &arrow_txt,
+            "arrows": arrow_txt,
         }),
     )?;
     Ok(output)

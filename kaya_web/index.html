@@ -1,34 +1,13 @@
 <!doctype html>
-<html lang="en-US">
+<html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <title>Kaya Diagrams</title>
-    <style id="dynstyle">
-    </style>
-    <script src=" https://cdn.jsdelivr.net/npm/leader-line@1.0.8/leader-line.min.js "></script>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>kaya_web</title>
   </head>
   <body>
-    <div id="target"></div>
-
-    <script type="module">
-      import init, { parse, render, render_parts, get_css } from "./pkg/kaya_web.js";
-
-      init().then(() => {
-        console.log('WASM init done');
-        const txt = "# L0\n## Stack\nx: 5\ny: ptr(x).se.de\n";
-        const prg = parse(txt);
-        console.log(txt);
-        console.log(prg);
-        console.log(JSON.stringify(prg));
-        const out = render(prg);
-        console.log(out);
-        const dynstyle = document.getElementById('dynstyle');
-        dynstyle.textContent = get_css();
-        const parts = render_parts(prg, false);
-        console.log(parts);
-        const d = document.getElementById('target');
-        d.innerHTML = parts[0];
-      });
-    </script>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

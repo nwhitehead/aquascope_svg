@@ -21,7 +21,7 @@ function handleClose(key: string, keyPath: string[]) {
     @open="handleOpen"
     @close="handleClose"
   >
-    <el-menu-item index="/edit">
+    <el-menu-item index="/">
       <el-icon>
         <Edit />
       </el-icon>

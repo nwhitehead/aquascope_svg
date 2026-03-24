@@ -1,13 +1,13 @@
 {
-  "name": "element-plus-vite-starter",
+  "name": "kaya-web-editor",
   "type": "module",
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@10.14.0",
   "license": "MIT",
-  "homepage": "https://vite-starter.element-plus.org",
+  "homepage": "https://kaya.shimmermathlabs.com",
   "repository": {
-    "url": "https://github.com/element-plus/element-plus-vite-starter"
+    "url": "https://github.com/nwhitehead/kaya"
   },
   "scripts": {
     "dev": "vite",

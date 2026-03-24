@@ -1,4 +1,3 @@
 <template>
-  <Logos my="4" />
-  <HelloWorld />
+  <Editor />
 </template>

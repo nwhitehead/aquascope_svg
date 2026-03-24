@@ -55,6 +55,5 @@ const contents = computed(() => {
 </script>
 
 <template>
-    Here is diagram:
     <div v-html="contents"></div>
 </template>

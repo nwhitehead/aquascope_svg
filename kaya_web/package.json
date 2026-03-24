@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
+    "@guolao/vue-monaco-editor": "^1.6.0",
     "@vueuse/core": "^13.6.0",
     "element-plus": "^2.10.5",
     "vue": "^3.5.18",

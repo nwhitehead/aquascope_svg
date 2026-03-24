@@ -22,6 +22,7 @@ import 'element-plus/theme-chalk/src/overlay.scss' // the modal class for messag
 
 // if you do not need ssg:
 // import { createApp } from "vue";
+import { install as VueMonacoEditorPlugin } from '@guolao/vue-monaco-editor'
 
 // const app = createApp(App);
 // app.use(createRouter({
@@ -43,5 +44,6 @@ export const createApp = ViteSSG(
     Object.values(import.meta.glob<{ install: UserModule }>('./modules/*.ts', { eager: true }))
       .forEach(i => i.install?.(ctx))
     // ctx.app.use(Previewer)
+    ctx.app.use(VueMonacoEditorPlugin)
   },
 )

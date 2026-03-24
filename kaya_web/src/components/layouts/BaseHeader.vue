@@ -13,7 +13,7 @@ import { toggleDark } from '~/composables'
       </div>
     </el-menu-item>
 
-    <el-menu-item h="full" @click="toggleDark()">
+    <el-menu-item h="full" @click="toggleDark()" index="">
       <button
         class="w-full cursor-pointer border-none bg-transparent"
         style="height: var(--ep-menu-item-height)"
@@ -22,7 +22,7 @@ import { toggleDark } from '~/composables'
       </button>
     </el-menu-item>
 
-    <el-menu-item h="full">
+    <el-menu-item h="full" :index="repository.url">
       <a class="size-full flex items-center justify-center" :href="repository.url" target="_blank">
         <div i-ri-github-fill />
       </a>

@@ -16,20 +16,45 @@ const MONACO_EDITOR_OPTIONS = {
 </script>
 
 <style>
+body {
+    background-color: #181818 !important;
+}
     div.container {
+        display: flex;
+        flex-direction: column;
         width: 100vw;
-        height: 50vh;
+        height: 100vh;
+        border-radius: 0;
+        overflow: none;
+    }
+    div.inner {
+        display: flex;
+        padding: 20px;
+        width: 90vw;
+        height: 40vh;
+    }
+    div.inner-output {
+        display: flex;
+        background-color: var(--bg);
+        padding: 20px;
+        width: 100%;
+        height: fit-content;
+        padding-bottom: 40px;
     }
 </style>
 
 <template>
     <div class="container">
-        <VueMonacoEditor
-            v-model:value="code"
-            theme="vs-dark"
-            :options="MONACO_EDITOR_OPTIONS"
-            @mount="handleMount"
-        />
-        <Kaya :source="code" />
+        <div class="inner">
+            <VueMonacoEditor
+                v-model:value="code"
+                theme="vs-dark"
+                :options="MONACO_EDITOR_OPTIONS"
+                @mount="handleMount"
+            />
+        </div>
+        <div class="inner-output">
+            <Kaya :source="code" />
+        </div>
     </div>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 
 import { ref, shallowRef } from 'vue';
+import { useDark } from '@vueuse/core';
 
 const MONACO_EDITOR_OPTIONS = {
     automaticLayout: true,
@@ -10,6 +11,7 @@ const MONACO_EDITOR_OPTIONS = {
 
 const code = ref('// some code...');
 const editor = shallowRef();
+const isDark = useDark();
 
 function handleMount(instance) {
     editor.value = instance;
@@ -23,7 +25,7 @@ function handleMount(instance) {
         <div class="demo-panel">
             <vue-monaco-editor
                 v-model:value="code"
-                theme="vs-dark"
+                :theme="isDark ? 'vs-dark' : 'vs-light'"
                 :options="MONACO_EDITOR_OPTIONS"
                 height="50vh"
                 @mount="handleMount"
@@ -42,6 +44,8 @@ function handleMount(instance) {
 div.demo-panel {
     display: flex;
     flex-direction: column;
+}
+html.dark div.demo-panel {
     background-color: var(--el-bg-color);
 }
 </style>

@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "leader-line": "^1.0.8",
     "vue": "^3.5.30"
   },
   "devDependencies": {

@@ -4,6 +4,7 @@ use handlebars::Handlebars;
 use serde_json::json;
 use std::cell::RefCell;
 use std::rc::Rc;
+use serde::{Serialize, Deserialize};
 
 pub enum Theme {
     Dark,
@@ -19,8 +20,9 @@ pub const INDEX_HBS: &[u8] = include_bytes!("./index.hbs");
 pub const NUM_ARROW_COLORS: usize = 6;
 const DEBUG_ARROWS: bool = false;
 
+#[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
-struct ArrowInfo {
+pub struct ArrowInfo {
     src: String,
     dst: String,
     src_help: String,
@@ -138,88 +140,136 @@ fn socket_gravity_to_option(x: &str) -> i32 {
     }
 }
 
+pub fn arrow_options(info: &ArrowInfo, idx: usize) -> serde_json::Value {
+    let ArrowInfo {
+        src: _,
+        dst: _,
+        src_help,
+        dst_help,
+        src_gravity,
+        dst_gravity,
+        path,
+        color,
+    } = info;
+    let start_socket = socket_dir_to_option(src_help);
+    let end_socket = match dst_help.as_str() {
+        "a" => "auto",
+        "n" => "top",
+        "s" => "bottom",
+        "w" => "left",
+        "e" => "right",
+        _ => "auto",
+    }
+    .to_string();
+    let path = match path.as_str() {
+        "" => "fluid",
+        s => s,
+    }
+    .to_string();
+    let start_socket_gravity = socket_gravity_to_option(src_gravity.as_str());
+    let end_socket_gravity = socket_gravity_to_option(dst_gravity.as_str());
+    let color_txt = match color {
+        None => format!("var(--arrow{})", idx % NUM_ARROW_COLORS),
+        Some(c) => format!("var(--arrow{})", (*c as usize) % NUM_ARROW_COLORS),
+    };
+    json!({
+        "startSocket": start_socket,
+        "endSocket": end_socket,
+        "startSocketGravity": start_socket_gravity,
+        "endSocketGravity": end_socket_gravity,
+        "color": color_txt,
+        "path": path,
+    })
+}
+
+pub fn render_arrow(info: &ArrowInfo, idx: usize) -> String {
+    let ArrowInfo {
+        src,
+        dst,
+        src_help,
+        dst_help,
+        src_gravity,
+        dst_gravity,
+        path,
+        color,
+    } = info;
+    let start_socket = socket_dir_to_option(src_help);
+    let end_socket = match dst_help.as_str() {
+        "a" => "auto",
+        "n" => "top",
+        "s" => "bottom",
+        "w" => "left",
+        "e" => "right",
+        _ => "auto",
+    }
+    .to_string();
+    let path = match path.as_str() {
+        "" => "fluid",
+        s => s,
+    }
+    .to_string();
+    let start_socket_gravity = socket_gravity_to_option(src_gravity.as_str());
+    let end_socket_gravity = socket_gravity_to_option(dst_gravity.as_str());
+    // check for loops on one element, must be handled specially
+    let color_txt = match color {
+        None => format!("'var(--arrow{})'", idx % NUM_ARROW_COLORS),
+        Some(c) => format!("'var(--arrow{})'", (*c as usize) % NUM_ARROW_COLORS),
+    };
+    let inner = &format!(
+        r#"{{
+            startSocket: '{}',
+            endSocket: '{}',
+            startSocketGravity: {},
+            endSocketGravity: {},
+            color: {},
+            size: parseFloat(getCssVar('arrow_width')),
+            endPlugSize: parseFloat(getCssVar('arrow_size')),
+            outline: getCssVar('arrow_outline') !== "",
+            outlineColor: 'var(--arrow_outline)',
+            outlineSize: parseFloat(getCssVar('arrow_outline_size')),
+            endPlugOutline: getCssVar('arrow_plug_outline') !== "",
+            endPlugOutlineColor: 'var(--arrow_plug_outline)',
+            endPlugOutlineSize: parseFloat(getCssVar('arrow_plug_outline_size')),
+            path: '{}',
+        }}"#,
+        start_socket, end_socket, start_socket_gravity, end_socket_gravity, color_txt, path
+    );
+    if src != dst {
+        format!(
+            "new LeaderLine(
+                document.getElementById('{}'),
+                document.getElementById('{}'),
+                {}
+            );",
+            src, dst, inner
+        )
+    } else {
+        format!(
+            "new LeaderLine(
+                document.getElementById('{}').getElementsByClassName('dummy')[0],
+                document.getElementById('{}'),
+                {}
+            );",
+            src, dst, inner
+        )
+    }
+}
+
+pub fn render_arrows(arrows: Vec<ArrowInfo>) -> Result<String> {
+    let mut arrow_txt = String::new();
+    for (idx, arrow_info) in arrows.iter().enumerate()
+    {
+        arrow_txt.push_str(&render_arrow(arrow_info, idx));
+    }
+    Ok(arrow_txt)
+}
+
 pub fn render_parts(prg: &Program, show_heap: bool) -> Result<(String, String)> {
     let (prg, arrows) = render_program(prg, !show_heap)?;
     if DEBUG_ARROWS {
         println!("arrows = {:?}", &arrows);
     }
-
-    let mut arrow_txt = String::new();
-    for (
-        idx,
-        ArrowInfo {
-            src,
-            dst,
-            src_help,
-            dst_help,
-            src_gravity,
-            dst_gravity,
-            path,
-            color,
-        },
-    ) in arrows.iter().enumerate()
-    {
-        let start_socket = socket_dir_to_option(src_help);
-        let end_socket = match dst_help.as_str() {
-            "a" => "auto",
-            "n" => "top",
-            "s" => "bottom",
-            "w" => "left",
-            "e" => "right",
-            _ => "auto",
-        }
-        .to_string();
-        let path = match path.as_str() {
-            "" => "fluid",
-            s => s,
-        }
-        .to_string();
-        let start_socket_gravity = socket_gravity_to_option(src_gravity.as_str());
-        let end_socket_gravity = socket_gravity_to_option(dst_gravity.as_str());
-        // check for loops on one element, must be handled specially
-        let color_txt = match color {
-            None => format!("'var(--arrow{})'", idx % NUM_ARROW_COLORS),
-            Some(c) => format!("'var(--arrow{})'", (*c as usize) % NUM_ARROW_COLORS),
-        };
-        let inner = &format!(
-            r#"{{
-                startSocket: '{}',
-                endSocket: '{}',
-                startSocketGravity: {},
-                endSocketGravity: {},
-                color: {},
-                size: parseFloat(getCssVar('arrow_width')),
-                endPlugSize: parseFloat(getCssVar('arrow_size')),
-                outline: getCssVar('arrow_outline') !== "",
-                outlineColor: 'var(--arrow_outline)',
-                outlineSize: parseFloat(getCssVar('arrow_outline_size')),
-                endPlugOutline: getCssVar('arrow_plug_outline') !== "",
-                endPlugOutlineColor: 'var(--arrow_plug_outline)',
-                endPlugOutlineSize: parseFloat(getCssVar('arrow_plug_outline_size')),
-                path: '{}',
-            }}"#,
-            start_socket, end_socket, start_socket_gravity, end_socket_gravity, color_txt, path
-        );
-        if src != dst {
-            arrow_txt.push_str(&format!(
-                "new LeaderLine(
-                    document.getElementById('{}'),
-                    document.getElementById('{}'),
-                    {}
-                );",
-                src, dst, inner
-            ));
-        } else {
-            arrow_txt.push_str(&format!(
-                "new LeaderLine(
-                  document.getElementById('{}').getElementsByClassName('dummy')[0],
-                  document.getElementById('{}'),
-                  {}
-                );",
-                src, dst, inner
-            ));
-        }
-    }
+    let arrow_txt = render_arrows(arrows)?;
     Ok((prg, arrow_txt))
 }
 
@@ -243,7 +293,7 @@ pub fn render(prg: &Program, show_heap: bool) -> Result<String> {
     Ok(output)
 }
 
-fn render_program(prg: &Program, hide_heap: bool) -> Result<(String, Vec<ArrowInfo>)> {
+pub fn render_program(prg: &Program, hide_heap: bool) -> Result<(String, Vec<ArrowInfo>)> {
     let mut res = String::new();
     res.push_str("<div class=\"program\">");
     let state = RenderState::new(0);

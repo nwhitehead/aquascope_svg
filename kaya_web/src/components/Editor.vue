@@ -42,5 +42,6 @@ function handleMount(instance) {
 div.demo-panel {
     display: flex;
     flex-direction: column;
+    background-color: var(--el-bg-color);
 }
 </style>

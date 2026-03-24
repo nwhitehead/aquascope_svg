@@ -1,9 +1,9 @@
 // import dark theme
 @use 'element-plus/theme-chalk/src/dark/css-vars.scss' as *;
 
-// :root {
-//   --ep-color-primary: red;
-// }
+:root {
+    --el-bg-color: #181818;
+}
 
 body {
   font-family:
@@ -12,6 +12,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   margin: 0;
+  background-color: var(--el-bg-color);
 }
 
 a {

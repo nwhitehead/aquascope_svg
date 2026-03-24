@@ -17,44 +17,52 @@ const MONACO_EDITOR_OPTIONS = {
 
 <style>
 body {
+    color: #ccc;
     background-color: #181818 !important;
 }
-    div.container {
-        display: flex;
-        flex-direction: column;
-        width: 100vw;
-        height: 100vh;
-        border-radius: 0;
-        overflow: none;
-    }
-    div.inner {
-        display: flex;
-        padding: 20px;
-        width: 90vw;
-        height: 40vh;
-    }
-    div.inner-output {
-        display: flex;
-        background-color: var(--bg);
-        padding: 20px;
-        width: 100%;
-        height: fit-content;
-        padding-bottom: 40px;
-    }
+div.inner-output {
+    display: flex;
+    background-color: var(--bg);
+    padding: 20px;
+    width: 100%;
+    height: fit-content;
+    padding-bottom: 40px;
+}
+div.demo-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100px;
+    width: 100px;
+    background-color: #f00;
+}
+.main-container {
+    height: calc(100vh - var(--el-menu-item-height) - 4px);
+}
 </style>
 
 <template>
-    <div class="container">
-        <div class="inner">
-            <VueMonacoEditor
-                v-model:value="code"
-                theme="vs-dark"
-                :options="MONACO_EDITOR_OPTIONS"
-                @mount="handleMount"
-            />
-        </div>
-        <div class="inner-output">
-            <Kaya :source="code" />
+    <div class="main-container flex">
+        <div w="full" py="4">
+            <el-container>
+
+                <el-header>
+                    <el-text class="mx-1">Default text</el-text>
+                </el-header>
+
+                <el-main>
+                    <el-splitter layout="vertical">
+                        <el-splitter-panel>
+                            <el-text class="mx-1">Panel 1</el-text>
+                        </el-splitter-panel>
+                        <el-splitter-panel>
+                            <el-text class="mx-1">Panel 2</el-text>
+                        </el-splitter-panel>
+                    </el-splitter>
+                </el-main>
+
+                <h1>HI</h1>
+            </el-container>
         </div>
     </div>
 </template>

@@ -2,8 +2,6 @@
 
 import { ref } from 'vue';
 
-defineProps<{ msg: string }>();
-
 </script>
 
 <template>

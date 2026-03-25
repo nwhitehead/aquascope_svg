@@ -88,11 +88,33 @@ impl RenderState {
                 ".straight" | ".arc" | ".fluid" | ".magnet" | ".grid" => {
                     path = chop_first(h.as_str()).to_string();
                 }
+                ".vl" => {
+                    src_gravity = "vlight".to_string();
+                    dst_gravity = "vlight".to_string();
+                },
+                ".l" => {
+                    src_gravity = "light".to_string();
+                    dst_gravity = "light".to_string();
+                },
+                ".m" => {
+                    src_gravity = "medium".to_string();
+                    dst_gravity = "medium".to_string();
+                },
+                ".h" => {
+                    src_gravity = "heavy".to_string();
+                    dst_gravity = "heavy".to_string();
+                },
+                ".vh" => {
+                    src_gravity = "vheavy".to_string();
+                    dst_gravity = "vheavy".to_string();
+                },
                 ".svl" | ".svlight" => src_gravity = "vlight".to_string(),
                 ".sl" | ".slight" => src_gravity = "light".to_string(),
+                ".sm" | ".smedium" => src_gravity = "medium".to_string(),
                 ".sh" | ".sheavy" => src_gravity = "heavy".to_string(),
                 ".svh" | ".svheavy" => src_gravity = "vheavy".to_string(),
                 ".dvl" | ".dvlight" => dst_gravity = "vlight".to_string(),
+                ".dm" | ".dmedium" => dst_gravity = "medium".to_string(),
                 ".dl" | ".dlight" => dst_gravity = "light".to_string(),
                 ".dh" | ".dheavy" => dst_gravity = "heavy".to_string(),
                 ".dvh" | ".dvheavy" => dst_gravity = "vheavy".to_string(),
@@ -134,6 +156,7 @@ fn socket_gravity_to_option(x: &str) -> i32 {
         "" => 120,
         "vlight" => 50,
         "light" => 80,
+        "medium" => 120,
         "heavy" => 160,
         "vheavy" => 190,
         _ => panic!("Unknown gravity"),

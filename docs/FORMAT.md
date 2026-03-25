@@ -103,10 +103,17 @@ the pointer arrow.
 
 .svlight                Set gravity of the source, from very light
 .slight                 to very heavy. Higher gravity influences the
-.sheavy                 arrow more.
+.smedium                arrow more.
+.sheavy
 .svheavy
 
 .dvlight ...            Set gravity of the destination.
+
+.vl .vlight             Set gravity of both source and destination.
+.l .light
+.m .medium
+.h .heavy
+.vh .vheavy
 ```
 
 ## Example

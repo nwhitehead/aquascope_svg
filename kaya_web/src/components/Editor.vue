@@ -2,6 +2,7 @@
 
 import { ref, shallowRef } from 'vue';
 import { useDark } from '@vueuse/core';
+import Kaya from './Kaya.vue';
 
 const MONACO_EDITOR_OPTIONS = {
     automaticLayout: true,
@@ -9,7 +10,7 @@ const MONACO_EDITOR_OPTIONS = {
     formatOnPaste: true,
 };
 
-const code = ref('// some code...');
+const code = ref("# L0\n## Stack\nx: 5\ny: 7\nz: ptr(x)\np: ptr(H0)\n## Heap\nH0: 42\n");
 const editor = shallowRef();
 const isDark = useDark();
 
@@ -34,7 +35,7 @@ function handleMount(instance) {
       </el-splitter-panel>
       <el-splitter-panel>
         <div class="demo-panel">
-          <p>Content goes here. 2</p>
+          <Kaya :source="code" />
         </div>
       </el-splitter-panel>
     </el-splitter>

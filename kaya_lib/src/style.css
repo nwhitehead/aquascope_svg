@@ -78,6 +78,7 @@ body {
             padding: 5px;
             padding-right: 15px;
             border-right: solid 1px var(--grid2);
+            border-radius: 0;
         }
     }
     .location {

@@ -20,7 +20,7 @@ float_number = @{ decimal ~ exponent? | ASCII_DIGIT+ ~ exponent }
 INT = @{ integer }
 FLOAT = @{ float_number }
 
-start = { (EOL)? ~ step* }
+start = { SOI ~ (EOL)? ~ step* ~ EOI }
 
 step = { "#" ~ TEXT? ~ EOL ~ location* }
 

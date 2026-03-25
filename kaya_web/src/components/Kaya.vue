@@ -9,8 +9,10 @@ import '../../../kaya_lib/src/style.css';
 
 const elem = useTemplateRef('elem');
 const props = defineProps(['source']);
+
 let ready = ref(false);
 let lines = [];
+let parsed = ref();
 
 onMounted(async () => {
     // init wasm
@@ -23,6 +25,7 @@ onMounted(async () => {
 const contents = computed(() => {
     if (!ready.value) return;
     const prg = parse(props.source + '\n');
+    parsed.value = prg;
     let [html, arrows] = render_program(prg, true);
     // Need to wait until next tick to update arrows because the html we return
     // here will trigger contents to be redrawn (DOM update)
@@ -63,5 +66,6 @@ div {
 </style>
 
 <template>
+    <p>{{ parsed }}</p>
     <div v-html="contents"></div>
 </template>

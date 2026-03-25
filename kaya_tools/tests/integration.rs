@@ -1,7 +1,7 @@
 use assert_cmd::prelude::*;
 use std::process::Command;
 
-const TEST_FILES: [&str; 15] = [
+const TEST_JSON_FILES: [&str; 15] = [
     "../testdata/json/array_0_error.json",
     "../testdata/json/basic.json",
     "../testdata/json/box.json",
@@ -19,6 +19,24 @@ const TEST_FILES: [&str; 15] = [
     "../testdata/json/vec_0_error.json",
 ];
 
+const TEST_KAYA_FILES: [&str; 15] = [
+    "../testdata/bare/array_0_error.states",
+    "../testdata/bare/basic.states",
+    "../testdata/bare/box.states",
+    "../testdata/bare/closure.states",
+    "../testdata/bare/error.states",
+    "../testdata/bare/for_loop_0.states",
+    "../testdata/bare/if_0.states",
+    "../testdata/bare/if_1.states",
+    "../testdata/bare/if_4.states",
+    "../testdata/bare/interior_move.states",
+    "../testdata/bare/linear_0.states",
+    "../testdata/bare/nested_ref.states",
+    "../testdata/bare/stackref.states",
+    "../testdata/bare/tuple.states",
+    "../testdata/bare/vec_0_error.states",
+];
+
 #[test]
 fn test_parse_states() {
     let mut cmd = Command::cargo_bin("render_kaya").unwrap();
@@ -28,7 +46,7 @@ fn test_parse_states() {
 
 #[test]
 fn test_parse_all_states() {
-    for file in TEST_FILES {
+    for file in TEST_KAYA_FILES {
         let mut cmd = Command::cargo_bin("render_kaya").unwrap();
         cmd.arg("--show-parse");
         cmd.arg(file).assert().success();
@@ -43,7 +61,7 @@ fn test_basic_json() {
 
 #[test]
 fn test_all_testdata_json() {
-    for file in TEST_FILES {
+    for file in TEST_JSON_FILES {
         let mut cmd = Command::cargo_bin("aquascope_json_to_kaya").unwrap();
         cmd.arg(file).assert().success();
     }

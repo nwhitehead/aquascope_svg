@@ -41,37 +41,18 @@ onMounted(() => {
 
 watch(
     () => props.contents,
-    (newValue, oldValue) => {
-        console.log('Contents changed');
-        console.log('Arrows', props.contents[1]);
+    () => {
+        // Remove all existing lines immediately
         while (lines.length > 0) {
             const line = lines.pop();
-            console.log('Removed a line');
             line.remove();
         }
-        // Need to wait until next tick to update arrows because the html is also updating
+        // Need to wait until next tick to draw new arrows because the html is also updating
         // DOM is being redrawn, need to wait until finished to add arrows
         nextTick(() => renderArrows());
-
-    //     nextTick(() => {
-    //             const opt = arrow_options(arrow, 0);
-    //             let objopt = {};
-    //             for (const [key, val] of opt) {
-    //                 objopt[key] = val;
-    //             }
-    //             console.log(opt);
-    //             console.log(objopt);
-    //             if (srcElem !== null && dstElem !== null) {
-    //                 const line = new LeaderLine(srcElem, dstElem, objopt);
-    //                 lines.push(line);
-    //             }
-    //         }
-    //     });
-    //     return html;
-    // },
-
-
-    }
+    },
+    // needs to be deep to see changing inside array
+    { deep: true },
 );
 
 </script>

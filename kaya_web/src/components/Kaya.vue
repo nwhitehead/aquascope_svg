@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import { ref, computed, onMounted } from 'vue';
+import { ref, watch, computed, onMounted } from 'vue';
 import { computedAsync } from '@vueuse/core';
 import init, { parse, parse_partial, render_program, arrow_options } from '../../pkg/kaya_web.js';
 import Diagram from './Diagram.vue';
@@ -15,12 +15,13 @@ const emit = defineEmits<{
 
 let ready = false;
 let error = ref();
+let contents = ref(["", []]);
 
-const contents = computedAsync<string>(async () => {
+async function render() {
+    console.log('Recomputing');
     // Access dependency on props before we wait for anything so it's tracked properly
     let src = props.source + '\n';
     let show_partial = props.show_partial;
-    console.log('starting computedAsync');
     if (!ready) {
         // init wasm (only need to do this once)
         await init();
@@ -33,19 +34,21 @@ const contents = computedAsync<string>(async () => {
         prg = res.Success;
         error.value = null;
     } else {
-        console.log('got error');
         error.value = res.Error;
         const row = res.Error[1][0];
         const col = res.Error[1][1];
         //emit(evt: "error", )
         if (!show_partial) {
-            return "";
+            // empty contents
+            contents.value[0] = "";
+            contents.value[1] = [];
         }
         let res2 = parse_partial(src);
         if (res2.Success === undefined) {
             // if we get here something went wrong in partial parse
             // just show nothing for rendered output
-            return "";
+            contents.value[0] = "";
+            contents.value[1] = [];
         }
         // Use partial parse for rendering
         prg = res2.Success;
@@ -53,37 +56,16 @@ const contents = computedAsync<string>(async () => {
     let res_render = render_program(prg, true);
     const html = res_render[0];
     const arrows = res_render[1];
-    return html;
-    // Need to wait until next tick to update arrows because the html we return
-    // here will trigger contents to be redrawn (DOM update)
-    nextTick(() => {
-        while (lines.length > 0) {
-            const line = lines.pop();
-            console.log('Removed a line');
-            line.remove();
-        }
-        for (const arrow of arrows) {
-            const opt = arrow_options(arrow, 0);
-            let srcElem = document.getElementById(arrow.src);
-            const dstElem = document.getElementById(arrow.dst);
-            if (arrow.src === arrow.dst) {
-                srcElem = srcElem.getElementsByClassName('dummy')[0];
-            }
-            let objopt = {};
-            for (const [key, val] of opt) {
-                objopt[key] = val;
-            }
-            console.log(opt);
-            console.log(objopt);
-            if (srcElem !== null && dstElem !== null) {
-                const line = new LeaderLine(srcElem, dstElem, objopt);
-                lines.push(line);
-            }
-        }
-    });
-    return html;
-},
-    "",
+    contents.value[0] = html;
+    contents.value[1] = arrows;
+}
+
+watch(
+    // Dependencies on rendering
+    () => [props.source, props.show_partial],
+    async () => {
+        await render();
+    },
 );
 
 function error_text() {
@@ -101,13 +83,11 @@ div {
 }
 pre.error {
     text-align: left;
-    /* color: var(--ep-color-danger); */
-    /* color: var(--ep-color-danger-dark-2); */
     background-color: var(--ep-color-danger-light-5);
 }
 </style>
 
 <template>
     <p><pre class="error">{{ error_text() }}</pre></p>
-    <Diagram :contents="contents" :arrows="[]" />
+    <Diagram :contents="contents" />
 </template>

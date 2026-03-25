@@ -1,7 +1,6 @@
 <script setup lang="ts">
 
-import { ref, watch, computed, onMounted } from 'vue';
-import { computedAsync } from '@vueuse/core';
+import { reactive, ref, watch, onMounted } from 'vue';
 import init, { parse, parse_partial, render_program, arrow_options } from '../../pkg/kaya_web.js';
 import Diagram from './Diagram.vue';
 
@@ -15,7 +14,7 @@ const emit = defineEmits<{
 
 let ready = false;
 let error = ref();
-let contents = ref(["", []]);
+let contents = reactive(["", []]);
 
 async function render() {
     console.log('Recomputing');
@@ -40,15 +39,15 @@ async function render() {
         //emit(evt: "error", )
         if (!show_partial) {
             // empty contents
-            contents.value[0] = "";
-            contents.value[1] = [];
+            contents[0] = "";
+            contents[1] = [];
         }
         let res2 = parse_partial(src);
         if (res2.Success === undefined) {
             // if we get here something went wrong in partial parse
             // just show nothing for rendered output
-            contents.value[0] = "";
-            contents.value[1] = [];
+            contents[0] = "";
+            contents[1] = [];
         }
         // Use partial parse for rendering
         prg = res2.Success;
@@ -56,17 +55,29 @@ async function render() {
     let res_render = render_program(prg, true);
     const html = res_render[0];
     const arrows = res_render[1];
-    contents.value[0] = html;
-    contents.value[1] = arrows;
+    // Apply options to arrows
+    // clear arrows output
+    contents[1].splice(0);
+    for (const arrow of arrows) {
+        const opt = arrow_options(arrow, 0);
+        let objopt = {};
+        for (const [key, val] of opt) {
+            objopt[key] = val;
+        }
+        contents[1].push({ src: arrow.src, dst: arrow.dst, options: objopt });
+    }
+
+    contents[0] = html;
 }
 
 watch(
     // Dependencies on rendering
     () => [props.source, props.show_partial],
-    async () => {
-        await render();
-    },
+    async () => render(),
 );
+
+// Make sure we do rendering code on load
+onMounted(() => render());
 
 function error_text() {
     if (error.value !== null && error.value !== undefined) {

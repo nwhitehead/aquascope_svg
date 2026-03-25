@@ -6,13 +6,33 @@ import LeaderLine from 'leader-line-new';
 // use the kaya style from the rust lib directly
 import '../../../kaya_lib/src/style.css';
 
+type ArrowInfo = {
+    src: string,
+    dst: string,
+    options: object,
+};
+
 const props = defineProps<{
-    contents: [string, any], // html contents, arrows
+    contents: [string, ArrowInfo[]], // html contents, arrows
 }>();
-let lines = [];
+
+// keep track of drawn LeaderLine objects
+let lines: any[] = [];
 
 function renderArrows() {
     console.log("Rendering arrows");
+    const arrows = props.contents[1];
+    for (const arrow of arrows) {
+        let srcElem = document.getElementById(arrow.src);
+        const dstElem = document.getElementById(arrow.dst);
+        if (arrow.src === arrow.dst) {
+            srcElem = srcElem.getElementsByClassName('dummy')[0];
+        }
+        if (srcElem !== null && dstElem !== null) {
+            const line = new LeaderLine(srcElem, dstElem, arrow.options);
+            lines.push(line);
+        }
+    }
 }
 
 onMounted(() => {
@@ -23,22 +43,18 @@ watch(
     () => props.contents,
     (newValue, oldValue) => {
         console.log('Contents changed');
+        console.log('Arrows', props.contents[1]);
+        while (lines.length > 0) {
+            const line = lines.pop();
+            console.log('Removed a line');
+            line.remove();
+        }
+        // Need to wait until next tick to update arrows because the html is also updating
+        // DOM is being redrawn, need to wait until finished to add arrows
+        nextTick(() => renderArrows());
 
-    //     // Need to wait until next tick to update arrows because the html we return
-    //     // here will trigger contents to be redrawn (DOM update)
     //     nextTick(() => {
-    //         while (lines.length > 0) {
-    //             const line = lines.pop();
-    //             console.log('Removed a line');
-    //             line.remove();
-    //         }
-    //         for (const arrow of arrows) {
     //             const opt = arrow_options(arrow, 0);
-    //             let srcElem = document.getElementById(arrow.src);
-    //             const dstElem = document.getElementById(arrow.dst);
-    //             if (arrow.src === arrow.dst) {
-    //                 srcElem = srcElem.getElementsByClassName('dummy')[0];
-    //             }
     //             let objopt = {};
     //             for (const [key, val] of opt) {
     //                 objopt[key] = val;

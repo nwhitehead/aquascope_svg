@@ -10,8 +10,11 @@ import '../../../kaya_lib/src/style.css';
 const elem = useTemplateRef('elem');
 const props = defineProps<{
     source: string,
+    show_partial?: boolean,
 }>();
-const emit = defineEmits([])
+const emit = defineEmits<{
+    error: [row: number, col: number, msg: string],
+}>()
 let ready = ref(false);
 let lines = [];
 let error = ref();
@@ -34,9 +37,13 @@ const contents = computed(() => {
         error.value = null;
     } else {
         error.value = res.Error;
-        console.log(error);
+        const row = res.Error[1][0];
+        const col = res.Error[1][1];
+        //emit(evt: "error", )
+        if (!props.show_partial) {
+            return "";
+        }
         let res2 = parse_partial(src);
-        console.log(res2);
         if (res2.Success === undefined) {
             // if we get here something went wrong in partial parse
             // just show nothing for rendered output

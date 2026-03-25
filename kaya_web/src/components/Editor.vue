@@ -18,6 +18,10 @@ function handleMount(instance) {
     editor.value = instance;
 }
 
+function handleError(evt) {
+    console.log(`ERROR ${evt}`);
+}
+
 </script>
 
 <template>
@@ -35,7 +39,7 @@ function handleMount(instance) {
       </el-splitter-panel>
       <el-splitter-panel>
         <div class="demo-panel">
-          <Kaya :source="code" />
+          <Kaya :source="code" :show_partial="true" @error="handleError" />
         </div>
       </el-splitter-panel>
     </el-splitter>

@@ -15,11 +15,12 @@
 
 <style>
 #app {
-  text-align: center;
-  color: var(--ep-text-color-primary);
+    text-align: center;
+    color: var(--ep-text-color-primary);
+    background-color: var(--ep-bg-color);
 }
 
 .main-container {
-  height: calc(100vh - var(--ep-menu-item-height) - 4px);
+    height: calc(100vh - var(--ep-menu-item-height) - 4px);
 }
 </style>

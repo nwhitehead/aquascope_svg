@@ -54,6 +54,14 @@ fn test_parse_all_states() {
 }
 
 #[test]
+fn test_parse_failure() {
+    let mut cmd = Command::cargo_bin("render_kaya").unwrap();
+    cmd.arg("--show-parse");
+    cmd.arg("../testdata/kaya/parse_error.kaya").assert().failure();
+
+}
+
+#[test]
 fn test_basic_json() {
     let mut cmd = Command::cargo_bin("aquascope_json_to_kaya").unwrap();
     cmd.arg("../testdata/json/basic.json").assert().success();

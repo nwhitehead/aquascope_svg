@@ -4,13 +4,6 @@ use wasm_bindgen::prelude::*;
 use kaya_lib::states::Program;
 use kaya_lib::render::ArrowInfo;
 
-// use kaya_lib::render::render;
-
-        // let program = parse(&contents)?;
-        // let output = render(&program, args.show_heap)?;
-
-//.map_err(|e| JsError::from(&*e))
-
 #[wasm_bindgen]
 pub fn parse(txt: String) -> Result<JsValue, JsError> {
     let prg = kaya_lib::parser::parse(&txt)?;

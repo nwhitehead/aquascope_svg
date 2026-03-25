@@ -1,0 +1,8 @@
+// This file should fail to even parse
+# L0
+## Stack
+x: 5
+/y: 10
+##
+H0: ptr(x)
+

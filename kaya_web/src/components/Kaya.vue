@@ -1,13 +1,10 @@
 <script setup lang="ts">
 
-import { ref, computed, useTemplateRef, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { computedAsync } from '@vueuse/core';
 import init, { parse, parse_partial, render_program, arrow_options } from '../../pkg/kaya_web.js';
-import LeaderLine from 'leader-line-new';
+import Diagram from './Diagram.vue';
 
-// use the kaya style from the rust lib directly
-import '../../../kaya_lib/src/style.css';
-
-const elem = useTemplateRef('elem');
 const props = defineProps<{
     source: string,
     show_partial?: boolean,
@@ -15,20 +12,20 @@ const props = defineProps<{
 const emit = defineEmits<{
     error: [row: number, col: number, msg: string],
 }>()
-let ready = ref(false);
-let lines = [];
+
+let ready = false;
 let error = ref();
 
-onMounted(async () => {
-    // init wasm
-    await init();
-    // update reactive value to trigger computed stuff
-    ready.value = true;
-});
-
-const contents = computed(() => {
-    if (!ready.value) return;
+const contents = computedAsync<string>(async () => {
+    // Access dependency on props before we wait for anything so it's tracked properly
     let src = props.source + '\n';
+    let show_partial = props.show_partial;
+    console.log('starting computedAsync');
+    if (!ready) {
+        // init wasm (only need to do this once)
+        await init();
+        ready = true;
+    }
     // Try to parse, if it fails then try with partial parse
     let res = parse(src);
     let prg = null;
@@ -36,11 +33,12 @@ const contents = computed(() => {
         prg = res.Success;
         error.value = null;
     } else {
+        console.log('got error');
         error.value = res.Error;
         const row = res.Error[1][0];
         const col = res.Error[1][1];
         //emit(evt: "error", )
-        if (!props.show_partial) {
+        if (!show_partial) {
             return "";
         }
         let res2 = parse_partial(src);
@@ -52,8 +50,10 @@ const contents = computed(() => {
         // Use partial parse for rendering
         prg = res2.Success;
     }
-    let [html, arrows] = render_program(prg, true);
-    return "";
+    let res_render = render_program(prg, true);
+    const html = res_render[0];
+    const arrows = res_render[1];
+    return html;
     // Need to wait until next tick to update arrows because the html we return
     // here will trigger contents to be redrawn (DOM update)
     nextTick(() => {
@@ -82,7 +82,9 @@ const contents = computed(() => {
         }
     });
     return html;
-});
+},
+    "",
+);
 
 function error_text() {
     if (error.value !== null && error.value !== undefined) {
@@ -107,5 +109,5 @@ pre.error {
 
 <template>
     <p><pre class="error">{{ error_text() }}</pre></p>
-    <div v-html="contents"></div>
+    <Diagram :contents="contents" :arrows="[]" />
 </template>

@@ -17,7 +17,6 @@ let error = ref();
 let contents = reactive(["", []]);
 
 async function render() {
-    console.log('Recomputing');
     // Access dependency on props before we wait for anything so it's tracked properly
     let src = props.source + '\n';
     let show_partial = props.show_partial;
@@ -26,6 +25,8 @@ async function render() {
         await init();
         ready = true;
     }
+    // If source is empty, don't do anything
+    if (props.source === '') return;
     // Try to parse, if it fails then try with partial parse
     let res = parse(src);
     let prg = null;
@@ -81,7 +82,6 @@ onMounted(() => render());
 
 function error_text() {
     if (error.value !== null && error.value !== undefined) {
-        console.log(error.value[0]);
         return error.value[0];
     }
 }

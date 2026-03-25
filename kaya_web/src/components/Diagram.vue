@@ -20,7 +20,6 @@ const props = defineProps<{
 let lines: any[] = [];
 
 function renderArrows() {
-    console.log("Rendering arrows");
     const arrows = props.contents[1];
     for (const arrow of arrows) {
         let srcElem = document.getElementById(arrow.src);
@@ -47,7 +46,7 @@ watch(
             const line = lines.pop();
             line.remove();
         }
-        // Need to wait until next tick to draw new arrows because the html is also updating
+        // Need to wait until next tick to draw new arrows because DOM is also updating
         // DOM is being redrawn, need to wait until finished to add arrows
         nextTick(() => renderArrows());
     },

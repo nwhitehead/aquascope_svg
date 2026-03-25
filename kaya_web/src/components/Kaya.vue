@@ -3,6 +3,7 @@
 import { ref, computed, useTemplateRef, onMounted, nextTick } from 'vue';
 import init, { parse, render, render_parts, render_program, get_css, arrow_options } from '../../pkg/kaya_web.js';
 import LeaderLine from 'leader-line-new';
+import '../../../kaya_lib/src/style.css';
 
 const elem = useTemplateRef('elem');
 const props = defineProps(['source']);

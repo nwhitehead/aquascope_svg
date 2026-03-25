@@ -7,6 +7,8 @@ edition = "2024"
 wasm-bindgen = "0.2.114"
 kaya_lib = { path = "../kaya_lib" }
 serde-wasm-bindgen = "0.6.5"
+serde = { version = "1.0.228", features = ["derive"] }
+pest = "2.8.6"
 
 [lib]
 crate-type = ["cdylib"]

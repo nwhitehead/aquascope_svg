@@ -853,6 +853,8 @@ name = "kaya_web"
 version = "0.1.0"
 dependencies = [
  "kaya_lib",
+ "pest",
+ "serde",
  "serde-wasm-bindgen",
  "wasm-bindgen",
 ]

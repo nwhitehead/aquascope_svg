@@ -15,7 +15,6 @@
 
 <style>
 #app {
-    text-align: center;
     color: var(--ep-text-color-primary);
     background-color: var(--ep-bg-color);
 }

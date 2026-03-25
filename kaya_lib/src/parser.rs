@@ -1,5 +1,5 @@
 use pest::Parser;
-use pest::iterators::Pair;
+use pest::iterators::{Pair, Pairs};
 use pest_derive::Parser;
 
 use crate::states::{Def, Location, NamedStruct, Program, Ptr, Region, Step, Value};
@@ -8,15 +8,26 @@ use crate::states::{Def, Location, NamedStruct, Program, Ptr, Region, Step, Valu
 #[grammar = "grammar.pest"]
 struct StatesParser;
 
+/// Parse kaya string, return error if parse fails
 pub fn parse(content: &str) -> Result<Program, pest::error::Error<Rule>> {
     let pairs = StatesParser::parse(Rule::start, content)?;
+    Ok(parse_program(pairs))
+}
+
+/// Parse kaya string, return as much program as we can parse (stop parsing rather than error)
+pub fn parse_partial(content: &str) -> Result<Program, pest::error::Error<Rule>> {
+    let pairs = StatesParser::parse(Rule::start_partial, content)?;
+    Ok(parse_program(pairs))
+}
+
+fn parse_program(pairs: Pairs<Rule>) -> Program {
     let mut steps = Vec::new();
 
     for pair in pairs {
         match pair.as_rule() {
             Rule::step => steps.push(parse_step(pair)),
             Rule::EOL => {}
-            Rule::start => {
+            Rule::start | Rule::start_partial => {
                 for inner in pair.into_inner() {
                     #[allow(clippy::single_match)]
                     match inner.as_rule() {
@@ -29,7 +40,7 @@ pub fn parse(content: &str) -> Result<Program, pest::error::Error<Rule>> {
         }
     }
 
-    Ok(Program(steps))
+    Program(steps)
 }
 
 fn parse_step(pair: Pair<Rule>) -> Step {

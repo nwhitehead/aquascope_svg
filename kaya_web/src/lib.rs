@@ -1,13 +1,52 @@
 
 use wasm_bindgen::prelude::*;
+use serde::Serialize;
+use pest::error::LineColLocation;
 
 use kaya_lib::states::Program;
 use kaya_lib::render::ArrowInfo;
 
+#[derive(Serialize)]
+pub enum ParseResult {
+    Success(Program),
+    Error(String, Vec<usize>),
+}
+
 #[wasm_bindgen]
 pub fn parse(txt: String) -> Result<JsValue, JsError> {
-    let prg = kaya_lib::parser::parse(&txt)?;
-    Ok(serde_wasm_bindgen::to_value(&prg)?)
+    match kaya_lib::parser::parse(&txt) {
+        Ok(prg) => {
+            let res = ParseResult::Success(prg);
+            Ok(serde_wasm_bindgen::to_value(&res)?)
+        },
+        Err(err) => {
+            let pos = match err.line_col {
+                LineColLocation::Pos((u0, u1)) => vec![u0, u1],
+                LineColLocation::Span((u0, u1), (u2, u3)) => vec![u0, u1, u2, u3],
+            };
+            let res = ParseResult::Error(err.to_string(), pos);
+            Ok(serde_wasm_bindgen::to_value(&res)?)
+        }
+    }
+}
+
+#[wasm_bindgen]
+pub fn parse_partial(txt: String) -> Result<JsValue, JsError> {
+    match kaya_lib::parser::parse_partial(&txt) {
+        Ok(prg) => {
+            let res = ParseResult::Success(prg);
+            Ok(serde_wasm_bindgen::to_value(&res)?)
+        },
+        Err(err) => {
+            let pos = match err.line_col {
+                LineColLocation::Pos((u0, u1)) => vec![u0, u1],
+                LineColLocation::Span((u0, u1), (u2, u3)) => vec![u0, u1, u2, u3],
+            };
+            let res = ParseResult::Error(err.to_string(), pos);
+            Ok(serde_wasm_bindgen::to_value(&res)?)
+        }
+    }
+
 }
 
 #[wasm_bindgen]

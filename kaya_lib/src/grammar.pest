@@ -21,6 +21,7 @@ INT = @{ integer }
 FLOAT = @{ float_number }
 
 start = { SOI ~ (EOL)? ~ step* ~ EOI }
+start_partial = { SOI ~ (EOL)? ~ step* }
 
 step = { "#" ~ TEXT? ~ EOL ~ location* }
 

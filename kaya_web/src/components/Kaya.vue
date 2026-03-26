@@ -26,8 +26,12 @@ async function render() {
         await init();
         ready = true;
     }
-    // If source is empty, don't do anything
-    if (props.source === '') return;
+    // If source is empty, render nothing
+    if (props.source === '') {
+        contents[0] = '';
+        contents[1].splice(0);
+        return;
+    }
     // Try to parse, if it fails then try with partial parse
     let res = parse(src);
     let prg = null;

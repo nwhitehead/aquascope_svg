@@ -33,10 +33,13 @@ function handleError(evt) {
 
 function handleUpdate() {
     renderedCode.value = code.value;
+    kayaKey.value++;
 }
 
 function updateDisabled() {
-    return renderedCode.value === code.value;
+    return false;
+    // // or we could do:
+    // return renderedCode.value === code.value;
 }
 
 watch(() => code.value, () => {

@@ -36,7 +36,6 @@ function clearArrows() {
 }
 
 function renderArrows() {
-    return;
     // Make sure we are not double rendering
     // If arrows are already clear it's fine
     clearArrows();

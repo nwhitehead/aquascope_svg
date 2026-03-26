@@ -11,9 +11,9 @@ import { ElMenu, ElMenuItem, ElIcon } from 'element-plus';
             <el-icon><Edit /></el-icon>
             <template #title>Edit</template>
         </el-menu-item>
-        <el-menu-item index="/settings">
+        <!-- <el-menu-item index="/">
             <el-icon><Setting /></el-icon>
             <template #title>Settings</template>
-        </el-menu-item>
+        </el-menu-item> -->
     </el-menu>
 </template>

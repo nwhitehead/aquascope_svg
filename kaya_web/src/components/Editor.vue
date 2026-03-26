@@ -15,6 +15,7 @@ const renderedCode = ref("");
 const editor = shallowRef();
 const isDark = useDark();
 const autoUpdate = ref(false);
+const kayaKey = ref(0);
 
 function handleMount(instance) {
     editor.value = instance;
@@ -36,10 +37,21 @@ watch(() => code.value, () => {
     if (autoUpdate.value) handleUpdate();
 });
 
+function handleScroll() {
+    // Force re-render of DOM for Kaya subcomponent
+    // This is needed to redraw arrows, which are done in absolute position
+    kayaKey.value++;
+}
+
+function handleResize() {
+    // Force re-render of DOM for Kaya subcomponent
+    kayaKey.value++;
+}
+
 </script>
 
 <template>
-   <el-splitter layout="horizontal">
+   <el-splitter layout="horizontal" @resize="handleResize">
       <el-splitter-panel>
         <div class="demo-panel">
             <vue-monaco-editor
@@ -55,9 +67,9 @@ watch(() => code.value, () => {
             </div>
         </div>
       </el-splitter-panel>
-      <el-splitter-panel>
+      <el-splitter-panel @scroll="handleScroll">
         <div class="demo-panel">
-          <Kaya :source="renderedCode" :show_partial="true" @error="handleError" />
+          <Kaya :source="renderedCode" :show_partial="true" @error="handleError" :key="kayaKey"/>
         </div>
       </el-splitter-panel>
     </el-splitter>

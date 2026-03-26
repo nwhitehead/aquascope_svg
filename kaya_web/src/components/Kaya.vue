@@ -15,6 +15,7 @@ const emit = defineEmits<{
 let ready = false;
 let error = ref();
 let contents = reactive(["", []]);
+let diagramKey = ref(0);
 
 async function render() {
     // Access dependency on props before we wait for anything so it's tracked properly
@@ -100,5 +101,5 @@ pre.error {
 
 <template>
     <p><pre class="error">{{ error_text() }}</pre></p>
-    <Diagram :contents="contents" />
+    <Diagram :contents="contents" :key="diagramKey" />
 </template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import { watch, ref, onMounted, nextTick } from 'vue';
+import { watch, ref, onMounted, onUnmounted, nextTick } from 'vue';
 import LeaderLine from 'leader-line-new';
 
 // use the kaya style from the rust lib directly
@@ -19,7 +19,18 @@ const props = defineProps<{
 // keep track of drawn LeaderLine objects
 let lines: any[] = [];
 
+function clearArrows() {
+    // Remove all existing lines
+    while (lines.length > 0) {
+        const line = lines.pop();
+        line.remove();
+    }
+}
+
 function renderArrows() {
+    // Make sure we are not double rendering
+    // If arrows are already clear it's fine
+    clearArrows();
     const arrows = props.contents[1];
     for (const arrow of arrows) {
         let srcElem = document.getElementById(arrow.src);
@@ -38,14 +49,13 @@ onMounted(() => {
     renderArrows();
 });
 
+onUnmounted(() => {
+    clearArrows();
+});
+
 watch(
     () => props.contents,
     () => {
-        // Remove all existing lines immediately
-        while (lines.length > 0) {
-            const line = lines.pop();
-            line.remove();
-        }
         // Need to wait until next tick to draw new arrows because DOM is also updating
         // DOM is being redrawn, need to wait until finished to add arrows
         nextTick(() => renderArrows());

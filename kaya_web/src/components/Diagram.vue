@@ -39,6 +39,7 @@ function renderArrows() {
     // Make sure we are not double rendering
     // If arrows are already clear it's fine
     clearArrows();
+    if (diaElem.value === null) return;
     const arrows = props.contents[1];
     for (const arrow of arrows) {
         let srcElem = document.getElementById(arrow.src);
@@ -50,15 +51,21 @@ function renderArrows() {
             const line = new LeaderLine(srcElem, dstElem, arrow.options);
             lines.push(line);
         }
-        // Move all lines to div element
-        const elems = document.querySelectorAll('.leader-line:last-of-type');
-        for (const elem of elems) {
-            linesSvg.push(elem);
-            diaElem.value.appendChild(elem);
-            // elem.style.transform = 'translate(-100px, -100px)';
-        }
     }
-    // Make sure transform is correct for line positions
+    // Move svg defs to div element
+    const defs = document.querySelector('#leader-line-defs');
+    if (defs) {
+        diaElem.value.appendChild(defs);
+    }
+    // Move all lines to div element
+    console.log('diaElem box = ', diaElem.value?.getBoundingClientRect());
+    const elems = document.querySelectorAll('.leader-line');
+    for (const elem of elems) {
+        linesSvg.push(elem);
+        diaElem.value.appendChild(elem);
+        // Make sure transform is correct for line positions
+        elem.style.transform = 'translate(-115px, -60px)';
+    }
 }
 
 onMounted(() => {
@@ -92,6 +99,7 @@ svg {
 div {
     background-color: var(--ep-bg-color);
     color: var(--ep-text-color-primary);
+    width: fit-content;
 }
 </style>
 

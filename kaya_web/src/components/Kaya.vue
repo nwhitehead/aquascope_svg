@@ -15,7 +15,6 @@ const emit = defineEmits<{
 let ready = false;
 const error = ref(null);
 const contents = reactive(["", []]);
-const diagramKey = ref(0);
 
 async function render() {
     // Access dependency on props before we wait for anything so it's tracked properly
@@ -93,10 +92,6 @@ function error_text() {
 </script>
 
 <style scoped>
-div {
-    background-color: var(--ep-bg-color);
-    color: var(--ep-text-color-primary);
-}
 pre.error {
     text-align: left;
     background-color: var(--ep-color-danger-light-5);
@@ -105,5 +100,5 @@ pre.error {
 
 <template>
     <p v-if="error"><pre class="error">{{ error_text() }}</pre></p>
-    <Diagram :contents="contents" :key="diagramKey" />
+    <Diagram :contents="contents" />
 </template>

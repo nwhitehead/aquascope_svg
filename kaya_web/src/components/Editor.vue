@@ -1,8 +1,9 @@
 <script setup lang="ts">
 
-import { ref, watch, shallowRef } from 'vue';
+import { ref, watch, shallowRef, useTemplateRef } from 'vue';
 import { useDark } from '@vueuse/core';
 import Kaya from './Kaya.vue';
+import html2canvas from 'html2canvas-pro';
 
 const MONACO_EDITOR_OPTIONS = {
     automaticLayout: true,
@@ -16,6 +17,8 @@ const editor = shallowRef();
 const isDark = useDark();
 const autoUpdate = ref(false);
 const kayaKey = ref(0);
+const kayaElem = useTemplateRef('kaya');
+const outputElem = useTemplateRef('output');
 
 function handleMount(instance) {
     editor.value = instance;
@@ -41,11 +44,21 @@ function handleScroll() {
     // Force re-render of DOM for Kaya subcomponent
     // This is needed to redraw arrows, which are done in absolute position
     kayaKey.value++;
+    return false;
 }
 
 function handleResize() {
     // Force re-render of DOM for Kaya subcomponent
     kayaKey.value++;
+}
+
+function handlePNG() {
+    console.log("Generating PNG");
+    console.log(kayaElem.value);
+    html2canvas(kayaElem.value).then((canvas) => {
+        console.log('got canvas', canvas);
+        outputElem.value.appendChild(canvas);
+    });
 }
 
 </script>
@@ -62,13 +75,16 @@ function handleResize() {
                 @mount="handleMount"
             />
             <div class="row">
+                <el-button @click="handlePNG">Save PNG</el-button>
                 <el-switch active-text="Auto Update" v-model="autoUpdate" />
                 <el-button type="primary" @click="handleUpdate" :disabled="updateDisabled()">Update</el-button>
+            </div>
+            <div ref="output">
             </div>
         </div>
       </el-splitter-panel>
       <el-splitter-panel @scroll="handleScroll">
-        <div class="demo-panel">
+        <div ref="kaya" class="demo-panel">
           <Kaya :source="renderedCode" :show_partial="true" @error="handleError" :key="kayaKey"/>
         </div>
       </el-splitter-panel>
@@ -84,6 +100,7 @@ div .row {
 div.demo-panel {
     display: flex;
     flex-direction: column;
+    width: fit-content;
 }
 html.dark div.demo-panel {
     background-color: var(--el-bg-color);

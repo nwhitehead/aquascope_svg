@@ -1,0 +1,19 @@
+# L0
+## Stack
+x: 5
+y: 7
+z: ptr(x).se.de.vl
+p: ptr(H0).se.ds.vl
+## Heap
+H0: 42
+
+# L1
+## Stack
+x: 5
+y: 7
+z: ptr(x).se.de.vl
+p: ptr(H0.0).se.ds.vl
+## Heap
+H0: (2, ptr(H1).straight)
+##
+H1: 42

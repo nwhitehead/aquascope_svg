@@ -23,4 +23,5 @@ app.use(createRouter({
     routes,
 }));
 app.use(ElementPlus);
+app.use(VueMonacoEditorPlugin);
 app.mount("#app");

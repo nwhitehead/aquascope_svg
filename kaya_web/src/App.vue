@@ -10,7 +10,6 @@ import BaseSide from './components/layouts/BaseSide.vue';
     <div class="main-container flex">
         <BaseSide />
         <div w="full">
-            <h1>HELLO</h1>
             <RouterView />
         </div>
     </div>

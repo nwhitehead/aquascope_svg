@@ -11,7 +11,7 @@ import { ElMenu, ElMenuItem, ElIcon } from 'element-plus';
             <el-icon><Edit /></el-icon>
             <template #title>Edit</template>
         </el-menu-item>
-        <el-menu-item index="/settings" disabled>
+        <el-menu-item index="/settings">
             <el-icon><Setting /></el-icon>
             <template #title>Settings</template>
         </el-menu-item>

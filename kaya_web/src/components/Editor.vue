@@ -2,11 +2,11 @@
 
 import { ref, watch, shallowRef, useTemplateRef } from 'vue';
 import { useDark } from '@vueuse/core';
-// import Kaya from './Kaya.vue';
+import Kaya from './Kaya.vue';
 //import html2canvas from 'html2canvas-pro';
 import { toPng, toJpeg, toBlob, toPixelData, toSvg } from 'html-to-image';
 // import { CodeEditor } from 'monaco-editor-vue3';
-// import vue-monaco-editor from 'vue-monaco-editor';
+//import vue-monaco-editor from 'vue-monaco-editor';
 
 const MONACO_EDITOR_OPTIONS = {
     automaticLayout: true,
@@ -40,7 +40,6 @@ function updateDisabled() {
 }
 
 watch(() => code.value, () => {
-    console.log('code updated');
     if (autoUpdate.value) handleUpdate();
 });
 
@@ -95,9 +94,9 @@ function handlePNG() {
         </div>
       </el-splitter-panel>
       <el-splitter-panel @scroll="handleScroll">
-        <!-- <div ref="kaya" class="demo-panel">
-        <Kaya :source="renderedCode" :show_partial="true" @error="handleError" :key="kayaKey"/>
-        </div> -->
+        <div ref="kaya" class="demo-panel">
+            <Kaya :source="renderedCode" :show_partial="true" @error="handleError" :key="kayaKey"/>
+        </div>
       </el-splitter-panel>
     </el-splitter>
 </template>

@@ -32,6 +32,10 @@ import { toggleDark } from '~/composables'
 
 <style lang="scss">
 .el-menu-bh {
+    z-index: 1;
+}
+
+.el-menu-bh {
   &.ep-menu--horizontal > .ep-menu-item:nth-child(1) {
     margin-right: auto;
   }

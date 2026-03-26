@@ -66,6 +66,12 @@ watch(
 
 </script>
 
+<style>
+svg {
+    z-index: 0;
+}
+</style>
+
 <style scoped>
 div {
     background-color: var(--ep-bg-color);

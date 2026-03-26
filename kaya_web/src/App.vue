@@ -6,7 +6,7 @@
     <BaseHeader />
     <div class="main-container flex">
       <BaseSide />
-      <div w="full" py="4">
+      <div w="full">
         <RouterView />
       </div>
     </div>

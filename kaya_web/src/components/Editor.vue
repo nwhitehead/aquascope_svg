@@ -2,8 +2,11 @@
 
 import { ref, watch, shallowRef, useTemplateRef } from 'vue';
 import { useDark } from '@vueuse/core';
-import Kaya from './Kaya.vue';
-import html2canvas from 'html2canvas-pro';
+// import Kaya from './Kaya.vue';
+//import html2canvas from 'html2canvas-pro';
+import { toPng, toJpeg, toBlob, toPixelData, toSvg } from 'html-to-image';
+// import { CodeEditor } from 'monaco-editor-vue3';
+// import vue-monaco-editor from 'vue-monaco-editor';
 
 const MONACO_EDITOR_OPTIONS = {
     automaticLayout: true,
@@ -13,7 +16,7 @@ const MONACO_EDITOR_OPTIONS = {
 
 const code = ref("# L0\n## Stack\nx: 5\ny: 7\nz: ptr(x)\np: ptr(H0)\n## Heap\nH0: 42\n");
 const renderedCode = ref("");
-const editor = shallowRef();
+let editor = null;
 const isDark = useDark();
 const autoUpdate = ref(false);
 const kayaKey = ref(0);
@@ -21,7 +24,7 @@ const kayaElem = useTemplateRef('kaya');
 const outputElem = useTemplateRef('output');
 
 function handleMount(instance) {
-    editor.value = instance;
+    editor = instance;
 }
 
 function handleError(evt) {
@@ -37,17 +40,20 @@ function updateDisabled() {
 }
 
 watch(() => code.value, () => {
+    console.log('code updated');
     if (autoUpdate.value) handleUpdate();
 });
 
 function handleScroll() {
     // Force re-render of DOM for Kaya subcomponent
     // This is needed to redraw arrows, which are done in absolute position
+    console.log('scroll');
     kayaKey.value++;
     return false;
 }
 
 function handleResize() {
+    console.log('resize');
     // Force re-render of DOM for Kaya subcomponent
     kayaKey.value++;
 }
@@ -55,10 +61,15 @@ function handleResize() {
 function handlePNG() {
     console.log("Generating PNG");
     console.log(kayaElem.value);
-    html2canvas(kayaElem.value).then((canvas) => {
-        console.log('got canvas', canvas);
-        outputElem.value.appendChild(canvas);
-    });
+    toPng(document.body)
+        .then((dataUrl) => {
+            const img = new Image();
+            img.src = dataUrl;
+            outputElem.value.appendChild(img);
+        })
+        .catch((err) => {
+            console.error('oops', err);
+        });
 }
 
 </script>
@@ -84,9 +95,9 @@ function handlePNG() {
         </div>
       </el-splitter-panel>
       <el-splitter-panel @scroll="handleScroll">
-        <div ref="kaya" class="demo-panel">
-          <Kaya :source="renderedCode" :show_partial="true" @error="handleError" :key="kayaKey"/>
-        </div>
+        <!-- <div ref="kaya" class="demo-panel">
+        <Kaya :source="renderedCode" :show_partial="true" @error="handleError" :key="kayaKey"/>
+        </div> -->
       </el-splitter-panel>
     </el-splitter>
 </template>

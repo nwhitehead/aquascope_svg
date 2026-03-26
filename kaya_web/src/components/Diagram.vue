@@ -36,6 +36,7 @@ function clearArrows() {
 }
 
 function renderArrows() {
+    return;
     // Make sure we are not double rendering
     // If arrows are already clear it's fine
     clearArrows();
@@ -53,10 +54,10 @@ function renderArrows() {
         }
     }
     // Move svg defs to div element
-    const defs = document.querySelector('#leader-line-defs');
-    if (defs) {
-        diaElem.value.appendChild(defs);
-    }
+    const defs = document.querySelector('#leader-line-defs defs');
+    // if (defs) {
+    //     diaElem.value.appendChild(defs);
+    // }
     // Move all lines to div element
     console.log('diaElem box = ', diaElem.value?.getBoundingClientRect());
     const elems = document.querySelectorAll('.leader-line');
@@ -66,6 +67,12 @@ function renderArrows() {
         // Make sure transform is correct for line positions
         elem.style.transform = 'translate(-115px, -60px)';
     }
+    // get a line and try to make it work in canvas
+    const aline = document.querySelector('.leader-line');
+    if (defs && aline) {
+        aline.appendChild(defs);
+    }
+
 }
 
 onMounted(() => {
@@ -91,7 +98,11 @@ watch(
 
 <style>
 svg {
-    z-index: 0;
+    z-index: 5;
+}
+.leader-line {
+    position: absolute;
+    opacity: 0.5;
 }
 </style>
 

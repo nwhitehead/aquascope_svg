@@ -7,7 +7,8 @@
     <div class="main-container flex">
       <BaseSide />
       <div w="full">
-        <RouterView />
+        <h1>HELLO</h1>
+        <!-- <RouterView /> -->
       </div>
     </div>
   </el-config-provider>

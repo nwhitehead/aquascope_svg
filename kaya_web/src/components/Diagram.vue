@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import { watch, ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { watch, ref, useTemplateRef, onMounted, onUnmounted, nextTick } from 'vue';
 import LeaderLine from 'leader-line-new';
 
 // use the kaya style from the rust lib directly
@@ -16,11 +16,19 @@ const props = defineProps<{
     contents: [string, ArrowInfo[]], // html contents, arrows
 }>();
 
+const diaElem = useTemplateRef('dia');
+
 // keep track of drawn LeaderLine objects
 let lines: any[] = [];
+let linesSvg: any[] = [];
 
 function clearArrows() {
     // Remove all existing lines
+    while (linesSvg.length > 0) {
+        const lineSvg = linesSvg.pop();
+        // Move to body
+        document.body.appendChild(lineSvg);
+    }
     while (lines.length > 0) {
         const line = lines.pop();
         line.remove();
@@ -42,7 +50,15 @@ function renderArrows() {
             const line = new LeaderLine(srcElem, dstElem, arrow.options);
             lines.push(line);
         }
+        // Move all lines to div element
+        const elems = document.querySelectorAll('.leader-line:last-of-type');
+        for (const elem of elems) {
+            linesSvg.push(elem);
+            diaElem.value.appendChild(elem);
+            // elem.style.transform = 'translate(-100px, -100px)';
+        }
     }
+    // Make sure transform is correct for line positions
 }
 
 onMounted(() => {
@@ -80,5 +96,5 @@ div {
 </style>
 
 <template>
-    <div v-html="contents[0]"></div>
+    <div ref="dia" v-html="contents[0]"></div>
 </template>

@@ -1,14 +1,16 @@
 <script lang="ts" setup>
-import { repository } from '~/../package.json'
 
-import { toggleDark } from '~/composables'
+import { repository } from '~/../package.json';
+import { toggleDark } from '~/composables';
+import { ElMenu, ElMenuItem } from 'element-plus';
+
 </script>
 
 <template>
   <el-menu class="el-menu-bh" mode="horizontal" :ellipsis="false" router>
     <el-menu-item index="/">
       <div class="flex items-center justify-center gap-2">
-        <div class="text-xl" i-ep-data-analysis />
+        <div class="text-xl" i-el-data-analysis />
         <span>Kaya</span>
       </div>
     </el-menu-item>
@@ -16,7 +18,7 @@ import { toggleDark } from '~/composables'
     <el-menu-item h="full" @click="toggleDark()" index="">
       <button
         class="w-full cursor-pointer border-none bg-transparent"
-        style="height: var(--ep-menu-item-height)"
+        style="height: var(--el-menu-item-height)"
       >
         <i inline-flex i="dark:ep-moon ep-sunny" />
       </button>
@@ -36,8 +38,8 @@ import { toggleDark } from '~/composables'
 }
 
 .el-menu-bh {
-  &.ep-menu--horizontal > .ep-menu-item:nth-child(1) {
-    margin-right: auto;
-  }
+    &.el-menu--horizontal > .el-menu-item:nth-child(1) {
+        margin-right: auto;
+    }
 }
 </style>

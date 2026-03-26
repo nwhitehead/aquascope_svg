@@ -27,33 +27,11 @@ export default defineConfig({
 
   plugins: [
     Vue(),
-
-    // https://github.com/posva/unplugin-vue-router
-    VueRouter({
-      extensions: ['.vue', '.md'],
-      dts: 'src/typed-router.d.ts',
-    }),
-
     Components({
-      // allow auto load markdown components under `./src/components/`
-      extensions: ['vue', 'md'],
-      // allow auto import and register components used in markdown
-      include: [/\.vue$/, /\.vue\?vue/, /\.md$/],
-      resolvers: [
-        ElementPlusResolver({
-          importStyle: 'sass',
-        }),
-      ],
+      extensions: ['vue'],
+      include: [/\.vue$/, /\.vue\?vue/],
       dts: 'src/components.d.ts',
     }),
-
-    // https://github.com/antfu/unocss
-    // see uno.config.ts for config
     Unocss(),
   ],
-
-  ssr: {
-    // TODO: workaround until they support native ESM
-    noExternal: ['element-plus'],
-  },
 })

@@ -19,6 +19,7 @@ import BaseSide from './components/layouts/BaseSide.vue';
 #app {
     color: var(--el-text-color-primary);
     background-color: var(--el-bg-color);
+    overflow: clip;
 }
 
 .main-container {

@@ -17,6 +17,7 @@ const error = ref(null);
 const contents = reactive(["", []]);
 
 async function render() {
+    console.log('Starting render');
     // Access dependency on props before we wait for anything so it's tracked properly
     let src = props.source + '\n';
     let show_partial = props.show_partial;

@@ -52,25 +52,26 @@ function renderArrows() {
             lines.push(line);
         }
     }
-    // Move svg defs to div element
-    const defs = document.querySelector('#leader-line-defs defs');
-    // if (defs) {
-    //     diaElem.value.appendChild(defs);
-    // }
-    // Move all lines to div element
+    // // Move svg defs to div element
+    // const defs = document.querySelector('#leader-line-defs defs');
+    // // if (defs) {
+    // //     diaElem.value.appendChild(defs);
+    // // }
+    // // Move all lines to div element
     console.log('diaElem box = ', diaElem.value?.getBoundingClientRect());
+    const box = diaElem.value.getBoundingClientRect();
     const elems = document.querySelectorAll('.leader-line');
     for (const elem of elems) {
         linesSvg.push(elem);
         diaElem.value.appendChild(elem);
         // Make sure transform is correct for line positions
-        elem.style.transform = 'translate(-115px, -60px)';
+        elem.style.transform = `translate(-${box.x}px, -${box.y}px)`;
     }
-    // get a line and try to make it work in canvas
-    const aline = document.querySelector('.leader-line');
-    if (defs && aline) {
-        aline.appendChild(defs);
-    }
+    // // get a line and try to make it work in canvas
+    // const aline = document.querySelector('.leader-line');
+    // if (defs && aline) {
+    //     aline.appendChild(defs);
+    // }
 
 }
 
@@ -101,7 +102,6 @@ svg {
 }
 .leader-line {
     position: absolute;
-    opacity: 0.5;
 }
 </style>
 
@@ -110,6 +110,8 @@ div {
     background-color: var(--ep-bg-color);
     color: var(--ep-text-color-primary);
     width: fit-content;
+    position: relative;
+    overflow: clip;
 }
 </style>
 

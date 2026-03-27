@@ -3,10 +3,8 @@
 import { ref, watch, shallowRef, useTemplateRef } from 'vue';
 import { useDark } from '@vueuse/core';
 import Kaya from './Kaya.vue';
-//import html2canvas from 'html2canvas-pro';
-import { toPng, toJpeg, toBlob, toPixelData, toSvg } from 'html-to-image';
-// import { CodeEditor } from 'monaco-editor-vue3';
-//import vue-monaco-editor from 'vue-monaco-editor';
+import html2canvas from 'html2canvas-pro';
+//import { toPng, toJpeg, toBlob, toPixelData, toSvg } from 'html-to-image';
 
 const MONACO_EDITOR_OPTIONS = {
     automaticLayout: true,
@@ -46,38 +44,34 @@ watch(() => code.value, () => {
     if (autoUpdate.value) handleUpdate();
 });
 
-function handleScroll() {
-    // Force re-render of DOM for Kaya subcomponent
-    // This is needed to redraw arrows, which are done in absolute position
-    console.log('scroll');
-    kayaKey.value++;
-    return false;
-}
-
-function handleResize() {
-    console.log('resize');
-    // Force re-render of DOM for Kaya subcomponent
+function handleRender() {
     kayaKey.value++;
 }
 
 function handlePNG() {
     console.log("Generating PNG");
     console.log(kayaElem.value);
-    toPng(document.body)
-        .then((dataUrl) => {
-            const img = new Image();
-            img.src = dataUrl;
-            outputElem.value.appendChild(img);
-        })
-        .catch((err) => {
-            console.error('oops', err);
-        });
+    html2canvas(kayaElem.value, {
+        scale: 2.0,
+    }).then((canvas) => {
+        outputElem.value?.replaceChildren();
+        outputElem.value.appendChild(canvas);
+    });
+    // toPng(kayaElem.value)
+    //     .then((dataUrl) => {
+    //         const img = new Image();
+    //         img.src = dataUrl;
+    //         outputElem.value.appendChild(img);
+    //     })
+    //     .catch((err) => {
+    //         console.error('oops', err);
+    //     });
 }
 
 </script>
 
 <template>
-   <el-splitter layout="horizontal" @resize="handleResize">
+   <el-splitter layout="horizontal">
       <el-splitter-panel>
         <div class="demo-panel">
             <vue-monaco-editor
@@ -88,6 +82,7 @@ function handlePNG() {
                 @mount="handleMount"
             />
             <div class="row">
+                <el-button @click="handleRender">Re-render</el-button>
                 <el-button @click="handlePNG">Save PNG</el-button>
                 <el-switch active-text="Auto Update" v-model="autoUpdate" />
                 <el-button type="primary" @click="handleUpdate" :disabled="updateDisabled()">Update</el-button>
@@ -96,7 +91,7 @@ function handlePNG() {
             </div>
         </div>
       </el-splitter-panel>
-      <el-splitter-panel @scroll="handleScroll">
+      <el-splitter-panel>
         <div ref="kaya" class="demo-panel">
             <Kaya :source="renderedCode" :show_partial="true" @error="handleError" :key="kayaKey"/>
         </div>
@@ -114,8 +109,12 @@ div.demo-panel {
     display: flex;
     flex-direction: column;
     width: fit-content;
+    overflow: scroll;
 }
 html.dark div.demo-panel {
     background-color: var(--el-bg-color);
+}
+.el-spliiter-panel {
+    overflow: clip;
 }
 </style>

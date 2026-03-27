@@ -121,6 +121,8 @@ function handlePNG() {
                 <g>
                     <use href="#leader-line-1-line-shape" style="stroke: white;"></use>
 
+                    <path style="stroke: red; stroke-width: 4px;" d="M 937.383 197 C 837.383 79.5818 837.383 274.988 837.383 171"></path>
+
                     <circle cx="837" cy="182" r="8" fill="white" style="stroke: white;" />
                 </g>
             </svg>

@@ -119,15 +119,13 @@ function handlePNG() {
 
             <svg class="leader-line-sc" viewBox="829.383 71.5818 16 211.406" style="left: 129.383px; top: 71.5818px; width: 16px; height: 211.406px;">
                 <defs>
-                    <path id="leader-line-1-line-path" class="leader-line-line-path" style="fill: none;" d="M 837.383 197 C 837.383 79.5818 837.383 274.988 837.383 171"></path>
+                    <path id="leader-line-1-line-path" class="leader-line-line-path" d="M 837.383 197 C 837.383 79.5818 837.383 274.988 837.383 171"></path>
                     <use id="leader-line-1-line-shape" href="#leader-line-1-line-path" style="stroke-width: 4px;"></use>
-                    <rect width="100%" height="100%" id="leader-line-1-mask-bg-rect" class="leader-line-mask-bg-rect" style="fill: white;" x="829.383" y="71.5818"></rect>
-                    <mask id="leader-line-1-line-mask" maskUnits="userSpaceOnUse" x="829.383px" y="71.5818px" width="100%" height="100%"><use href="#leader-line-1-mask-bg-rect"></use><use class="leader-line-line-mask-shape" href="#leader-line-1-line-path" style="display: none;"></use><use href="#leader-line-1-caps" style="display: inline;"></use></mask>
                 </defs>
                 <g>
-                    <use href="#leader-line-1-line-shape" style="stroke: var(--arrow0); mask: url(#leader-line-1-line-mask);"></use>
+                    <use href="#leader-line-1-line-shape" style="stroke: var(--arrow0);"></use>
 
-                    <circle cx="837" cy="182" r="8" fill="white" style="stroke: var(--arrow0); mask: url(#leader-line-1-line-mask);" />
+                    <circle cx="837" cy="182" r="8" fill="white" style="stroke: var(--arrow0);" />
                 </g>
             </svg>
 

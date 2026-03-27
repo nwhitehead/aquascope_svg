@@ -113,19 +113,15 @@ function handlePNG() {
       <el-splitter-panel>
         <div ref="kaya" class="demo-panel">
 
-            <svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg" class="leader-line-sc" style="left: 100px; top: 50px; width: 180px; height: 180px;">
-                <circle cx="5" cy="5" r="1" fill="white" />
-            </svg>
-
             <svg class="leader-line-sc" viewBox="829.383 71.5818 16 211.406" style="left: 129.383px; top: 71.5818px; width: 16px; height: 211.406px;">
                 <defs>
                     <path id="leader-line-1-line-path" class="leader-line-line-path" d="M 837.383 197 C 837.383 79.5818 837.383 274.988 837.383 171"></path>
                     <use id="leader-line-1-line-shape" href="#leader-line-1-line-path" style="stroke-width: 4px;"></use>
                 </defs>
                 <g>
-                    <use href="#leader-line-1-line-shape" style="stroke: var(--arrow0);"></use>
+                    <use href="#leader-line-1-line-shape" style="stroke: white;"></use>
 
-                    <circle cx="837" cy="182" r="8" fill="white" style="stroke: var(--arrow0);" />
+                    <circle cx="837" cy="182" r="8" fill="white" style="stroke: white;" />
                 </g>
             </svg>
 

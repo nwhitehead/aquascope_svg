@@ -125,10 +125,9 @@ function handlePNG() {
                     <mask id="leader-line-1-line-mask" maskUnits="userSpaceOnUse" x="829.383px" y="71.5818px" width="100%" height="100%"><use href="#leader-line-1-mask-bg-rect"></use><use class="leader-line-line-mask-shape" href="#leader-line-1-line-path" style="display: none;"></use><use href="#leader-line-1-caps" style="display: inline;"></use></mask>
                 </defs>
                 <g>
-                    <use href="#leader-line-1-line-shape" style="stroke: var(--arrow0); mask: url(&quot;#leader-line-1-line-mask&quot;);"></use>
-                    <use href="#leader-line-1-line-shape" style="mask: url(&quot;#leader-line-1-line-outline-mask&quot;); display: none;"></use>
-                    <use class="leader-line-plugs-face" href="#leader-line-1-line-shape" style="display: inline; marker-end: url(&quot;#leader-line-1-plug-marker-1&quot;);"></use>
-                    <circle cx="837" cy="182" r="8" fill="white" style="stroke: var(--arrow0); mask: url(&quot;#leader-line-1-line-mask&quot;);" />
+                    <use href="#leader-line-1-line-shape" style="stroke: var(--arrow0); mask: url(#leader-line-1-line-mask);"></use>
+
+                    <circle cx="837" cy="182" r="8" fill="white" style="stroke: var(--arrow0); mask: url(#leader-line-1-line-mask);" />
                 </g>
             </svg>
 

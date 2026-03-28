@@ -68,8 +68,10 @@ function renderArrows() {
         elem.prepend(defs.cloneNode(true));
         linesSvg.push(elem);
         diaElem.value.appendChild(elem);
-        // Make sure transform is correct for line positions
-        elem.style.transform = `translate(-${box.x}px, -${box.y}px)`;
+        const currLeft = elem.style.left;
+        elem.style.left = `calc(${currLeft} - ${box.x}px)`;
+        const currTop = elem.style.top;
+        elem.style.top = `calc(${currTop} - ${box.y}px)`;
     }
     // // Remove the svg defs thing
     //document.querySelector('#leader-line-defs')?.remove();
@@ -79,8 +81,14 @@ function renderArrows() {
     const svg = svgs[1];
     if (!svg) return;
 
-    let serializer = new XMLSerializer();
-    let svgtxt = serializer.serializeToString(svg);
+    const serializer = new XMLSerializer();
+    const svgCopy = svg.cloneNode(true);
+    svgCopy.style.width = "";
+    svgCopy.style.height = "";
+    svgCopy.style.left = "";
+    svgCopy.style.top = "";
+    svgCopy.style.transform = "";
+    const svgtxt = serializer.serializeToString(svgCopy);
 
     //const svgtxt = svg.outerHTML;
     console.log(svgtxt);
@@ -123,59 +131,10 @@ watch(
 </script>
 
 <style>
+
 svg {
     z-index: 5;
 }
-
-/* .leader-line {
-    position: absolute;
-    overflow: visible !important;
-    pointer-events: none !important;
-    font-size: 16px;
-}
-
-.leader-line-line-path {
-    fill: none;
-}
-
-.leader-line-mask-bg-rect {
-    fill: #fff;
-}
-
-.leader-line-caps-mask-anchor, .leader-line-caps-mask-marker-shape {
-    fill: #000;
-}
-
-.leader-line-caps-mask-anchor {
-    stroke: #000;
-}
-
-.leader-line-caps-mask-line, .leader-line-plugs-face {
-    stroke: transparent;
-}
-
-.leader-line-line-mask-shape {
-    stroke: #fff;
-}
-
-.leader-line-line-outline-mask-shape {
-    stroke: #000;
-}
-
-.leader-line-plug-mask-shape {
-    fill: #fff;
-    stroke: #000;
-}
-
-.leader-line-plug-outline-mask-shape {
-    fill: #000;
-    stroke: #fff;
-}
-
-.leader-line-areaAnchor {
-    position: absolute;
-    overflow: visible !important;
-} */
 
 </style>
 
@@ -187,10 +146,13 @@ div {
     position: relative;
     overflow: clip;
 }
+img.svgimg {
+    background-color: #f00;
+}
 </style>
 
 <template>
     <div ref="dia" v-html="contents[0]"></div>
     <canvas ref="canvas"></canvas>
-    <img :src="dataUri" width="100px"></img>
+    <img class="svgimg" :src="dataUri"></img>
 </template>

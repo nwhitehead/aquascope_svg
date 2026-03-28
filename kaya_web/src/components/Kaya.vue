@@ -95,11 +95,11 @@ function error_text() {
 <style scoped>
 pre.error {
     text-align: left;
-    background-color: var(--ep-color-danger-light-5);
+    background-color: var(--el-color-danger-light-5);
 }
 </style>
 
 <template>
-    <p v-if="error"><pre class="error">{{ error_text() }}</pre></p>
+    <pre v-if="error" class="error">{{ error_text() }}</pre>
     <Diagram :contents="contents" />
 </template>

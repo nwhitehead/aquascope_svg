@@ -92,10 +92,13 @@ function handlePNG() {
                 @mount="handleMount"
             />
             <div class="row">
+                <el-switch active-text="Auto Update" v-model="autoUpdate" />
+                <div class="gap"></div>
+                <el-button type="primary" @click="handleUpdate" :disabled="updateDisabled()">Update</el-button>
+            </div>
+            <div class="row">
                 <el-button @click="handleRender">Re-render</el-button>
                 <el-button @click="handlePNG">Save PNG</el-button>
-                <el-switch active-text="Auto Update" v-model="autoUpdate" />
-                <el-button type="primary" @click="handleUpdate" :disabled="updateDisabled()">Update</el-button>
             </div>
             <div ref="output">
             </div>
@@ -113,12 +116,15 @@ function handlePNG() {
 div .row {
     display: flex;
     flex-direction: row;
-    gap: 24px;
+}
+div .gap {
+    display: flex;
+    flex-grow: 1;
 }
 div.demo-panel {
     display: flex;
     flex-direction: column;
-    width: fit-content;
+    width: 100%;
     overflow: scroll;
 }
 html.dark div.demo-panel {

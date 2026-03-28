@@ -39,6 +39,9 @@ function renderArrows() {
     // Make sure we are not double rendering
     // If arrows are already clear it's fine
     clearArrows();
+    // set global option for LeaderLine (secret option not specified in type I guess)
+    // this makes LeaderLine not reposition the lines on window resize (we re-parent them so not needed)
+    LeaderLine.positionByWindowResize = false;
     if (diaElem.value === null) return;
     const arrows = props.contents[1];
     for (const arrow of arrows) {
@@ -53,7 +56,7 @@ function renderArrows() {
         }
     }
     // // Move svg defs to div element
-    // const defs = document.querySelector('#leader-line-defs defs');
+    const defs = document.querySelector('#leader-line-defs defs');
     // // if (defs) {
     // //     diaElem.value.appendChild(defs);
     // // }
@@ -61,17 +64,13 @@ function renderArrows() {
     const box = diaElem.value.getBoundingClientRect();
     const elems = document.querySelectorAll('.leader-line');
     for (const elem of elems) {
+        // Give each svg leader line it's own copy of the global defs
+        elem.prepend(defs.cloneNode(true));
         linesSvg.push(elem);
         diaElem.value.appendChild(elem);
         // Make sure transform is correct for line positions
         elem.style.transform = `translate(-${box.x}px, -${box.y}px)`;
     }
-    // // get a line and try to make it work in canvas
-    // const aline = document.querySelector('.leader-line');
-    // if (defs && aline) {
-    //     aline.appendChild(defs);
-    // }
-
 }
 
 onMounted(() => {

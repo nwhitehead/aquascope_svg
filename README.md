@@ -53,12 +53,12 @@ See [FORMAT.md](docs/FORMAT.md) for details on the `kaya` diagram description fo
 The simplest workflow for `kaya` is:
 
 ```
-Kaya format file --> HTML/SVG/PNG diagram
+Kaya format file --> HTML/PNG diagram
 ```
 
 In this workflow you write a `kaya` diagram description directly in a text
-editor then use the `render_kaya` tool to create the output HTML/SVG/PNG file.
-The diagram can then be included inside other documentation.
+editor then use the `render_kaya` tool to create the output HTML/PNG file. The
+diagram can then be included inside other documentation.
 
 If a build system is being used then changes to the `kaya` source files can
 trigger rebuilds of the output diagrams.
@@ -69,14 +69,13 @@ It is also possible to put `kaya` format diagrams inside other Markdown
 documents. The workflow then becomes:
 
 ```
-Markdown -> extrated Kaya --> HTML/SVG/PNG diagram
+Markdown -> extrated Kaya --> HTML/PNG diagram
 ```
 
 In this case the locations where `kaya` diagrams appear in the source text can
-be code fences in the Markdown source tagged with `kaya`. This workflow
-requires a Markdown processor plugin that extracts the `kaya` blocks,
-calls `render_kaya` to get HTML/SVG/PNG output, then includes the output
-in the final rendered Markdown.
+be code fences in the Markdown source tagged with `kaya`. This workflow requires
+a Markdown processor plugin that extracts the `kaya` blocks, calls `render_kaya`
+to get HTML/PNG output, then includes the output in the final rendered Markdown.
 
 ### Automatic Rust Analysis Workflow
 

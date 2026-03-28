@@ -52,9 +52,12 @@ async function convertArrowsSvg() {
     console.log('Render to canvas start');
 
     // clear canvas
-    const ctx = canvasRef.value?.getContext('2d');
+    if (!canvasRef.value) return;
+    if (!diaElem.value) return;
+
+    const ctx = canvasRef.value.getContext('2d');
     if (!ctx) return;
-    ctx?.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     const svgs = document.querySelectorAll('svg.leader-line');
     if (!svgs.length) {
         return;
@@ -81,9 +84,9 @@ async function convertArrowsSvg() {
         let y = parseFloat(svgCopy.style.top);
         // Draw SVG to canvas at that location
         ctx.drawImage(img, x, y);
-        img.src = datauriv;
     }
-
+    //canvasRef.value.width = diaElem.value.clientWidth;
+    document.querySelectorAll('.leader-line').forEach(el => el.remove());
 }
 
 function renderArrows() {
@@ -172,10 +175,21 @@ img.svgimg {
     width: 100%;
     height: 100%;
 }
+div.overlay {
+    position: relative;
+}
+div.overlay canvas {
+    position: static;
+    left: 0;
+    top: 0;
+}
+
 </style>
 
 <template>
     <el-button @click="handleClick">Render to canvas</el-button>
-    <div ref="dia" v-html="contents[0]"></div>
-    <canvas ref="canvas" :width="CANVAS_SIZE" :height="CANVAS_SIZE"></canvas>
+    <div class="overlay">
+        <div ref="dia" v-html="contents[0]"></div>
+        <canvas ref="canvas" :width="CANVAS_SIZE" :height="CANVAS_SIZE"></canvas>
+    </div>
 </template>

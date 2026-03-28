@@ -56,27 +56,46 @@ function renderArrows() {
             lines.push(line);
         }
     }
-    // // Move svg defs to div element
+    // // Move copy of svg defs and styles to each line
     const defs = document.querySelector('#leader-line-defs defs');
-    // // if (defs) {
-    // //     diaElem.value.appendChild(defs);
-    // // }
-    // // Move all lines to div element
+    const svgStyle = document.querySelector('#leader-line-defs style');
     const box = diaElem.value.getBoundingClientRect();
     const elems = document.querySelectorAll('.leader-line');
     for (const elem of elems) {
         // Give each svg leader line it's own copy of the global defs
+        elem.prepend(svgStyle?.cloneNode(true));
         elem.prepend(defs.cloneNode(true));
         linesSvg.push(elem);
         diaElem.value.appendChild(elem);
         // Make sure transform is correct for line positions
         elem.style.transform = `translate(-${box.x}px, -${box.y}px)`;
     }
+    // // Remove the svg defs thing
+    //document.querySelector('#leader-line-defs')?.remove();
 
     // Now replace first line with canvas rendering...
     const svgs = document.querySelectorAll('svg.leader-line');
-    const svg = svgs[0];
+    const svg = svgs[1];
+    if (!svg) return;
 
+    let serializer = new XMLSerializer();
+    let svgtxt = serializer.serializeToString(svg);
+
+    //const svgtxt = svg.outerHTML;
+    console.log(svgtxt);
+    (async () => {
+        const canvas = document.querySelector('canvas');
+        const ctx = canvas.getContext('2d');
+
+        console.log(canvas?.getBoundingClientRect());
+        const v = await Canvg.from(ctx, svgtxt);
+
+        // Start SVG rendering with animations and mouse handling.
+        //v.start();
+        await v.render();
+        console.log(canvas?.getBoundingClientRect());
+        console.log("done render");
+    })();
 }
 
 onMounted(() => {
@@ -105,7 +124,7 @@ svg {
     z-index: 5;
 }
 
-.leader-line {
+/* .leader-line {
     position: absolute;
     overflow: visible !important;
     pointer-events: none !important;
@@ -153,7 +172,7 @@ svg {
 .leader-line-areaAnchor {
     position: absolute;
     overflow: visible !important;
-}
+} */
 
 </style>
 
@@ -169,4 +188,5 @@ div {
 
 <template>
     <div ref="dia" v-html="contents[0]"></div>
+    <canvas ref="canvas"></canvas>
 </template>

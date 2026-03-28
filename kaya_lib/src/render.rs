@@ -192,8 +192,8 @@ pub fn arrow_options(info: &ArrowInfo, idx: usize) -> serde_json::Value {
     let start_socket_gravity = socket_gravity_to_option(src_gravity.as_str());
     let end_socket_gravity = socket_gravity_to_option(dst_gravity.as_str());
     let color_txt = match color {
-        None => format!("var(--arrow{})", idx % NUM_ARROW_COLORS),
-        Some(c) => format!("var(--arrow{})", (*c as usize) % NUM_ARROW_COLORS),
+        None => format!("{}", idx % NUM_ARROW_COLORS),
+        Some(c) => format!("{}", (*c as usize) % NUM_ARROW_COLORS),
     };
     json!({
         "startSocket": start_socket,

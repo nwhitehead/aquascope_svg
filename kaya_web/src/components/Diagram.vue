@@ -58,7 +58,6 @@ function renderArrows() {
     // //     diaElem.value.appendChild(defs);
     // // }
     // // Move all lines to div element
-    console.log('diaElem box = ', diaElem.value?.getBoundingClientRect());
     const box = diaElem.value.getBoundingClientRect();
     const elems = document.querySelectorAll('.leader-line');
     for (const elem of elems) {

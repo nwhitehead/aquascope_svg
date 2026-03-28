@@ -16,6 +16,11 @@ let ready = false;
 const error = ref(null);
 const contents = reactive(["", []]);
 
+function getCssVar(name: string) {
+    let bodyStyles = window.getComputedStyle(document.body);
+    return bodyStyles.getPropertyValue(`--${name}`);
+}
+
 async function render() {
     console.log('Starting render');
     // Access dependency on props before we wait for anything so it's tracked properly
@@ -70,6 +75,7 @@ async function render() {
         for (const [key, val] of opt) {
             objopt[key] = val;
         }
+        objopt.color = getCssVar(`arrow${objopt.color}`);
         contents[1].push({ src: arrow.src, dst: arrow.dst, options: objopt });
     }
 

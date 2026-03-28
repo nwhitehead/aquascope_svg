@@ -19,6 +19,8 @@ const props = defineProps<{
 
 const diaElem = useTemplateRef('dia');
 const dataUri = ref("");
+const svgRef = useTemplateRef('svgref');
+const canvasRef = useTemplateRef<HTMLCanvasElement>('canvas');
 
 // keep track of drawn LeaderLine objects
 let lines: any[] = [];
@@ -69,31 +71,42 @@ function renderArrows() {
         linesSvg.push(elem);
         diaElem.value.appendChild(elem);
         const currLeft = elem.style.left;
-        elem.style.left = `calc(${currLeft} - ${box.x}px)`;
+        elem.style.left = `calc(${currLeft} - ${box.x}px - 1px)`;
         const currTop = elem.style.top;
-        elem.style.top = `calc(${currTop} - ${box.y}px)`;
+        elem.style.top = `calc(${currTop} - ${box.y}px - 1px)`;
+        elem.viewBox.baseVal.x -= 1;
+        elem.viewBox.baseVal.y -= 1;
     }
     // // Remove the svg defs thing
     //document.querySelector('#leader-line-defs')?.remove();
 
     // Now replace first line with canvas rendering...
     const svgs = document.querySelectorAll('svg.leader-line');
-    const svg = svgs[1];
+    const svg = svgs[0];
     if (!svg) return;
 
     const serializer = new XMLSerializer();
     const svgCopy = svg.cloneNode(true);
+    //svgCopy.style.left = "";
     svgCopy.style.width = "";
     svgCopy.style.height = "";
-    svgCopy.style.left = "";
-    svgCopy.style.top = "";
-    svgCopy.style.transform = "";
     const svgtxt = serializer.serializeToString(svgCopy);
 
     //const svgtxt = svg.outerHTML;
     console.log(svgtxt);
-    dataUri.value = 'data:image/svg+xml,' + encodeURIComponent(svgtxt);;
+    const datauriv = 'data:image/svg+xml,' + encodeURIComponent(svgtxt);
+    dataUri.value = datauriv;
 
+    const img = new Image();
+    img.addEventListener("load", () => {
+        console.log(img);
+        const ctx = canvasRef.value?.getContext('2d');
+        if (!ctx) return;
+        console.log(img.width, img.height);
+        //ctx.drawImage(img, 0, 0, 300, 223, 0, 0, 300, 223);
+        ctx.drawImage(img, 0, 0);
+    });
+    img.src = datauriv;
     // (async () => {
     //     const canvas = document.querySelector('canvas');
     //     const ctx = canvas.getContext('2d');
@@ -148,11 +161,13 @@ div {
 }
 img.svgimg {
     background-color: #f00;
+    width: 100%;
+    height: 100%;
 }
 </style>
 
 <template>
     <div ref="dia" v-html="contents[0]"></div>
-    <canvas ref="canvas"></canvas>
-    <img class="svgimg" :src="dataUri"></img>
+    <canvas ref="canvas" width="1024" height="1024"></canvas>
+    <img ref="svgref" class="svgimg" :src="dataUri"></img>
 </template>

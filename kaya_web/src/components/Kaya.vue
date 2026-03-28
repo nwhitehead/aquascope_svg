@@ -75,7 +75,17 @@ async function render() {
         for (const [key, val] of opt) {
             objopt[key] = val;
         }
+        // Fill in options using data from render, also just stylesheet
         objopt.color = getCssVar(`arrow${objopt.color}`);
+        objopt.size = parseFloat(getCssVar('arrow_width'));
+        objopt.endPlugSize = parseFloat(getCssVar('arrow_size'));
+        objopt.outline = getCssVar('arrow_outline') !== "";
+        objopt.outlineColor = getCssVar('arrow_outline');
+        objopt.outlineSize = parseFloat(getCssVar('arrow_outline_size'));
+        objopt.endPlugOutline = getCssVar('arrow_plug_outline') !== "";
+        objopt.endPlugOutlineColor = getCssVar('arrow_plug_outline');
+        objopt.endPlugOutlineSize = parseFloat(getCssVar('arrow_plug_outline_size'));
+
         contents[1].push({ src: arrow.src, dst: arrow.dst, options: objopt });
     }
 

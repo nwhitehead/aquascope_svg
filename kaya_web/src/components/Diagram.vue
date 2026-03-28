@@ -2,6 +2,7 @@
 
 import { watch, ref, useTemplateRef, onMounted, onUnmounted, nextTick } from 'vue';
 import LeaderLine from 'leader-line-new';
+import { Canvg } from 'canvg';
 
 // use the kaya style from the rust lib directly
 import '../../../kaya_lib/src/style.css';
@@ -71,6 +72,11 @@ function renderArrows() {
         // Make sure transform is correct for line positions
         elem.style.transform = `translate(-${box.x}px, -${box.y}px)`;
     }
+
+    // Now replace first line with canvas rendering...
+    const svgs = document.querySelectorAll('svg.leader-line');
+    const svg = svgs[0];
+
 }
 
 onMounted(() => {
@@ -98,9 +104,57 @@ watch(
 svg {
     z-index: 5;
 }
+
 .leader-line {
     position: absolute;
+    overflow: visible !important;
+    pointer-events: none !important;
+    font-size: 16px;
 }
+
+.leader-line-line-path {
+    fill: none;
+}
+
+.leader-line-mask-bg-rect {
+    fill: #fff;
+}
+
+.leader-line-caps-mask-anchor, .leader-line-caps-mask-marker-shape {
+    fill: #000;
+}
+
+.leader-line-caps-mask-anchor {
+    stroke: #000;
+}
+
+.leader-line-caps-mask-line, .leader-line-plugs-face {
+    stroke: transparent;
+}
+
+.leader-line-line-mask-shape {
+    stroke: #fff;
+}
+
+.leader-line-line-outline-mask-shape {
+    stroke: #000;
+}
+
+.leader-line-plug-mask-shape {
+    fill: #fff;
+    stroke: #000;
+}
+
+.leader-line-plug-outline-mask-shape {
+    fill: #000;
+    stroke: #fff;
+}
+
+.leader-line-areaAnchor {
+    position: absolute;
+    overflow: visible !important;
+}
+
 </style>
 
 <style scoped>

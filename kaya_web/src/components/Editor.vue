@@ -12,7 +12,17 @@ const MONACO_EDITOR_OPTIONS = {
     formatOnPaste: true,
 };
 
-const code = ref("# L0\n## Stack\nx: 5\ny: 7\nz: ptr(x)\np: ptr(H0)\n## Heap\nH0: 42\n");
+const code = ref(`
+# L0
+## Stack
+x: 5
+y: 7
+z: ptr(x).se.de.g5
+p: ptr(H0).se.ds.g4
+## Heap
+H0: 42
+`);
+//"# L0\n## Stack\nx: 5\ny: 7\nz: ptr(x)\np: ptr(H0)\n## Heap\nH0: 42\n");
 const renderedCode = ref("");
 let editor = null;
 const isDark = useDark();

@@ -14,6 +14,7 @@ pub enum Theme {
     TransparentNoColor,
 }
 
+pub const DEFAULT_GRAVITY: f32 = 80.0;
 pub const CSS_STYLE: &[u8] = include_bytes!("./style.css");
 pub const LEADER_LINE_JS: &[u8] = include_bytes!("./leader-line-v1.0.7.min.js");
 pub const INDEX_HBS: &[u8] = include_bytes!("./index.hbs");
@@ -27,8 +28,8 @@ pub struct ArrowInfo {
     dst: String,
     src_help: String,
     dst_help: String,
-    src_gravity: String,
-    dst_gravity: String,
+    src_gravity: f32,
+    dst_gravity: f32,
     path: String,
     color: Option<i32>,
 }
@@ -71,8 +72,8 @@ impl RenderState {
     fn add_arrow(&mut self, src: &str, dst: &str, help: &Vec<String>) {
         let mut src_help = String::new();
         let mut dst_help = String::new();
-        let mut src_gravity = String::new();
-        let mut dst_gravity = String::new();
+        let mut src_gravity = 0.0;
+        let mut dst_gravity = 0.0;
         let mut path = String::new();
         let mut color = None;
         for h in help {
@@ -88,36 +89,66 @@ impl RenderState {
                 ".straight" | ".arc" | ".fluid" | ".magnet" | ".grid" => {
                     path = chop_first(h.as_str()).to_string();
                 }
-                ".vl" => {
-                    src_gravity = "vlight".to_string();
-                    dst_gravity = "vlight".to_string();
+                ".g0" => {
+                    src_gravity = 0.0;
+                    dst_gravity = 0.0;
                 },
-                ".l" => {
-                    src_gravity = "light".to_string();
-                    dst_gravity = "light".to_string();
+                ".g1" => {
+                    src_gravity = 1.0;
+                    dst_gravity = 1.0;
                 },
-                ".m" => {
-                    src_gravity = "medium".to_string();
-                    dst_gravity = "medium".to_string();
+                ".g2" => {
+                    src_gravity = 2.0;
+                    dst_gravity = 2.0;
                 },
-                ".h" => {
-                    src_gravity = "heavy".to_string();
-                    dst_gravity = "heavy".to_string();
+                ".g3" => {
+                    src_gravity = 3.0;
+                    dst_gravity = 3.0;
                 },
-                ".vh" => {
-                    src_gravity = "vheavy".to_string();
-                    dst_gravity = "vheavy".to_string();
+                ".g4" => {
+                    src_gravity = 4.0;
+                    dst_gravity = 4.0;
                 },
-                ".svl" | ".svlight" => src_gravity = "vlight".to_string(),
-                ".sl" | ".slight" => src_gravity = "light".to_string(),
-                ".sm" | ".smedium" => src_gravity = "medium".to_string(),
-                ".sh" | ".sheavy" => src_gravity = "heavy".to_string(),
-                ".svh" | ".svheavy" => src_gravity = "vheavy".to_string(),
-                ".dvl" | ".dvlight" => dst_gravity = "vlight".to_string(),
-                ".dm" | ".dmedium" => dst_gravity = "medium".to_string(),
-                ".dl" | ".dlight" => dst_gravity = "light".to_string(),
-                ".dh" | ".dheavy" => dst_gravity = "heavy".to_string(),
-                ".dvh" | ".dvheavy" => dst_gravity = "vheavy".to_string(),
+                ".g5" => {
+                    src_gravity = 5.0;
+                    dst_gravity = 5.0;
+                },
+                ".g6" => {
+                    src_gravity = 6.0;
+                    dst_gravity = 6.0;
+                },
+                ".g7" => {
+                    src_gravity = 7.0;
+                    dst_gravity = 7.0;
+                },
+                ".g8" => {
+                    src_gravity = 8.0;
+                    dst_gravity = 8.0;
+                },
+                ".g9" => {
+                    src_gravity = 9.0;
+                    dst_gravity = 9.0;
+                },
+                ".sg0" => src_gravity = 0.0,
+                ".sg1" => src_gravity = 1.0,
+                ".sg2" => src_gravity = 2.0,
+                ".sg3" => src_gravity = 3.0,
+                ".sg4" => src_gravity = 4.0,
+                ".sg5" => src_gravity = 5.0,
+                ".sg6" => src_gravity = 6.0,
+                ".sg7" => src_gravity = 7.0,
+                ".sg8" => src_gravity = 8.0,
+                ".sg9" => src_gravity = 9.0,
+                ".dg0" => dst_gravity = 0.0,
+                ".dg1" => dst_gravity = 1.0,
+                ".dg2" => dst_gravity = 2.0,
+                ".dg3" => dst_gravity = 3.0,
+                ".dg4" => dst_gravity = 4.0,
+                ".dg5" => dst_gravity = 5.0,
+                ".dg6" => dst_gravity = 6.0,
+                ".dg7" => dst_gravity = 7.0,
+                ".dg8" => dst_gravity = 8.0,
+                ".dg9" => dst_gravity = 9.0,
                 ".c0" => color = Some(0),
                 ".c1" => color = Some(1),
                 ".c2" => color = Some(2),
@@ -151,16 +182,11 @@ fn socket_dir_to_option(x: &str) -> String {
     }
 }
 
-fn socket_gravity_to_option(x: &str) -> i32 {
-    match x {
-        "" => 120,
-        "vlight" => 50,
-        "light" => 80,
-        "medium" => 120,
-        "heavy" => 160,
-        "vheavy" => 190,
-        _ => panic!("Unknown gravity"),
+fn socket_gravity_to_option(x: f32) -> Option<f32> {
+    if x == 0.0 {
+        return None;
     }
+    Some(20.0 * x - 10.0)
 }
 
 pub fn arrow_options(info: &ArrowInfo, idx: usize) -> serde_json::Value {
@@ -189,8 +215,8 @@ pub fn arrow_options(info: &ArrowInfo, idx: usize) -> serde_json::Value {
         s => s,
     }
     .to_string();
-    let start_socket_gravity = socket_gravity_to_option(src_gravity.as_str());
-    let end_socket_gravity = socket_gravity_to_option(dst_gravity.as_str());
+    let start_socket_gravity = socket_gravity_to_option(*src_gravity);
+    let end_socket_gravity = socket_gravity_to_option(*dst_gravity);
     let color_txt = match color {
         None => format!("{}", idx % NUM_ARROW_COLORS),
         Some(c) => format!("{}", (*c as usize) % NUM_ARROW_COLORS),
@@ -231,8 +257,8 @@ pub fn render_arrow(info: &ArrowInfo, idx: usize) -> String {
         s => s,
     }
     .to_string();
-    let start_socket_gravity = socket_gravity_to_option(src_gravity.as_str());
-    let end_socket_gravity = socket_gravity_to_option(dst_gravity.as_str());
+    let start_socket_gravity = socket_gravity_to_option(*src_gravity).unwrap_or(DEFAULT_GRAVITY);
+    let end_socket_gravity = socket_gravity_to_option(*dst_gravity).unwrap_or(DEFAULT_GRAVITY);
     // check for loops on one element, must be handled specially
     let color_txt = match color {
         None => format!("'var(--arrow{})'", idx % NUM_ARROW_COLORS),

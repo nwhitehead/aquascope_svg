@@ -17,9 +17,9 @@ const props = defineProps<{
     contents: [string, ArrowInfo[]], // html contents, arrows
 }>();
 
+const test = ref(false);
 const diaElem = useTemplateRef('dia');
 const dataUri = ref("");
-const svgRef = useTemplateRef('svgref');
 const canvasRef = useTemplateRef<HTMLCanvasElement>('canvas');
 
 // keep track of drawn LeaderLine objects
@@ -71,36 +71,69 @@ function renderArrows() {
         linesSvg.push(elem);
         diaElem.value.appendChild(elem);
         const currLeft = parseFloat(elem.style.left);
-        elem.style.left = `${currLeft - box.x}px`;
+        const offset = 0;//box.x;
+        elem.style.left = `${currLeft - box.x + offset}px`;
         const currTop = parseFloat(elem.style.top);
         elem.style.top = `${currTop - box.y}px`;
-        elem.viewBox.baseVal.x -= 0;
+        elem.viewBox.baseVal.x += offset;
         elem.viewBox.baseVal.y -= 0;
     }
     // // Remove the svg defs thing
     //document.querySelector('#leader-line-defs')?.remove();
 
     // Now replace first line with canvas rendering...
+    const ctx = canvasRef.value?.getContext('2d');
+    ctx?.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     const svgs = document.querySelectorAll('svg.leader-line');
-    for (const svg of svgs) {
+    if (!svgs.length) {
+        return;
+    }
+    for (const svg of [svgs[0], svgs[1], svgs[2]]) {
         const serializer = new XMLSerializer();
         const svgCopy = svg.cloneNode(true);
-        svgCopy.style.width = "";
-        svgCopy.style.height = "";
-        svgCopy.viewBox.baseVal.width *= 2;
-        svgCopy.viewBox.baseVal.height *= 2;
+        if (test.value) {
+            // // moving left and top moves the rendered image
+            // svgCopy.style.left = "0px";
+
+            // // removing width and height on style has no effect
+            // svgCopy.style.width = "";
+            // svgCopy.style.height = "";
+
+            // // moving x, y translates final image, and sometimes clips it if drawn outside viewbox
+            // svgCopy.viewBox.baseVal.x += 20.0;
+            // svgCopy.viewBox.baseVal.y -= 20.0;
+
+            // // increasing width and height makes image smaller
+            // svgCopy.viewBox.baseVal.width += 200.0;
+            // svgCopy.viewBox.baseVal.height += 200.0;
+
+            // // hmm, what about fixed width and height?
+            svgCopy.viewBox.baseVal.width = 1024;
+            svgCopy.viewBox.baseVal.height = 1024;
+        }
+        // svgCopy.style.right = "";
+        // const scale = 1.0;
+        // svgCopy.viewBox.baseVal.x *= scale;
+        // svgCopy.viewBox.baseVal.y *= scale;
+        // svgCopy.viewBox.baseVal.width *= scale;
+        // svgCopy.viewBox.baseVal.height *= scale;
         const svgtxt = serializer.serializeToString(svgCopy);
 
         const datauriv = 'data:image/svg+xml,' + encodeURIComponent(svgtxt);
-        dataUri.value = datauriv;
 
         const img = new Image();
         img.addEventListener("load", () => {
-            const ctx = canvasRef.value?.getContext('2d');
             if (!ctx) return;
-            const x = parseFloat(svgCopy.style.left);
-            const y = parseFloat(svgCopy.style.top);
-            ctx.drawImage(img, x, y, img.width * 2, img.height * 2);
+            let x = parseFloat(svgCopy.style.left);
+            let y = parseFloat(svgCopy.style.top);
+            let w = svgCopy.viewBox.baseVal.width * 1;
+            let h = svgCopy.viewBox.baseVal.height * 1;
+            console.log('leader line ', x, y, w, h);
+            ctx.drawImage(img, x, y);
+            ctx.strokeStyle="green";
+            ctx.beginPath();
+//            ctx.rect(x, y, w, h);
+            ctx.stroke();
         });
         img.src = datauriv;
     }
@@ -115,7 +148,7 @@ onUnmounted(() => {
 });
 
 watch(
-    () => props.contents,
+    () => [props.contents, test],
     () => {
         // Need to wait until next tick to draw new arrows because DOM is also updating
         // DOM is being redrawn, need to wait until finished to add arrows
@@ -151,7 +184,8 @@ img.svgimg {
 </style>
 
 <template>
+    <el-switch active-text="Test On" v-model="test" />
+
     <div ref="dia" v-html="contents[0]"></div>
-    <canvas ref="canvas" width="1024" height="800"></canvas>
-    <img ref="svgref" class="svgimg" :src="dataUri"></img>
+    <canvas ref="canvas" width="2048" height="2048"></canvas>
 </template>

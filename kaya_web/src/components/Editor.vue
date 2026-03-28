@@ -20,7 +20,7 @@ y: 7
 z: ptr(x).se.de.g5
 p: ptr(H0).se.ds.g4
 ## Heap
-H0: 42
+H0: (42, ptr(z).c4.sn.dw)
 `);
 //"# L0\n## Stack\nx: 5\ny: 7\nz: ptr(x)\np: ptr(H0)\n## Heap\nH0: 42\n");
 const renderedCode = ref("");

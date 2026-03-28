@@ -18,6 +18,7 @@ const props = defineProps<{
 }>();
 
 const diaElem = useTemplateRef('dia');
+const dataUri = ref("");
 
 // keep track of drawn LeaderLine objects
 let lines: any[] = [];
@@ -83,19 +84,21 @@ function renderArrows() {
 
     //const svgtxt = svg.outerHTML;
     console.log(svgtxt);
-    (async () => {
-        const canvas = document.querySelector('canvas');
-        const ctx = canvas.getContext('2d');
+    dataUri.value = 'data:image/svg+xml,' + encodeURIComponent(svgtxt);;
 
-        console.log(canvas?.getBoundingClientRect());
-        const v = await Canvg.from(ctx, svgtxt);
+    // (async () => {
+    //     const canvas = document.querySelector('canvas');
+    //     const ctx = canvas.getContext('2d');
 
-        // Start SVG rendering with animations and mouse handling.
-        //v.start();
-        await v.render();
-        console.log(canvas?.getBoundingClientRect());
-        console.log("done render");
-    })();
+    //     console.log(canvas?.getBoundingClientRect());
+    //     const v = await Canvg.from(ctx, svgtxt);
+
+    //     // Start SVG rendering with animations and mouse handling.
+    //     //v.start();
+    //     await v.render();
+    //     console.log(canvas?.getBoundingClientRect());
+    //     console.log("done render");
+    // })();
 }
 
 onMounted(() => {
@@ -189,4 +192,5 @@ div {
 <template>
     <div ref="dia" v-html="contents[0]"></div>
     <canvas ref="canvas"></canvas>
+    <img :src="dataUri" width="100px"></img>
 </template>

@@ -12,7 +12,7 @@ type ArrowInfo = {
     options: object,
 };
 
-const CANVAS_SIZE = 1024;
+const CANVAS_SIZE = 2048;
 const CANVAS_SCALE = 0.5;
 
 const props = defineProps<{
@@ -39,11 +39,21 @@ function clearArrows() {
     }
 }
 
-function convertArrowsSvg() {
+async function waitForEvent(elem: Element, evt: any, setup: any) {
+    return new Promise((resolve) => {
+        elem.addEventListener(evt, () => {
+            resolve(null);
+        });
+        setup();
+    });
+}
+
+async function convertArrowsSvg() {
     console.log('Render to canvas start');
 
-    // Now replace first line with canvas rendering...
+    // clear canvas
     const ctx = canvasRef.value?.getContext('2d');
+    if (!ctx) return;
     ctx?.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     const svgs = document.querySelectorAll('svg.leader-line');
     if (!svgs.length) {
@@ -56,17 +66,21 @@ function convertArrowsSvg() {
         svgCopy.viewBox.baseVal.width = CANVAS_SIZE * CANVAS_SCALE;
         svgCopy.viewBox.baseVal.height = CANVAS_SIZE * CANVAS_SCALE;
 
+        // User proper serializer to convert node to dataURI with svg contents
         const serializer = new XMLSerializer();
         const svgtxt = serializer.serializeToString(svgCopy);
         const datauriv = 'data:image/svg+xml,' + encodeURIComponent(svgtxt);
-
+        // Now make an image with that svg data
         const img = new Image();
-        img.addEventListener("load", () => {
-            if (!ctx) return;
-            let x = parseFloat(svgCopy.style.left);
-            let y = parseFloat(svgCopy.style.top);
-            ctx.drawImage(img, x, y);
+        // Wait until it is loaded (svg rendering is async even for dataURI I think)
+        await waitForEvent(img, "load", () => {
+            img.src = datauriv;
         });
+        // Find original location of svg from node
+        let x = parseFloat(svgCopy.style.left);
+        let y = parseFloat(svgCopy.style.top);
+        // Draw SVG to canvas at that location
+        ctx.drawImage(img, x, y);
         img.src = datauriv;
     }
 

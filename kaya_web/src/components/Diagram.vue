@@ -55,7 +55,9 @@ async function convertArrowsSvg() {
     if (!canvasRef.value) return;
     if (!diaElem.value) return;
 
-    const ctx = canvasRef.value.getContext('2d');
+    const canvas = new OffscreenCanvas(CANVAS_SIZE, CANVAS_SIZE);
+
+    const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     const svgs = document.querySelectorAll('svg.leader-line');
@@ -85,8 +87,21 @@ async function convertArrowsSvg() {
         // Draw SVG to canvas at that location
         ctx.drawImage(img, x, y);
     }
-    //canvasRef.value.width = diaElem.value.clientWidth;
+    const w = diaElem.value.clientWidth;
+    const h = diaElem.value.clientHeight;
+    console.log('client w,h = ', w, h);
     document.querySelectorAll('.leader-line').forEach(el => el.remove());
+
+    // Render offscreen canvas to actual canvas
+    // first set actual gfx canvas size to final size to avoid stretching
+    canvasRef.value.width = w;
+    canvasRef.value.height = h;
+    const ctxc = canvasRef.value.getContext('2d');
+    if (!ctxc) return;
+    // read from (0, 0) - (w, h) scaled by vscale (2?)
+    // write to entire dst canvas (should already be right size)
+    const vscale = 2.0;
+    ctxc.drawImage(canvas, 0, 0, w * vscale, h * vscale, 0, 0, ctxc.canvas.width, ctxc.canvas.height);
 }
 
 function renderArrows() {
@@ -121,9 +136,9 @@ function renderArrows() {
         linesSvg.push(elem);
         diaElem.value.appendChild(elem);
         const currLeft = parseFloat(elem.style.left);
-        elem.style.left = `${currLeft - box.x}px`;
+        elem.style.left = `${currLeft - box.x + 7}px`;
         const currTop = parseFloat(elem.style.top);
-        elem.style.top = `${currTop - box.y}px`;
+        elem.style.top = `${currTop - box.y + 0}px`;
     }
     // // Remove the svg defs thing
     //document.querySelector('#leader-line-defs')?.remove();
@@ -157,7 +172,7 @@ function handleClick() {
 <style>
 
 svg {
-    z-index: 5;
+    z-index: 999;
 }
 
 </style>
@@ -179,7 +194,7 @@ div.overlay {
     position: relative;
 }
 div.overlay canvas {
-    position: static;
+    position: absolute;
     left: 0;
     top: 0;
 }
@@ -190,6 +205,6 @@ div.overlay canvas {
     <el-button @click="handleClick">Render to canvas</el-button>
     <div class="overlay">
         <div ref="dia" v-html="contents[0]"></div>
-        <canvas ref="canvas" :width="CANVAS_SIZE" :height="CANVAS_SIZE"></canvas>
+        <canvas ref="canvas" :width="500" :height="500"></canvas>
     </div>
 </template>

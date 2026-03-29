@@ -13,9 +13,11 @@ type ArrowInfo = {
 };
 
 // Virtual offscreen canvas for arrow rendering (limits max size of diagram)
-const CANVAS_SIZE = 1024;
+const CANVAS_SIZE = 2048;
 // Not sure why this scale factor is needed for viewBox??? 
 const CANVAS_SCALE = 0.5;
+// Offscreen quality scale
+const OS_SCALE = 2.0;
 
 // Scale for display canvas (how much bigger than final size is it?)
 const CANVAS_QUALITY_SCALE = 4.0;
@@ -90,7 +92,7 @@ async function convertArrowsSvg() {
         let x = parseFloat(svgCopy.style.left);
         let y = parseFloat(svgCopy.style.top);
         // Draw SVG to canvas at that location
-        ctx.drawImage(img, x, y);
+        ctx.drawImage(img, 0, 0, CANVAS_SIZE / OS_SCALE, CANVAS_SIZE / OS_SCALE,  x * OS_SCALE, y * OS_SCALE, (CANVAS_SIZE), (CANVAS_SIZE));
     }
     const w = diaElem.value.clientWidth;
     const h = diaElem.value.clientHeight;
@@ -108,7 +110,7 @@ async function convertArrowsSvg() {
     // read from (0, 0) - (w, h) scaled by vscale (2?)
     // write to entire dst canvas (should already be right size)
     const vscale = 2.0;
-    ctxc.drawImage(canvas, 0, 0, w * vscale, h * vscale, 0, 0, ctxc.canvas.width, ctxc.canvas.height);
+    ctxc.drawImage(canvas, 0, 0, w * vscale, h * vscale, 0, 0, ctxc.canvas.width / OS_SCALE, ctxc.canvas.height / OS_SCALE);
 }
 
 function renderArrows() {

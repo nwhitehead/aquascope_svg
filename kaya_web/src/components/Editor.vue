@@ -62,7 +62,7 @@ function handlePNG() {
     console.log("Generating PNG");
     console.log(kayaElem.value);
     html2canvas(kayaElem.value, {
-        scale: 2.0,
+        scale: 4.0,
     }).then((canvas) => {
         outputElem.value?.replaceChildren();
         outputElem.value.appendChild(canvas);

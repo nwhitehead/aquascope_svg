@@ -12,8 +12,13 @@ type ArrowInfo = {
     options: object,
 };
 
+// Virtual offscreen canvas for arrow rendering (limits max size of diagram)
 const CANVAS_SIZE = 1024;
+// Not sure why this scale factor is needed for viewBox??? 
 const CANVAS_SCALE = 0.5;
+
+// Scale for display canvas (how much bigger than final size is it?)
+const CANVAS_QUALITY_SCALE = 4.0;
 
 const props = defineProps<{
     contents: [string, ArrowInfo[]], // html contents, arrows
@@ -94,8 +99,10 @@ async function convertArrowsSvg() {
 
     // Render offscreen canvas to actual canvas
     // first set actual gfx canvas size to final size to avoid stretching
-    canvasRef.value.width = w;
-    canvasRef.value.height = h;
+    canvasRef.value.width = w * CANVAS_QUALITY_SCALE;
+    canvasRef.value.height = h * CANVAS_QUALITY_SCALE;
+    canvasRef.value.style.width = `${w}px`;
+    canvasRef.value.style.height = `${h}px`;
     const ctxc = canvasRef.value.getContext('2d');
     if (!ctxc) return;
     // read from (0, 0) - (w, h) scaled by vscale (2?)

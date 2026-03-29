@@ -17,5 +17,8 @@ wasm:
 dev:
     cd kaya_web && miniserve .
 
+build:
+    cd kaya_web && npm run build
 
-
+deploy:
+    rsync --archive dist/ root@shimmermathlabs.com:/var/www/kaya/

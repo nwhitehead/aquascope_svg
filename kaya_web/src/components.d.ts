@@ -9,17 +9,8 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     BaseHeader: typeof import('./components/layouts/BaseHeader.vue')['default']
-    BaseSide: typeof import('./components/layouts/BaseSide.vue')['default']
     Diagram: typeof import('./components/Diagram.vue')['default']
     Editor: typeof import('./components/Editor.vue')['default']
-    ElButton: typeof import('element-plus/es')['ElButton']
-    ElConfigProvider: typeof import('element-plus/es')['ElConfigProvider']
-    ElIcon: typeof import('element-plus/es')['ElIcon']
-    ElMenu: typeof import('element-plus/es')['ElMenu']
-    ElMenuItem: typeof import('element-plus/es')['ElMenuItem']
-    ElSplitter: typeof import('element-plus/es')['ElSplitter']
-    ElSplitterPanel: typeof import('element-plus/es')['ElSplitterPanel']
-    ElSwitch: typeof import('element-plus/es')['ElSwitch']
     Kaya: typeof import('./components/Kaya.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

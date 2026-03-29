@@ -1,0 +1,17 @@
+
+server {
+    listen 80;
+    listen [::]:80;
+
+    {% if ansible_connection != 'local' %}
+        server_name kaya.shimmermathlabs.com;
+    {% endif %}
+
+    root /var/www/kaya;
+
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html =404;
+    }
+}

@@ -12,7 +12,7 @@ type ArrowInfo = {
     options: object,
 };
 
-const CANVAS_SIZE = 2048;
+const CANVAS_SIZE = 1024;
 const CANVAS_SCALE = 0.5;
 
 const props = defineProps<{
@@ -205,6 +205,6 @@ div.overlay canvas {
     <el-button @click="handleClick">Render to canvas</el-button>
     <div class="overlay">
         <div ref="dia" v-html="contents[0]"></div>
-        <canvas ref="canvas" :width="500" :height="500"></canvas>
+        <canvas ref="canvas"></canvas>
     </div>
 </template>

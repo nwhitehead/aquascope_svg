@@ -67,15 +67,6 @@ function handlePNG() {
         outputElem.value?.replaceChildren();
         outputElem.value.appendChild(canvas);
     });
-    // toPng(kayaElem.value)
-    //     .then((dataUrl) => {
-    //         const img = new Image();
-    //         img.src = dataUrl;
-    //         outputElem.value.appendChild(img);
-    //     })
-    //     .catch((err) => {
-    //         console.error('oops', err);
-    //     });
 }
 
 </script>
@@ -105,8 +96,10 @@ function handlePNG() {
         </div>
       </el-splitter-panel>
       <el-splitter-panel>
-        <div ref="kaya" class="demo-panel">
-            <Kaya :source="renderedCode" :show_partial="true" @error="handleError" :key="kayaKey"/>
+        <div class="demo-panel">
+            <div class="kaya" ref="kaya">
+                <Kaya :source="renderedCode" :show_partial="true" @error="handleError" :key="kayaKey"/>
+            </div>
         </div>
       </el-splitter-panel>
     </el-splitter>
@@ -126,6 +119,11 @@ div.demo-panel {
     flex-direction: column;
     width: 100%;
     overflow: scroll;
+    background-color: transparent !important;
+}
+.kaya {
+    background-color: transparent !important;
+    width: fit-content;
 }
 html.dark div.demo-panel {
     background-color: var(--el-bg-color);

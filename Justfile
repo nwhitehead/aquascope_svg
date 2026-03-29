@@ -22,3 +22,6 @@ build:
 
 deploy:
     rsync --archive dist/ root@shimmermathlabs.com:/var/www/kaya/
+
+rendertest:
+    rm -f test.png && cargo run --bin kaya_png -- testdata/test.states --output test.png && eog test.png

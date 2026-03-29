@@ -1,6 +1,7 @@
 <script setup lang="ts">
 
 import { ref, watch, useTemplateRef, nextTick } from 'vue';
+import { Edit, Download } from '@element-plus/icons-vue';
 import { useDark } from '@vueuse/core';
 import Kaya from './Kaya.vue';
 import html2canvas from 'html2canvas-pro';
@@ -56,8 +57,25 @@ watch(() => code.value, () => {
     if (autoUpdate.value) handleUpdate();
 });
 
-function handleRender() {
-    kayaKey.value++;
+// use the above approach for string input
+function base64(string) {
+    const bytes = new TextEncoder().encode(string);
+    const binString = String.fromCodePoint(...bytes);
+    return btoa(binString);
+}
+
+function saveAsFile(dataUri, filename) {
+    var link = document.createElement('a');
+    link.download = filename;
+    link.href = dataUri;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function handleKaya() {
+    const dataURL = `data:text/plain;base64,${base64(code.value + '\n')}`
+    saveAsFile(dataURL, "diagram.kaya");
 }
 
 function handlePNG() {
@@ -70,8 +88,8 @@ function handlePNG() {
         html2canvas(kayaElem.value, {
             scale: 4.0,
         }).then((canvas) => {
-            outputElem.value?.replaceChildren();
-            outputElem.value?.appendChild(canvas);
+            const img = canvas.toDataURL("image/png");
+            saveAsFile(img, "diagram.png");
             const canvasRef = document.querySelector('.canvas-target');
             if (!canvasRef) return;
             const ctxc = canvasRef.getContext('2d');
@@ -162,7 +180,19 @@ async function convertArrowsSvg() {
 </script>
 
 <template>
-   <el-splitter layout="horizontal">
+    <div class="flex">
+        <el-menu router default-active="1" class="el-menu-vertical-demo">
+            <el-menu-item index="/" @click="handleKaya">
+                <el-icon><Download /></el-icon>
+                <template #title>Kaya</template>
+            </el-menu-item>
+            <el-menu-item index="/" @click="handlePNG">
+                <el-icon><Download /></el-icon>
+                <template #title>PNG</template>
+            </el-menu-item>
+        </el-menu>
+
+    <el-splitter layout="horizontal">
       <el-splitter-panel>
         <div class="demo-panel">
             <vue-monaco-editor
@@ -176,10 +206,6 @@ async function convertArrowsSvg() {
                 <div class="gap"></div>
                 <el-button type="primary" @click="handleUpdate" :disabled="updateDisabled()">Update</el-button>
             </div>
-            <div class="row">
-                <el-button @click="handleRender">Re-render</el-button>
-                <el-button @click="handlePNG">Save PNG</el-button>
-            </div>
             <div ref="output">
             </div>
         </div>
@@ -192,9 +218,13 @@ async function convertArrowsSvg() {
         </div>
       </el-splitter-panel>
     </el-splitter>
+</div>
 </template>
 
 <style scoped>
+div.flex {
+    height: 100%;
+}
 div .row {
     display: flex;
     flex-direction: row;

@@ -1,14 +1,12 @@
 <script setup lang="ts">
 
 import BaseHeader from './components/layouts/BaseHeader.vue';
-import BaseSide from './components/layouts/BaseSide.vue';
 
 </script>
 
 <template>
     <BaseHeader />
     <div class="main-container flex">
-        <BaseSide />
         <div w="full">
             <RouterView />
         </div>

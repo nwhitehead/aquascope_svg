@@ -1,10 +1,9 @@
 <script setup lang="ts">
 
-import { ref, watch, shallowRef, useTemplateRef } from 'vue';
+import { ref, watch, useTemplateRef, nextTick } from 'vue';
 import { useDark } from '@vueuse/core';
 import Kaya from './Kaya.vue';
 import html2canvas from 'html2canvas-pro';
-//import { toPng, toJpeg, toBlob, toPixelData, toSvg } from 'html-to-image';
 
 const MONACO_EDITOR_OPTIONS = {
     automaticLayout: true,
@@ -24,16 +23,19 @@ H0: (42, ptr(z).c4.sn.dw)
 `);
 //"# L0\n## Stack\nx: 5\ny: 7\nz: ptr(x)\np: ptr(H0)\n## Heap\nH0: 42\n");
 const renderedCode = ref("");
-let editor = null;
 const isDark = useDark();
 const autoUpdate = ref(false);
 const kayaKey = ref(0);
 const kayaElem = useTemplateRef('kaya');
 const outputElem = useTemplateRef('output');
 
-function handleMount(instance) {
-    editor = instance;
-}
+// Virtual offscreen canvas for arrow rendering (limits max size of diagram)
+const CANVAS_SIZE = 2048;
+// Not sure why this scale factor is needed for viewBox??? 
+const CANVAS_SCALE = 0.5;
+
+// Scale for display canvas (how much bigger than final size is it?)
+const CANVAS_QUALITY_SCALE = 4.0;
 
 function handleError(evt) {
     console.log(`ERROR ${evt}`);
@@ -59,14 +61,102 @@ function handleRender() {
 }
 
 function handlePNG() {
-    console.log("Generating PNG");
-    console.log(kayaElem.value);
-    html2canvas(kayaElem.value, {
-        scale: 4.0,
-    }).then((canvas) => {
-        outputElem.value?.replaceChildren();
-        outputElem.value.appendChild(canvas);
+    nextTick(async () => {
+        if (!kayaElem.value) return;
+        if (!outputElem.value) return;
+
+        console.log("Generating PNG");
+        await convertArrowsSvg();
+        html2canvas(kayaElem.value, {
+            scale: 4.0,
+        }).then((canvas) => {
+            outputElem.value?.replaceChildren();
+            outputElem.value?.appendChild(canvas);
+            const canvasRef = document.querySelector('.canvas-target');
+            if (!canvasRef) return;
+            const ctxc = canvasRef.getContext('2d');
+            ctxc.clearRect(0, 0, ctxc.canvas.width, ctxc.canvas.height);
+            kayaKey.value++;
+        });
     });
+}
+
+async function waitForEvent(elem: Element, evt: any, setup: any) {
+    return new Promise((resolve) => {
+        elem.addEventListener(evt, () => {
+            resolve(null);
+        });
+        setup();
+    });
+}
+
+async function convertArrowsSvg() {
+    console.log('Render to canvas start');
+    const canvasRef = document.querySelector('.canvas-target');
+    const diaElem = document.querySelector('.dia');
+
+    if (!canvasRef) {
+        console.error("canvasRef null");
+        return;
+    }
+    if (!diaElem) {
+        console.error("diaElem null");
+        return;
+    }
+
+    // make offscreen canvas clear canvas
+    const canvas = new OffscreenCanvas(CANVAS_SIZE, CANVAS_SIZE);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('ctx null');
+        return;
+    }
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    const svgs = document.querySelectorAll('svg.leader-line');
+    if (!svgs.length) {
+        console.warn('No leader lines found');
+        return;
+    }
+    for (const svg of svgs) {
+        // Create copy of the svg using deep clone
+        const svgCopy = svg.cloneNode(true);
+        // Set viewbox to fixed size of big backing canvas
+        svgCopy.viewBox.baseVal.width = CANVAS_SIZE * CANVAS_SCALE;
+        svgCopy.viewBox.baseVal.height = CANVAS_SIZE * CANVAS_SCALE;
+
+        // User proper serializer to convert node to dataURI with svg contents
+        const serializer = new XMLSerializer();
+        const svgtxt = serializer.serializeToString(svgCopy);
+        const datauriv = 'data:image/svg+xml,' + encodeURIComponent(svgtxt);
+        // Now make an image with that svg data
+        const img = new Image();
+        // Wait until it is loaded (svg rendering is async even for dataURI I think)
+        await waitForEvent(img, "load", () => {
+            img.src = datauriv;
+        });
+        // Find original location of svg from node
+        let x = parseFloat(svgCopy.style.left);
+        let y = parseFloat(svgCopy.style.top);
+        // Draw SVG to canvas at that location
+        ctx.drawImage(img, 0, 0, CANVAS_SIZE, CANVAS_SIZE,  x, y, CANVAS_SIZE, CANVAS_SIZE);
+    }
+    const w = diaElem.clientWidth;
+    const h = diaElem.clientHeight;
+    console.log('client w,h = ', w, h);
+    document.querySelectorAll('.leader-line').forEach(el => el.remove());
+
+    // Render offscreen canvas to actual canvas
+    // first set actual gfx canvas size to final size to avoid stretching
+    canvasRef.width = w * CANVAS_QUALITY_SCALE;
+    canvasRef.height = h * CANVAS_QUALITY_SCALE;
+    canvasRef.style.width = `${w}px`;
+    canvasRef.style.height = `${h}px`;
+    const ctxc = canvasRef.getContext('2d');
+    if (!ctxc) return;
+    // read from (0, 0) - (w, h) scaled by vscale (2?)
+    // write to entire dst canvas (should already be right size)
+    const vscale = 2.0;
+    ctxc.drawImage(canvas, 0, 0, w * vscale, h * vscale, 0, 0, ctxc.canvas.width, ctxc.canvas.height);
 }
 
 </script>
@@ -80,7 +170,6 @@ function handlePNG() {
                 :theme="isDark ? 'vs-dark' : 'vs-light'"
                 :options="MONACO_EDITOR_OPTIONS"
                 height="50vh"
-                @mount="handleMount"
             />
             <div class="row">
                 <el-switch active-text="Auto Update" v-model="autoUpdate" />
@@ -118,7 +207,7 @@ div.demo-panel {
     display: flex;
     flex-direction: column;
     width: 100%;
-    overflow: scroll;
+    overflow: auto;
     background-color: transparent !important;
 }
 .kaya {

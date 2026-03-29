@@ -12,16 +12,6 @@ type ArrowInfo = {
     options: object,
 };
 
-// Virtual offscreen canvas for arrow rendering (limits max size of diagram)
-const CANVAS_SIZE = 2048;
-// Not sure why this scale factor is needed for viewBox??? 
-const CANVAS_SCALE = 0.5;
-// Offscreen quality scale
-const OS_SCALE = 2.0;
-
-// Scale for display canvas (how much bigger than final size is it?)
-const CANVAS_QUALITY_SCALE = 4.0;
-
 const props = defineProps<{
     contents: [string, ArrowInfo[]], // html contents, arrows
 }>();
@@ -44,73 +34,6 @@ function clearArrows() {
         const line = lines.pop();
         line.remove();
     }
-}
-
-async function waitForEvent(elem: Element, evt: any, setup: any) {
-    return new Promise((resolve) => {
-        elem.addEventListener(evt, () => {
-            resolve(null);
-        });
-        setup();
-    });
-}
-
-async function convertArrowsSvg() {
-    console.log('Render to canvas start');
-
-    // clear canvas
-    if (!canvasRef.value) return;
-    if (!diaElem.value) return;
-
-    const canvas = new OffscreenCanvas(CANVAS_SIZE, CANVAS_SIZE);
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    const svgs = document.querySelectorAll('svg.leader-line');
-    if (!svgs.length) {
-        return;
-    }
-    for (const svg of svgs) {
-        // Create copy of the svg using deep clone
-        const svgCopy = svg.cloneNode(true);
-        // Set viewbox to fixed size of big backing canvas
-        svgCopy.viewBox.baseVal.width = CANVAS_SIZE * CANVAS_SCALE;
-        svgCopy.viewBox.baseVal.height = CANVAS_SIZE * CANVAS_SCALE;
-
-        // User proper serializer to convert node to dataURI with svg contents
-        const serializer = new XMLSerializer();
-        const svgtxt = serializer.serializeToString(svgCopy);
-        const datauriv = 'data:image/svg+xml,' + encodeURIComponent(svgtxt);
-        // Now make an image with that svg data
-        const img = new Image();
-        // Wait until it is loaded (svg rendering is async even for dataURI I think)
-        await waitForEvent(img, "load", () => {
-            img.src = datauriv;
-        });
-        // Find original location of svg from node
-        let x = parseFloat(svgCopy.style.left);
-        let y = parseFloat(svgCopy.style.top);
-        // Draw SVG to canvas at that location
-        ctx.drawImage(img, 0, 0, CANVAS_SIZE / OS_SCALE, CANVAS_SIZE / OS_SCALE,  x * OS_SCALE, y * OS_SCALE, (CANVAS_SIZE), (CANVAS_SIZE));
-    }
-    const w = diaElem.value.clientWidth;
-    const h = diaElem.value.clientHeight;
-    console.log('client w,h = ', w, h);
-    document.querySelectorAll('.leader-line').forEach(el => el.remove());
-
-    // Render offscreen canvas to actual canvas
-    // first set actual gfx canvas size to final size to avoid stretching
-    canvasRef.value.width = w * CANVAS_QUALITY_SCALE;
-    canvasRef.value.height = h * CANVAS_QUALITY_SCALE;
-    canvasRef.value.style.width = `${w}px`;
-    canvasRef.value.style.height = `${h}px`;
-    const ctxc = canvasRef.value.getContext('2d');
-    if (!ctxc) return;
-    // read from (0, 0) - (w, h) scaled by vscale (2?)
-    // write to entire dst canvas (should already be right size)
-    const vscale = 2.0;
-    ctxc.drawImage(canvas, 0, 0, w * vscale, h * vscale, 0, 0, ctxc.canvas.width / OS_SCALE, ctxc.canvas.height / OS_SCALE);
 }
 
 function renderArrows() {
@@ -172,10 +95,6 @@ watch(
     { deep: true },
 );
 
-function handleClick() {
-    convertArrowsSvg();
-}
-
 </script>
 
 <style>
@@ -211,9 +130,8 @@ div.overlay canvas {
 </style>
 
 <template>
-    <el-button @click="handleClick">Render to canvas</el-button>
     <div class="overlay">
-        <div ref="dia" v-html="contents[0]"></div>
-        <canvas ref="canvas"></canvas>
+        <div ref="dia" class="dia" v-html="contents[0]"></div>
+        <canvas class="canvas-target"></canvas>
     </div>
 </template>

@@ -835,6 +835,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "kaya_png"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "kaya_lib",
+]
+
+[[package]]
 name = "kaya_tools"
 version = "0.1.0"
 dependencies = [

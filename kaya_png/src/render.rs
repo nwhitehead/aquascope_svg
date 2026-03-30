@@ -111,6 +111,46 @@ impl Drawable for GBox {
     }
 }
 
+pub struct GArray {
+    items: Vec<Box<dyn Drawable>>,
+}
+
+impl GArray {
+    pub fn push(&mut self, item: Box<dyn Drawable>) {
+        self.items.push(item);
+    }
+    pub fn new() -> Self {
+        Self { items: vec![] }
+    }
+}
+
+impl Drawable for GArray {
+    fn translate(&mut self, t: Point) {
+        for item in &mut self.items {
+            item.translate(t);
+        }
+    }
+
+    fn bounding_box(&self, canvas: &Canvas) -> Result<Rect> {
+        let mut rbb: Rect = Rect { min: point(1000.0, 1000.0), max: point(-1000.0, -1000.0) };
+        for item in &self.items {
+            let bb = item.bounding_box(&canvas)?;
+            rbb.min.x = rbb.min.x.min(bb.min.x);
+            rbb.min.y = rbb.min.y.min(bb.min.y);
+            rbb.max.x = rbb.max.x.max(bb.max.x);
+            rbb.max.y = rbb.max.y.max(bb.max.y);
+        }
+        Ok(rbb)
+    }
+
+    fn draw(&self, canvas: &mut Canvas) -> Result<()> {
+        for item in &self.items {
+            item.draw(canvas)?;
+        }
+        Ok(())
+    }
+}
+
 impl Default for DrawState {
     fn default() -> Self {
         Self {

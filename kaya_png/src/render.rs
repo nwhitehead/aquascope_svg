@@ -19,9 +19,9 @@ impl Color {
 }
 
 impl<'a> Canvas<'a> {
-    pub fn new(width: i32, height: i32) -> Self {
+    pub fn new(width: u32, height: u32) -> Self {
         Self {
-            image: DynamicImage::new_rgba8(256, 256).to_rgba8(),
+            image: DynamicImage::new_rgba8(width, height).to_rgba8(),
             font: None,
         }
     }
@@ -56,7 +56,7 @@ impl<'a> Canvas<'a> {
         let Some(font) = self.font else {
             bail!("no font");
         };
-        let font = font.as_scaled(size);
+        let font = font.as_scaled(PxScale::from(size));
         let v_advance = font.height() + font.line_gap();
         let mut caret = position + point(0.0, font.ascent());
         let mut last_glyph: Option<Glyph> = None;
@@ -94,6 +94,36 @@ impl<'a> Canvas<'a> {
         let caret = self.layout_text(text, size, point(0.0, 0.0), max_width, &mut glyphs)?;
         Ok(Rect { min: point(0.0, 0.0), max: caret})
     }
+    pub fn draw_text(&mut self, text: &str, size: f32, position: Point, max_width: f32, color: Color) -> Result<()> {
+        let Some(font) = self.font else {
+            bail!("no font");
+        };
+        let font = font.as_scaled(PxScale::from(size));
+        let mut glyphs = vec![];
+        let caret = self.layout_text(text, size, position, max_width, &mut glyphs)?;
+        let outlined: Vec<_> = glyphs
+            .into_iter()
+            .filter_map(|g| font.outline_glyph(g))
+            .collect();
+        // Now draw the outlines
+        for glyph in outlined {
+            let bounds = glyph.px_bounds();
+            let x0 = bounds.min.x as u32;
+            let y0 = bounds.min.y as u32;
+            glyph.draw(|x, y, c| {
+                let px = self.image.get_pixel_mut(x0 + x, y0 + y);
+                // Blend alpha with previous, sum opacity
+                *px = Rgba([
+                    color.0.0[0],
+                    color.0.0[1],
+                    color.0.0[2],
+                    px.0[3].saturating_add((c * 255.0) as u8),
+                ]);
+            });
+        }
+
+        Ok(())
+    }
     pub fn save(&self, filename: &str) -> Result<()> {
         Ok(self.image.save(filename)?)
     }
@@ -101,61 +131,16 @@ impl<'a> Canvas<'a> {
 
 pub fn test(filename: &str) -> Result<()> {
 
-    let mut canvas = Canvas::new(256, 256);
-    let mut image = DynamicImage::new_rgba8(256, 256).to_rgba8();
+    let mut canvas = Canvas::new(512, 512);
 
     let font = FontVec::try_from_vec(Vec::from(include_bytes!("../fonts/Lato-Regular.ttf")))?;
     canvas.set_font(&font);
     let color = Color::new(150, 0, 0);
 
-    canvas.draw_glyph('&', 100.0, 100.0, 48.0, color)?;
+    let txt = "Hello, ab_glyph!";
+    canvas.draw_text(txt, 48.0, point(100.0, 100.0), 9999.0, color)?;
     canvas.save(filename)?;
-    let txt = "Hello, world!";
-    println!("Size of \"{}\" is {:?}", txt, canvas.measure_text(txt, 48.0, 9999.0)?);
 
+    println!("Size of \"{}\" is {:?}", txt, canvas.measure_text(txt, 48.0, 9999.0)?);
     Ok(())
 }
-
-// /// Simple paragraph layout for glyphs into `target`.
-// /// Starts at position `(0, ascent)`.
-// ///
-// /// This is for testing and examples.
-// pub fn layout_paragraph<F, SF>(
-//     font: SF,
-//     position: Point,
-//     max_width: f32,
-//     text: &str,
-//     target: &mut Vec<Glyph>,
-// ) where
-//     F: Font,
-//     SF: ScaleFont<F>,
-// {
-//     let v_advance = font.height() + font.line_gap();
-//     let mut caret = position + point(0.0, font.ascent());
-//     let mut last_glyph: Option<Glyph> = None;
-//     for c in text.chars() {
-//         if c.is_control() {
-//             if c == '\n' {
-//                 caret = point(position.x, caret.y + v_advance);
-//                 last_glyph = None;
-//             }
-//             continue;
-//         }
-//         let mut glyph = font.scaled_glyph(c);
-//         if let Some(previous) = last_glyph.take() {
-//             caret.x += font.kern(previous.id, glyph.id);
-//         }
-//         glyph.position = caret;
-
-//         last_glyph = Some(glyph.clone());
-//         caret.x += font.h_advance(glyph.id);
-
-//         if !c.is_whitespace() && caret.x > position.x + max_width {
-//             caret = point(position.x, caret.y + v_advance);
-//             glyph.position = caret;
-//             last_glyph = None;
-//         }
-
-//         target.push(glyph);
-//     }
-// }

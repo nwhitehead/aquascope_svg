@@ -7,8 +7,6 @@ use std::collections::HashMap;
 
 const TEXT: &str = "This is ab_glyph rendered into a png!";
 
-pub struct Color(Rgb::<u8>);
-
 pub struct Canvas {
     pub pixmap: Pixmap,
     image: ImageBuffer<Rgba<u8>, Vec<u8>>,
@@ -16,13 +14,7 @@ pub struct Canvas {
     font: String,
     font_size: f32,
     font_max_width: f32,
-    color: Color,
-}
-
-impl Color {
-    pub fn new(r: u8, g: u8, b: u8) -> Self {
-        Self(Rgb::<u8>([r, g, b]))
-    }
+    color: ColorU8,
 }
 
 fn pixmap_pixel_mut(pixmap: &mut Pixmap, x: u32, y: u32) -> Option<&mut PremultipliedColorU8> {
@@ -42,7 +34,7 @@ impl Canvas {
             font: "".into(),
             font_size: 24.0,
             font_max_width: 9999.0,
-            color: Color::new(0, 0, 0),
+            color: ColorU8::from_rgba(0, 0, 0, 255),
         })
     }
     pub fn load_font(&mut self, name: &str, fontdata: &[u8]) -> Result<()> {
@@ -58,7 +50,7 @@ impl Canvas {
     pub fn set_font_size(&mut self, font_size: f32) {
         self.font_size = font_size;
     }
-    pub fn set_color(&mut self, color: Color) {
+    pub fn set_color(&mut self, color: ColorU8) {
         self.color = color;
     }
     fn layout_text(&self, text: &str, position: Point, target: &mut Vec<Glyph>) -> Result<Point> {
@@ -112,6 +104,7 @@ impl Canvas {
             .filter_map(|g| font.outline_glyph(g))
             .collect();
         let color = &self.color;
+        let mcolor = color.premultiply();
         // Now draw the outlines
         for glyph in outlined {
             let bounds = glyph.px_bounds();
@@ -120,14 +113,20 @@ impl Canvas {
             glyph.draw(|x, y, c| {
                 let px = self.image.get_pixel_mut(x0 + x, y0 + y);
                 if let Some(pmx) = pixmap_pixel_mut(&mut self.pixmap, x0 + x, y0 + y) {
-                    *pmx = PremultipliedColorU8::from_rgba(0, 0, 0, 255).expect("create color");
+                    let mcolor = ColorU8::from_rgba(
+                        color.red(),
+                        color.green(),
+                        color.blue(),
+                        pmx.alpha().saturating_add((c * 255.0) as u8),
+                    );
+                    *pmx = mcolor.premultiply();
                     //*pmx;
                 }
                 // Blend alpha with previous, sum opacity
                 *px = Rgba([
-                    color.0.0[0],
-                    color.0.0[1],
-                    color.0.0[2],
+                    color.red(),
+                    color.green(),
+                    color.blue(),
                     px.0[3].saturating_add((c * 255.0) as u8),
                 ]);
             });
@@ -146,7 +145,7 @@ pub fn test(filename: &str) -> Result<()> {
 
     canvas.load_font("mono", include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf"))?;
     canvas.set_font("mono");
-    canvas.set_color(Color::new(150, 0, 0));
+    canvas.set_color(ColorU8::from_rgba(150, 0, 0, 255));
     canvas.set_font_size(48.0);
 
     let txt = "What font is this? 42";

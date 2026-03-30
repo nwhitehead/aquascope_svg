@@ -3,6 +3,7 @@ use ab_glyph::{point, Font, Glyph, Point, Rect, ScaleFont};
 use ab_glyph::{FontRef, FontVec, PxScale};
 use image::{DynamicImage, ImageBuffer, Rgb, Rgba};
 use tiny_skia::*;
+use std::collections::HashMap;
 
 const TEXT: &str = "This is ab_glyph rendered into a png!";
 
@@ -10,6 +11,7 @@ pub struct Canvas<'a> {
     pixmap: Pixmap,
     image: ImageBuffer<Rgba<u8>, Vec<u8>>,
     font: Option<&'a FontVec>,
+    fonts: HashMap<String, FontVec>,
 }
 
 pub struct Color(Rgb::<u8>);
@@ -29,9 +31,14 @@ impl<'a> Canvas<'a> {
             pixmap,
             image: DynamicImage::new_rgba8(width, height).to_rgba8(),
             font: None,
+            fonts: HashMap::new(),
         })
     }
-    pub fn set_font(&mut self, font: &'a FontVec) {
+    pub fn set_font(&mut self, name: &str, fontdata: &[u8]) -> Result<()> {
+        self.fonts.insert(name.to_string(), FontVec::try_from_vec(Vec::from(fontdata))?);
+        Ok(())
+    }
+    pub fn s_font(&mut self, font: &'a FontVec) {
         self.font = Some(font);
     }
     fn layout_text(&self, text: &str, size: f32, position: Point, max_width: f32, target: &mut Vec<Glyph>) -> Result<Point> {
@@ -110,13 +117,14 @@ impl<'a> Canvas<'a> {
 
 pub fn test(filename: &str) -> Result<()> {
 
-    let mut canvas = Canvas::new(512, 512)?;
+    let mut canvas = Canvas::new(800, 400)?;
 
-    let font = FontVec::try_from_vec(Vec::from(include_bytes!("../fonts/Lato-Regular.ttf")))?;
-    canvas.set_font(&font);
+    canvas.set_font("mono", include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf"))?;
+    let font = FontVec::try_from_vec(Vec::from(include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf")))?;
+    canvas.s_font(&font);
     let color = Color::new(150, 0, 0);
 
-    let txt = "Hello, ab_glyph!";
+    let txt = "What font is this? 42";
     canvas.draw_text(txt, 48.0, point(100.0, 100.0), 9999.0, color)?;
     canvas.save(filename)?;
 

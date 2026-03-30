@@ -12,6 +12,19 @@ pub struct Canvas<'a> {
 
 pub struct Color(Rgb::<u8>);
 
+pub struct Rect {
+    x: f32,
+    y: f32,
+    w: f32,
+    h: f32,
+}
+
+impl Rect {
+    pub fn new(x: f32, y: f32, w: f32, h: f32) -> Self {
+        Self { x, y, w, h }
+    }
+}
+
 impl Color {
     pub fn new(r: u8, g: u8, b: u8) -> Self {
         Self(Rgb::<u8>([r, g, b]))
@@ -51,6 +64,43 @@ impl<'a> Canvas<'a> {
         });
 
         Ok(())
+    }
+    fn layout_text(&mut self, text: &str, size: f32, position: Point, max_width: f32, target: &mut Vec<Glyph>) -> Result<()> {
+        let Some(font) = self.font else {
+            bail!("no font");
+        };
+        let font = font.as_scaled(size);
+        let v_advance = font.height() + font.line_gap();
+        let mut caret = position + point(0.0, font.ascent());
+        let mut last_glyph: Option<Glyph> = None;
+        for c in text.chars() {
+            if c.is_control() {
+                if c == '\n' {
+                    caret = point(position.x, caret.y + v_advance);
+                    last_glyph = None;
+                }
+                continue;
+            }
+            let mut glyph = font.scaled_glyph(c);
+            if let Some(previous) = last_glyph.take() {
+                caret.x += font.kern(previous.id, glyph.id);
+            }
+            glyph.position = caret;
+            last_glyph = Some(glyph.clone());
+            caret.x += font.h_advance(glyph.id);
+            if !c.is_whitespace() && caret.x > max_width {
+                caret = point(position.x, caret.y + v_advance);
+                glyph.position = caret;
+                last_glyph = None;
+            }
+            target.push(glyph);
+        }
+        Ok(())
+    }
+    pub fn measure_text(&mut self, text: &str, size: f32, max_width: f32) -> Result<Rect> {
+        let mut glyphs = vec![];
+        self.layout_text(text, size, point(0.0, 0.0), max_width, &mut glyphs)?;
+        Ok(Rect::new(0.0, 0.0, 0.0, 0.0))
     }
     pub fn save(&self, filename: &str) -> Result<()> {
         Ok(self.image.save(filename)?)

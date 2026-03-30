@@ -294,9 +294,13 @@ pub fn test(filename: &str) -> Result<()> {
         state
     };
     let bb = txt.bounding_box(&canvas)?;
-    txt.draw(&mut canvas)?;
+    //txt.draw(&mut canvas)?;
     let bx = GBox::new_with_options(bb, 4.0, ColorU8::from_rgba(0, 120, 0, 255));
-    bx.draw(&mut canvas)?;
+    //bx.draw(&mut canvas)?;
+    let mut ga = GArray::new();
+    ga.push(Box::new(txt));
+    ga.push(Box::new(bx));
+    ga.draw(&mut canvas)?;
 
     canvas.save(filename)?;
     Ok(())

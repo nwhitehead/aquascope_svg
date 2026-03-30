@@ -28,30 +28,31 @@ fn pixmap_pixel_mut(pixmap: &mut Pixmap, x: i32, y: i32) -> Option<&mut Premulti
 }
 
 pub trait Drawable {
-    fn translate(&mut self, tx: f32, ty: f32);
-    fn bounding_box(&self) -> Rect;
-    fn draw(&self, canvas: &mut Canvas);
+    fn translate(&mut self, t: Point);
+    fn bounding_box(&self, canvas: &Canvas) -> Result<Rect>;
+    fn draw(&self, canvas: &mut Canvas) -> Result<()>;
 }
 
 
 #[derive(Clone)]
 pub struct GText {
-    x: f32,
-    y: f32,
+    position: Point,
     size: f32,
-    txt: String,
+    text: String,
     font: String,
 }
 
-// impl Drawable for GText {
-//     fn translate(&mut self, tx: f32, ty: f32) {
-//         self.x += tx;
-//         self.y += ty;
-//     }
-//     fn bounding_box(&self) -> Rect {
-
-//     }
-// }
+impl Drawable for GText {
+    fn translate(&mut self, t: Point) {
+        self.position += t;
+    }
+    fn bounding_box(&self, canvas: &Canvas) -> Result<Rect> {
+        Ok(canvas.measure_text(&self.text, &DrawState { ..Default::default() })?)
+    }
+    fn draw(&self, canvas: &mut Canvas) -> Result<()> {
+        Ok(())
+    }
+}
 
 impl Default for DrawState {
     fn default() -> Self {

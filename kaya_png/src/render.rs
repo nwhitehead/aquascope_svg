@@ -7,6 +7,7 @@ use tiny_skia::*;
 const TEXT: &str = "This is ab_glyph rendered into a png!";
 
 pub struct Canvas<'a> {
+    pixmap: Pixmap,
     image: ImageBuffer<Rgba<u8>, Vec<u8>>,
     font: Option<&'a FontVec>,
 }
@@ -20,11 +21,15 @@ impl Color {
 }
 
 impl<'a> Canvas<'a> {
-    pub fn new(width: u32, height: u32) -> Self {
-        Self {
+    pub fn new(width: u32, height: u32) -> Result<Self> {
+        let Some(pixmap) = Pixmap::new(width, height) else {
+            bail!("pixmap failed");
+        };
+        Ok(Self {
+            pixmap,
             image: DynamicImage::new_rgba8(width, height).to_rgba8(),
             font: None,
-        }
+        })
     }
     pub fn set_font(&mut self, font: &'a FontVec) {
         self.font = Some(font);
@@ -132,7 +137,7 @@ impl<'a> Canvas<'a> {
 
 pub fn test(filename: &str) -> Result<()> {
 
-    let mut canvas = Canvas::new(512, 512);
+    let mut canvas = Canvas::new(512, 512)?;
 
     let font = FontVec::try_from_vec(Vec::from(include_bytes!("../fonts/Lato-Regular.ttf")))?;
     canvas.set_font(&font);

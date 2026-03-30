@@ -4,11 +4,14 @@ use anyhow::{Result, bail};
 use std::collections::HashMap;
 use tiny_skia::*;
 
+#[derive(Clone, Debug)]
 struct DrawState {
     font: String,
     font_size: f32,
     font_max_width: f32,
-    color: ColorU8,
+    text_color: ColorU8,
+    stroke_color: ColorU8,
+    stroke: Stroke,
 }
 
 pub struct Canvas {
@@ -37,9 +40,7 @@ pub trait Drawable {
 pub struct GText {
     text: String,
     position: Point,
-    font: String,
-    size: f32,
-    color: ColorU8,
+    state: DrawState,
 }
 
 impl Drawable for GText {
@@ -47,21 +48,66 @@ impl Drawable for GText {
         self.position += t;
     }
     fn bounding_box(&self, canvas: &Canvas) -> Result<Rect> {
-        let state = DrawState {
-            font: self.font.clone(),
-            font_size: self.size,
-            ..Default::default()
-        };
-        Ok(canvas.measure_text(&self.text, &state)?)
+        let mut r = canvas.measure_text(&self.text, &self.state)?;
+        r.min += self.position;
+        r.max += self.position;
+        Ok(r)
     }
     fn draw(&self, canvas: &mut Canvas) -> Result<()> {
-        let state = DrawState {
-            font: self.font.clone(),
-            font_size: self.size,
-            color: self.color,
-            ..Default::default()
+        Ok(canvas.draw_text(&self.text, self.position, &self.state)?)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct GBox {
+    r: Rect,
+    state: DrawState,
+}
+
+impl GBox {
+    fn new_xywh(x: f32, y: f32, w: f32, h: f32) -> Self {
+        Self {
+            r: Rect { min: point(x, y), max: point(x + w, y + h) },
+            state: Default::default(),
+        }
+    }
+    fn new_with_options(r: Rect, width: f32, color: ColorU8) -> Self {
+        Self {
+            r,
+            state: DrawState { 
+                stroke_color: color,
+                stroke: Stroke { width, ..Default::default() },
+                ..Default::default() },
+        }
+    }
+}
+
+impl Drawable for GBox {
+    fn translate(&mut self, t: Point) {
+        self.r.min += t;
+        self.r.max += t;
+    }
+    fn bounding_box(&self, canvas: &Canvas) -> Result<Rect> {
+        Ok(self.r)
+    }
+    fn draw(&self, canvas: &mut Canvas) -> Result<()> {
+        let color = self.state.stroke_color;
+        let mut paint = Paint::default();
+        paint.set_color_rgba8(color.red(), color.green(), color.blue(), color.alpha());
+        paint.anti_alias = true;
+        let Some(path) = ({
+            let mut pb = PathBuilder::new();
+            pb.move_to(self.r.min.x, self.r.min.y);
+            pb.line_to(self.r.max.x, self.r.min.y);
+            pb.line_to(self.r.max.x, self.r.max.y);
+            pb.line_to(self.r.min.x, self.r.max.y);
+            pb.line_to(self.r.min.x, self.r.min.y);
+            pb.finish()
+        }) else {
+            bail!("could not make path");
         };
-        Ok(canvas.draw_text(&self.text, self.position, &state)?)
+        canvas.pixmap.stroke_path(&path, &paint, &self.state.stroke, Transform::identity(), None);
+        Ok(())
     }
 }
 
@@ -71,7 +117,9 @@ impl Default for DrawState {
             font: "".into(),
             font_size: 24.0,
             font_max_width: 9999.0,
-            color: ColorU8::from_rgba(0, 0, 0, 255),
+            stroke_color: ColorU8::from_rgba(0, 0, 0, 255),
+            text_color: ColorU8::from_rgba(0, 0, 0, 255),
+            stroke: Default::default(),
         }
     }
 }
@@ -157,7 +205,7 @@ impl Canvas {
             .into_iter()
             .filter_map(|g| font.outline_glyph(g))
             .collect();
-        let color = &state.color;
+        let color = &state.text_color;
         // Now draw the outlines
         for glyph in outlined {
             let bounds = glyph.px_bounds();
@@ -195,49 +243,21 @@ pub fn test(filename: &str) -> Result<()> {
     )?;
     let state = DrawState {
         font: "mono".into(),
-        color: ColorU8::from_rgba(150, 0, 0, 255),
+        text_color: ColorU8::from_rgba(150, 0, 0, 255),
         font_size: 48.0,
         ..Default::default()
     };
 
     let txt = GText {
-        text: "What font is this? 42".into(),
-        position: point(100.0, 10.0),
-        size: 48.0,
-        font: "mono".into(),
-        color: state.color,
+        text: "42".into(),
+        position: point(100.0, 100.0),
+        state
     };
+    let bb = txt.bounding_box(&canvas)?;
     txt.draw(&mut canvas)?;
-    //    canvas.draw_text(txt, point(100.0, 10.0), &state)?;
+    let bx = GBox::new_with_options(bb, 4.0, ColorU8::from_rgba(0, 120, 0, 255));
+    bx.draw(&mut canvas)?;
 
-    println!("Size of {:?} is {:?}", txt, txt.bounding_box(&canvas));
-
-    let mut paint = Paint::default();
-    paint.set_color_rgba8(0, 127, 0, 200);
-    paint.anti_alias = true;
-
-    let path = {
-        let mut pb = PathBuilder::new();
-        const RADIUS: f32 = 250.0;
-        const CENTER: f32 = 250.0;
-        pb.move_to(CENTER + RADIUS, CENTER);
-        for i in 1..8 {
-            let a = 2.6927937 * i as f32;
-            pb.line_to(CENTER + RADIUS * a.cos(), CENTER + RADIUS * a.sin());
-        }
-        pb.finish().unwrap()
-    };
-
-    let stroke = Stroke {
-        width: 6.0,
-        line_cap: LineCap::Round,
-        dash: StrokeDash::new(vec![20.0, 40.0], 0.0),
-        ..Default::default()
-    };
-
-    canvas
-        .pixmap
-        .stroke_path(&path, &paint, &stroke, Transform::identity(), None);
     canvas.save(filename)?;
     Ok(())
 }

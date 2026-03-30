@@ -52,7 +52,7 @@ impl<'a> Canvas<'a> {
 
         Ok(())
     }
-    fn layout_text(&self, text: &str, size: f32, position: Point, max_width: f32, target: &mut Vec<Glyph>) -> Result<()> {
+    fn layout_text(&self, text: &str, size: f32, position: Point, max_width: f32, target: &mut Vec<Glyph>) -> Result<Point> {
         let Some(font) = self.font else {
             bail!("no font");
         };
@@ -82,15 +82,17 @@ impl<'a> Canvas<'a> {
             }
             target.push(glyph);
         }
-        Ok(())
+        Ok(caret)
     }
     fn measure_glyphs(&self, glyphs: &[Glyph]) -> Rect {
         Rect { min: point(0.0, 0.0), max: point(1.0, 1.0) }
     }
+    /// Measure text using font metric information
+    // Actual drawn pixels may exceed the bounds returned here, but this is what should be used for computing layout
     pub fn measure_text(&self, text: &str, size: f32, max_width: f32) -> Result<Rect> {
         let mut glyphs = vec![];
-        self.layout_text(text, size, point(0.0, 0.0), max_width, &mut glyphs)?;
-        Ok(Rect { min: point(0.0, 0.0), max: point(1.0, 1.0) })
+        let caret = self.layout_text(text, size, point(0.0, 0.0), max_width, &mut glyphs)?;
+        Ok(Rect { min: point(0.0, 0.0), max: caret})
     }
     pub fn save(&self, filename: &str) -> Result<()> {
         Ok(self.image.save(filename)?)
@@ -108,6 +110,8 @@ pub fn test(filename: &str) -> Result<()> {
 
     canvas.draw_glyph('&', 100.0, 100.0, 48.0, color)?;
     canvas.save(filename)?;
+    let txt = "Hello, world!";
+    println!("Size of \"{}\" is {:?}", txt, canvas.measure_text(txt, 48.0, 9999.0)?);
 
     Ok(())
 }

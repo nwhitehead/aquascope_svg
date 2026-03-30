@@ -7,6 +7,5 @@ edition = "2024"
 ab_glyph = "0.2.32"
 anyhow = "1.0.102"
 clap = { version = "4.6.0", features = ["derive"] }
-image = "0.25.10"
 kaya_lib = { path = "../kaya_lib" }
 tiny-skia = "0.12.0"

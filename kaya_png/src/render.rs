@@ -1,11 +1,8 @@
 use anyhow::{bail, Result};
 use ab_glyph::{point, Font, Glyph, Point, Rect, ScaleFont};
-use ab_glyph::{FontRef, FontVec, PxScale};
-use image::{DynamicImage, ImageBuffer, Rgb, Rgba};
+use ab_glyph::{FontVec, PxScale};
 use tiny_skia::*;
 use std::collections::HashMap;
-
-const TEXT: &str = "This is ab_glyph rendered into a png!";
 
 pub struct Canvas {
     pixmap: Pixmap,
@@ -20,6 +17,13 @@ fn pixmap_pixel_mut(pixmap: &mut Pixmap, x: u32, y: u32) -> Option<&mut Premulti
     let idx = pixmap.width().checked_mul(y)?.checked_add(x)?;
     Some(&mut pixmap.pixels_mut()[idx as usize])
 }
+
+pub trait Drawable {
+    fn translate(&mut self, tx: f32, ty: f32);
+    fn bounding_box(&self) -> Rect;
+    fn draw(&self, canvas: &mut Canvas);
+}
+
 
 impl Canvas {
     pub fn new(width: u32, height: u32) -> Result<Self> {
@@ -37,7 +41,7 @@ impl Canvas {
     }
     pub fn load_font(&mut self, name: &str, fontdata: &[u8]) -> Result<()> {
         self.fonts.insert(name.into(), FontVec::try_from_vec(Vec::from(fontdata))?);
-        if self.font == "" {
+        if self.font.is_empty() {
             self.font = name.into();
         }
         Ok(())
@@ -96,13 +100,12 @@ impl Canvas {
         };
         let font = font.as_scaled(PxScale::from(self.font_size));
         let mut glyphs = vec![];
-        let caret = self.layout_text(text, position, &mut glyphs)?;
+        let _ = self.layout_text(text, position, &mut glyphs)?;
         let outlined: Vec<_> = glyphs
             .into_iter()
             .filter_map(|g| font.outline_glyph(g))
             .collect();
         let color = &self.color;
-        let mcolor = color.premultiply();
         // Now draw the outlines
         for glyph in outlined {
             let bounds = glyph.px_bounds();
@@ -159,10 +162,7 @@ pub fn test(filename: &str) -> Result<()> {
         pb.finish().unwrap()
     };
 
-    let mut stroke = Stroke::default();
-    stroke.width = 6.0;
-    stroke.line_cap = LineCap::Round;
-    stroke.dash = StrokeDash::new(vec![20.0, 40.0], 0.0);
+    let stroke = Stroke { width: 6.0, line_cap: LineCap::Round, dash: StrokeDash::new(vec![20.0, 40.0], 0.0), ..Default::default() };
 
     canvas.pixmap.stroke_path(&path, &paint, &stroke, Transform::identity(), None);
     canvas.save(filename)?;

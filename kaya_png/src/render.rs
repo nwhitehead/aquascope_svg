@@ -7,10 +7,9 @@ use std::collections::HashMap;
 
 const TEXT: &str = "This is ab_glyph rendered into a png!";
 
-pub struct Canvas<'a> {
+pub struct Canvas {
     pixmap: Pixmap,
     image: ImageBuffer<Rgba<u8>, Vec<u8>>,
-    font: Option<&'a FontVec>,
     fonts: HashMap<String, FontVec>,
 }
 
@@ -22,7 +21,7 @@ impl Color {
     }
 }
 
-impl<'a> Canvas<'a> {
+impl Canvas {
     pub fn new(width: u32, height: u32) -> Result<Self> {
         let Some(pixmap) = Pixmap::new(width, height) else {
             bail!("pixmap failed");
@@ -30,7 +29,6 @@ impl<'a> Canvas<'a> {
         Ok(Self {
             pixmap,
             image: DynamicImage::new_rgba8(width, height).to_rgba8(),
-            font: None,
             fonts: HashMap::new(),
         })
     }
@@ -38,11 +36,8 @@ impl<'a> Canvas<'a> {
         self.fonts.insert(name.to_string(), FontVec::try_from_vec(Vec::from(fontdata))?);
         Ok(())
     }
-    pub fn s_font(&mut self, font: &'a FontVec) {
-        self.font = Some(font);
-    }
-    fn layout_text(&self, text: &str, size: f32, position: Point, max_width: f32, target: &mut Vec<Glyph>) -> Result<Point> {
-        let Some(font) = self.font else {
+    fn layout_text(&self, text: &str, fontname: &str, size: f32, position: Point, max_width: f32, target: &mut Vec<Glyph>) -> Result<Point> {
+        let Some(font) = self.fonts.get(fontname) else {
             bail!("no font");
         };
         let font = font.as_scaled(PxScale::from(size));
@@ -75,18 +70,18 @@ impl<'a> Canvas<'a> {
     }
     /// Measure text using font metric information
     // Actual drawn pixels may exceed the bounds returned here, but this is what should be used for computing layout
-    pub fn measure_text(&self, text: &str, size: f32, max_width: f32) -> Result<Rect> {
+    pub fn measure_text(&self, text: &str, fontname: &str, size: f32, max_width: f32) -> Result<Rect> {
         let mut glyphs = vec![];
-        let caret = self.layout_text(text, size, point(0.0, 0.0), max_width, &mut glyphs)?;
+        let caret = self.layout_text(text, fontname, size, point(0.0, 0.0), max_width, &mut glyphs)?;
         Ok(Rect { min: point(0.0, 0.0), max: caret})
     }
-    pub fn draw_text(&mut self, text: &str, size: f32, position: Point, max_width: f32, color: Color) -> Result<()> {
-        let Some(font) = self.font else {
+    pub fn draw_text(&mut self, text: &str, fontname: &str, size: f32, position: Point, max_width: f32, color: Color) -> Result<()> {
+        let Some(font) = self.fonts.get(fontname) else {
             bail!("no font");
         };
         let font = font.as_scaled(PxScale::from(size));
         let mut glyphs = vec![];
-        let caret = self.layout_text(text, size, position, max_width, &mut glyphs)?;
+        let caret = self.layout_text(text, fontname, size, position, max_width, &mut glyphs)?;
         let outlined: Vec<_> = glyphs
             .into_iter()
             .filter_map(|g| font.outline_glyph(g))
@@ -120,15 +115,13 @@ pub fn test(filename: &str) -> Result<()> {
     let mut canvas = Canvas::new(800, 400)?;
 
     canvas.set_font("mono", include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf"))?;
-    let font = FontVec::try_from_vec(Vec::from(include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf")))?;
-    canvas.s_font(&font);
     let color = Color::new(150, 0, 0);
 
     let txt = "What font is this? 42";
-    canvas.draw_text(txt, 48.0, point(100.0, 100.0), 9999.0, color)?;
+    canvas.draw_text(txt, "mono", 48.0, point(100.0, 100.0), 9999.0, color)?;
     canvas.save(filename)?;
 
-    println!("Size of \"{}\" is {:?}", txt, canvas.measure_text(txt, 48.0, 9999.0)?);
+    println!("Size of \"{}\" is {:?}", txt, canvas.measure_text(txt, "mono", 48.0, 9999.0)?);
 
     let mut paint = Paint::default();
     paint.set_color_rgba8(0, 127, 0, 200);

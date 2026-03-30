@@ -36,7 +36,6 @@ pub trait Drawable {
     fn draw(&self, canvas: &mut Canvas) -> Result<()>;
 }
 
-#[derive(Clone, Debug)]
 pub struct GText {
     text: String,
     position: Point,
@@ -274,6 +273,66 @@ impl Canvas {
     }
 }
 
+#[derive(Clone, Debug)]
+enum FormulaType {
+    AlignLow,
+    AlignHigh,
+    Centered,
+    Sequenced,
+}
+
+fn apply_formula(formula: &FormulaType, x: f32, xx: f32, ix: f32, ixx: f32) -> f32 {
+    match formula {
+        FormulaType::AlignLow => x - ix,
+        FormulaType::AlignHigh => xx - ixx,
+        FormulaType::Centered => (x + 0.5 * (xx - x)) - (ix + 0.5 * (ixx - ix)),
+        FormulaType::Sequenced => xx - ix,
+    }
+}
+
+fn stack_general(
+    items: Vec<Box<dyn Drawable>>,
+    tx_formula: FormulaType,
+    ty_formula: FormulaType,
+    canvas: &Canvas
+) -> Result<GArray> {
+    let mut bb: Option<Rect> = None;
+    let mut c = GArray::new();
+    for mut item in items {
+        let item_bb = item.bounding_box(canvas)?.clone();
+        if let Some(ref b) = bb {
+            let tx = apply_formula(&tx_formula, b.min.x, b.max.x, item_bb.min.x, item_bb.max.x);
+            let ty = apply_formula(&ty_formula, b.min.y, b.max.y, item_bb.min.y, item_bb.max.y);
+            item.translate(point(tx, ty));
+        } else {
+            bb = Some(item.bounding_box(canvas)?);
+        }
+        c.push(item);
+    }
+    Ok(c)
+}
+pub fn stack(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
+    Ok(stack_general(items, FormulaType::Centered, FormulaType::Centered, canvas)?)
+}
+pub fn hstack(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
+    Ok(stack_general(items, FormulaType::Sequenced, FormulaType::Centered, canvas)?)
+}
+pub fn hstack_top(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
+    Ok(stack_general(items, FormulaType::Sequenced, FormulaType::AlignLow, canvas)?)
+}
+pub fn hstack_bottom(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
+    Ok(stack_general(items, FormulaType::Sequenced, FormulaType::AlignHigh, canvas)?)
+}
+pub fn vstack(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
+    Ok(stack_general(items, FormulaType::Centered, FormulaType::Sequenced, canvas)?)
+}
+pub fn vstack_left(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
+    Ok(stack_general(items, FormulaType::AlignLow, FormulaType::Sequenced, canvas)?)
+}
+pub fn vstack_right(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
+    Ok(stack_general(items, FormulaType::AlignHigh, FormulaType::Sequenced, canvas)?)
+}
+
 pub fn test(filename: &str) -> Result<()> {
     let mut canvas = Canvas::new(800, 400)?;
 
@@ -294,13 +353,20 @@ pub fn test(filename: &str) -> Result<()> {
         state
     };
     let bb = txt.bounding_box(&canvas)?;
-    //txt.draw(&mut canvas)?;
     let bx = GBox::new_with_options(bb, 4.0, ColorU8::from_rgba(0, 120, 0, 255));
-    //bx.draw(&mut canvas)?;
     let mut ga = GArray::new();
     ga.push(Box::new(txt));
     ga.push(Box::new(bx));
-    ga.draw(&mut canvas)?;
+    let bx2 = GBox::new_with_options(Rect { min: point(0.0, 0.0), max: point(100.0, 120.0) }, 4.0, ColorU8::from_rgba(0, 120, 120, 255));
+    let stk = vstack_right(vec![Box::new(ga), Box::new(bx2)], &canvas)?;
+    for item in &stk.items {
+        println!("bb item = {:?}", item.bounding_box(&canvas)?);
+    }
+    let bb_stk = stk.bounding_box(&canvas)?;
+    println!("bb_stk = {:?}", &bb_stk);
+    let bx_bb_stk = GBox::new_with_options(bb_stk, 4.0, ColorU8::from_rgba(100, 100, 100, 255));
+    stk.draw(&mut canvas)?;
+    bx_bb_stk.draw(&mut canvas)?;
 
     canvas.save(filename)?;
     Ok(())

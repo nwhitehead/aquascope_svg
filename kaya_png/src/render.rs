@@ -1,5 +1,5 @@
 use anyhow::{bail, Result};
-use ab_glyph::{point, Font, Glyph, Point, ScaleFont};
+use ab_glyph::{point, Font, Glyph, Point, Rect, ScaleFont};
 use ab_glyph::{FontRef, FontVec, PxScale};
 use image::{DynamicImage, ImageBuffer, Rgb, Rgba};
 
@@ -11,19 +11,6 @@ pub struct Canvas<'a> {
 }
 
 pub struct Color(Rgb::<u8>);
-
-pub struct Rect {
-    x: f32,
-    y: f32,
-    w: f32,
-    h: f32,
-}
-
-impl Rect {
-    pub fn new(x: f32, y: f32, w: f32, h: f32) -> Self {
-        Self { x, y, w, h }
-    }
-}
 
 impl Color {
     pub fn new(r: u8, g: u8, b: u8) -> Self {
@@ -65,7 +52,7 @@ impl<'a> Canvas<'a> {
 
         Ok(())
     }
-    fn layout_text(&mut self, text: &str, size: f32, position: Point, max_width: f32, target: &mut Vec<Glyph>) -> Result<()> {
+    fn layout_text(&self, text: &str, size: f32, position: Point, max_width: f32, target: &mut Vec<Glyph>) -> Result<()> {
         let Some(font) = self.font else {
             bail!("no font");
         };
@@ -97,10 +84,13 @@ impl<'a> Canvas<'a> {
         }
         Ok(())
     }
-    pub fn measure_text(&mut self, text: &str, size: f32, max_width: f32) -> Result<Rect> {
+    fn measure_glyphs(&self, glyphs: &[Glyph]) -> Rect {
+        Rect { min: point(0.0, 0.0), max: point(1.0, 1.0) }
+    }
+    pub fn measure_text(&self, text: &str, size: f32, max_width: f32) -> Result<Rect> {
         let mut glyphs = vec![];
         self.layout_text(text, size, point(0.0, 0.0), max_width, &mut glyphs)?;
-        Ok(Rect::new(0.0, 0.0, 0.0, 0.0))
+        Ok(Rect { min: point(0.0, 0.0), max: point(1.0, 1.0) })
     }
     pub fn save(&self, filename: &str) -> Result<()> {
         Ok(self.image.save(filename)?)

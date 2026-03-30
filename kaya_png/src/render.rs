@@ -16,8 +16,14 @@ pub struct Canvas {
     fonts: HashMap<String, FontVec>,
 }
 
-fn pixmap_pixel_mut(pixmap: &mut Pixmap, x: u32, y: u32) -> Option<&mut PremultipliedColorU8> {
-    let idx = pixmap.width().checked_mul(y)?.checked_add(x)?;
+fn pixmap_pixel_mut(pixmap: &mut Pixmap, x: i32, y: i32) -> Option<&mut PremultipliedColorU8> {
+    if x < 0 || x >= pixmap.width() as i32 {
+        return None;
+    }
+    if y < 0 || y >= pixmap.height() as i32 {
+        return None;
+    }
+    let idx = (pixmap.width() as i32).checked_mul(y)?.checked_add(x)?;
     Some(&mut pixmap.pixels_mut()[idx as usize])
 }
 
@@ -72,13 +78,16 @@ impl Canvas {
         self.fonts.insert(name.into(), FontVec::try_from_vec(Vec::from(fontdata))?);
         Ok(())
     }
+    /// position is at left, baseline
     fn layout_text(&self, text: &str, position: Point, state: &DrawState, target: &mut Vec<Glyph>) -> Result<Point> {
         let Some(font) = self.fonts.get(&state.font) else {
             bail!("no font");
         };
         let font = font.as_scaled(PxScale::from(state.font_size));
         let v_advance = font.height() + font.line_gap();
-        let mut caret = position + point(0.0, font.ascent());
+        let mut caret = position;
+        // to make position be at upper left, add in this: + point(0.0, font.ascent())
+        // to initial caret position
         let mut last_glyph: Option<Glyph> = None;
         for c in text.chars() {
             if c.is_control() {
@@ -107,9 +116,13 @@ impl Canvas {
     /// Measure text using font metric information
     // Actual drawn pixels may exceed the bounds returned here, but this is what should be used for computing layout
     pub fn measure_text(&self, text: &str, state: &DrawState) -> Result<Rect> {
+        let Some(font) = self.fonts.get(&state.font) else {
+            bail!("no font");
+        };
+        let font = font.as_scaled(PxScale::from(state.font_size));
         let mut glyphs = vec![];
         let caret = self.layout_text(text, point(0.0, 0.0), &state, &mut glyphs)?;
-        Ok(Rect { min: point(0.0, 0.0), max: caret})
+        Ok(Rect { min: point(0.0, -font.ascent()), max: caret})
     }
     pub fn draw_text(&mut self, text: &str, position: Point, state: &DrawState) -> Result<()> {
         let Some(font) = self.fonts.get(&state.font) else {
@@ -126,10 +139,10 @@ impl Canvas {
         // Now draw the outlines
         for glyph in outlined {
             let bounds = glyph.px_bounds();
-            let x0 = bounds.min.x as u32;
-            let y0 = bounds.min.y as u32;
+            let x0 = bounds.min.x as i32;
+            let y0 = bounds.min.y as i32;
             glyph.draw(|x, y, c| {
-                if let Some(pmx) = pixmap_pixel_mut(&mut self.pixmap, x0 + x, y0 + y) {
+                if let Some(pmx) = pixmap_pixel_mut(&mut self.pixmap, x0 + (x as i32), y0 + (y as i32)) {
                     // Blend alpha with previous, sum opacity
                     let mcolor = ColorU8::from_rgba(
                         color.red(),
@@ -157,7 +170,7 @@ pub fn test(filename: &str) -> Result<()> {
     let state = DrawState { font: "mono".into(), color: ColorU8::from_rgba(150, 0, 0, 255), font_size: 48.0, ..Default::default() };
 
     let txt = "What font is this? 42";
-    canvas.draw_text(txt, point(100.0, 100.0), &state)?;
+    canvas.draw_text(txt, point(100.0, 10.0), &state)?;
 
     println!("Size of \"{}\" is {:?}", txt, canvas.measure_text(txt, &state)?);
 

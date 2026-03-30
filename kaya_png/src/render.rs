@@ -340,6 +340,10 @@ pub fn test(filename: &str) -> Result<()> {
         "mono",
         include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf"),
     )?;
+    canvas.load_font(
+        "serif",
+        include_bytes!("../fonts/Lato/Lato-Regular.ttf"),
+    )?;
     let state = DrawState {
         font: "mono".into(),
         text_color: ColorU8::from_rgba(150, 0, 0, 255),
@@ -348,7 +352,7 @@ pub fn test(filename: &str) -> Result<()> {
     };
 
     let txt = GText {
-        text: "42".into(),
+        text: "✕✖✗✘×•●○◯42".into(),
         position: point(100.0, 100.0),
         state
     };

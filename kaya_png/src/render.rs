@@ -8,8 +8,7 @@ use std::collections::HashMap;
 const TEXT: &str = "This is ab_glyph rendered into a png!";
 
 pub struct Canvas {
-    pub pixmap: Pixmap,
-    image: ImageBuffer<Rgba<u8>, Vec<u8>>,
+    pixmap: Pixmap,
     fonts: HashMap<String, FontVec>,
     font: String,
     font_size: f32,
@@ -29,7 +28,6 @@ impl Canvas {
         };
         Ok(Self {
             pixmap,
-            image: DynamicImage::new_rgba8(width, height).to_rgba8(),
             fonts: HashMap::new(),
             font: "".into(),
             font_size: 24.0,
@@ -111,8 +109,8 @@ impl Canvas {
             let x0 = bounds.min.x as u32;
             let y0 = bounds.min.y as u32;
             glyph.draw(|x, y, c| {
-                let px = self.image.get_pixel_mut(x0 + x, y0 + y);
                 if let Some(pmx) = pixmap_pixel_mut(&mut self.pixmap, x0 + x, y0 + y) {
+                    // Blend alpha with previous, sum opacity
                     let mcolor = ColorU8::from_rgba(
                         color.red(),
                         color.green(),
@@ -120,22 +118,14 @@ impl Canvas {
                         pmx.alpha().saturating_add((c * 255.0) as u8),
                     );
                     *pmx = mcolor.premultiply();
-                    //*pmx;
                 }
-                // Blend alpha with previous, sum opacity
-                *px = Rgba([
-                    color.red(),
-                    color.green(),
-                    color.blue(),
-                    px.0[3].saturating_add((c * 255.0) as u8),
-                ]);
             });
         }
 
         Ok(())
     }
     pub fn save(&self, filename: &str) -> Result<()> {
-        Ok(self.image.save(filename)?)
+        Ok(self.pixmap.save_png(filename)?)
     }
 }
 
@@ -150,7 +140,6 @@ pub fn test(filename: &str) -> Result<()> {
 
     let txt = "What font is this? 42";
     canvas.draw_text(txt, point(100.0, 100.0))?;
-    canvas.save(filename)?;
 
     println!("Size of \"{}\" is {:?}", txt, canvas.measure_text(txt)?);
 
@@ -176,6 +165,6 @@ pub fn test(filename: &str) -> Result<()> {
     stroke.dash = StrokeDash::new(vec![20.0, 40.0], 0.0);
 
     canvas.pixmap.stroke_path(&path, &paint, &stroke, Transform::identity(), None);
-    canvas.pixmap.save_png("image.png").unwrap();
+    canvas.save(filename)?;
     Ok(())
 }

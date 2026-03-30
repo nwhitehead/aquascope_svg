@@ -34,30 +34,6 @@ impl<'a> Canvas<'a> {
     pub fn set_font(&mut self, font: &'a FontVec) {
         self.font = Some(font);
     }
-    pub fn draw_glyph(&mut self, c: char, x: f32, y: f32, size: f32, color: Color) -> Result<()> {
-        let Some(f) = self.font else {
-            bail!("no font");
-        };
-        let glyph: Glyph = f
-            .glyph_id(c)
-            .with_scale_and_position(size, point(x, y));
-        let Some(outline) = f.outline_glyph(glyph) else {
-            bail!("could not find glyph: '{c}'");
-        };
-        let x0 = x as u32;
-        let y0 = y as u32;
-        outline.draw(|x, y, c| {
-            let px = self.image.get_pixel_mut(x0 + x, y0 + y);
-            *px = Rgba([
-                color.0.0[0],
-                color.0.0[1],
-                color.0.0[2],
-                px.0[3].saturating_add((c * 255.0) as u8),
-            ]);
-        });
-
-        Ok(())
-    }
     fn layout_text(&self, text: &str, size: f32, position: Point, max_width: f32, target: &mut Vec<Glyph>) -> Result<Point> {
         let Some(font) = self.font else {
             bail!("no font");
@@ -89,9 +65,6 @@ impl<'a> Canvas<'a> {
             target.push(glyph);
         }
         Ok(caret)
-    }
-    fn measure_glyphs(&self, glyphs: &[Glyph]) -> Rect {
-        Rect { min: point(0.0, 0.0), max: point(1.0, 1.0) }
     }
     /// Measure text using font metric information
     // Actual drawn pixels may exceed the bounds returned here, but this is what should be used for computing layout

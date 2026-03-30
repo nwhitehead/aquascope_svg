@@ -1,8 +1,8 @@
-use anyhow::{bail, Result};
-use ab_glyph::{point, Font, Glyph, Point, Rect, ScaleFont};
+use ab_glyph::{Font, Glyph, Point, Rect, ScaleFont, point};
 use ab_glyph::{FontVec, PxScale};
-use tiny_skia::*;
+use anyhow::{Result, bail};
 use std::collections::HashMap;
+use tiny_skia::*;
 
 struct DrawState {
     font: String,
@@ -33,13 +33,13 @@ pub trait Drawable {
     fn draw(&self, canvas: &mut Canvas) -> Result<()>;
 }
 
-
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct GText {
-    position: Point,
-    size: f32,
     text: String,
+    position: Point,
     font: String,
+    size: f32,
+    color: ColorU8,
 }
 
 impl Drawable for GText {
@@ -47,10 +47,21 @@ impl Drawable for GText {
         self.position += t;
     }
     fn bounding_box(&self, canvas: &Canvas) -> Result<Rect> {
-        Ok(canvas.measure_text(&self.text, &DrawState { ..Default::default() })?)
+        let state = DrawState {
+            font: self.font.clone(),
+            font_size: self.size,
+            ..Default::default()
+        };
+        Ok(canvas.measure_text(&self.text, &state)?)
     }
     fn draw(&self, canvas: &mut Canvas) -> Result<()> {
-        Ok(())
+        let state = DrawState {
+            font: self.font.clone(),
+            font_size: self.size,
+            color: self.color,
+            ..Default::default()
+        };
+        Ok(canvas.draw_text(&self.text, self.position, &state)?)
     }
 }
 
@@ -76,11 +87,18 @@ impl Canvas {
         })
     }
     pub fn load_font(&mut self, name: &str, fontdata: &[u8]) -> Result<()> {
-        self.fonts.insert(name.into(), FontVec::try_from_vec(Vec::from(fontdata))?);
+        self.fonts
+            .insert(name.into(), FontVec::try_from_vec(Vec::from(fontdata))?);
         Ok(())
     }
     /// position is at left, baseline
-    fn layout_text(&self, text: &str, position: Point, state: &DrawState, target: &mut Vec<Glyph>) -> Result<Point> {
+    fn layout_text(
+        &self,
+        text: &str,
+        position: Point,
+        state: &DrawState,
+        target: &mut Vec<Glyph>,
+    ) -> Result<Point> {
         let Some(font) = self.fonts.get(&state.font) else {
             bail!("no font");
         };
@@ -123,7 +141,10 @@ impl Canvas {
         let font = font.as_scaled(PxScale::from(state.font_size));
         let mut glyphs = vec![];
         let caret = self.layout_text(text, point(0.0, 0.0), &state, &mut glyphs)?;
-        Ok(Rect { min: point(0.0, -font.ascent()), max: caret})
+        Ok(Rect {
+            min: point(0.0, -font.ascent()),
+            max: caret,
+        })
     }
     pub fn draw_text(&mut self, text: &str, position: Point, state: &DrawState) -> Result<()> {
         let Some(font) = self.fonts.get(&state.font) else {
@@ -143,7 +164,9 @@ impl Canvas {
             let x0 = bounds.min.x as i32;
             let y0 = bounds.min.y as i32;
             glyph.draw(|x, y, c| {
-                if let Some(pmx) = pixmap_pixel_mut(&mut self.pixmap, x0 + (x as i32), y0 + (y as i32)) {
+                if let Some(pmx) =
+                    pixmap_pixel_mut(&mut self.pixmap, x0 + (x as i32), y0 + (y as i32))
+                {
                     // Blend alpha with previous, sum opacity
                     let mcolor = ColorU8::from_rgba(
                         color.red(),
@@ -164,16 +187,30 @@ impl Canvas {
 }
 
 pub fn test(filename: &str) -> Result<()> {
-
     let mut canvas = Canvas::new(800, 400)?;
 
-    canvas.load_font("mono", include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf"))?;
-    let state = DrawState { font: "mono".into(), color: ColorU8::from_rgba(150, 0, 0, 255), font_size: 48.0, ..Default::default() };
+    canvas.load_font(
+        "mono",
+        include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf"),
+    )?;
+    let state = DrawState {
+        font: "mono".into(),
+        color: ColorU8::from_rgba(150, 0, 0, 255),
+        font_size: 48.0,
+        ..Default::default()
+    };
 
-    let txt = "What font is this? 42";
-    canvas.draw_text(txt, point(100.0, 10.0), &state)?;
+    let txt = GText {
+        text: "What font is this? 42".into(),
+        position: point(100.0, 10.0),
+        size: 48.0,
+        font: "mono".into(),
+        color: state.color,
+    };
+    txt.draw(&mut canvas)?;
+    //    canvas.draw_text(txt, point(100.0, 10.0), &state)?;
 
-    println!("Size of \"{}\" is {:?}", txt, canvas.measure_text(txt, &state)?);
+    println!("Size of {:?} is {:?}", txt, txt.bounding_box(&canvas));
 
     let mut paint = Paint::default();
     paint.set_color_rgba8(0, 127, 0, 200);
@@ -191,9 +228,16 @@ pub fn test(filename: &str) -> Result<()> {
         pb.finish().unwrap()
     };
 
-    let stroke = Stroke { width: 6.0, line_cap: LineCap::Round, dash: StrokeDash::new(vec![20.0, 40.0], 0.0), ..Default::default() };
+    let stroke = Stroke {
+        width: 6.0,
+        line_cap: LineCap::Round,
+        dash: StrokeDash::new(vec![20.0, 40.0], 0.0),
+        ..Default::default()
+    };
 
-    canvas.pixmap.stroke_path(&path, &paint, &stroke, Transform::identity(), None);
+    canvas
+        .pixmap
+        .stroke_path(&path, &paint, &stroke, Transform::identity(), None);
     canvas.save(filename)?;
     Ok(())
 }

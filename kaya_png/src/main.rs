@@ -77,7 +77,6 @@ fn main() -> Result<()> {
         let program = parse(&contents)?;
 
         render::test(&output_filename)?;
-
     }
     Ok(())
 }

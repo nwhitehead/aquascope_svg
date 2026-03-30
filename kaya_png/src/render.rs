@@ -1,30 +1,59 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 use ab_glyph::{point, Font, Glyph, Point, ScaleFont};
 use ab_glyph::{FontRef, FontVec, PxScale};
-use image::{DynamicImage, ImageBuffer, Rgba};
+use image::{DynamicImage, ImageBuffer, Rgb, Rgba};
 
 const TEXT: &str = "This is ab_glyph rendered into a png!";
 
 pub struct Canvas<'a> {
-    img: ImageBuffer<Rgba<u8>, Vec<u8>>,
+    image: ImageBuffer<Rgba<u8>, Vec<u8>>,
     font: Option<&'a FontVec>,
+}
+
+pub struct Color(Rgb::<u8>);
+
+impl Color {
+    pub fn new(r: u8, g: u8, b: u8) -> Self {
+        Self(Rgb::<u8>([r, g, b]))
+    }
 }
 
 impl<'a> Canvas<'a> {
     pub fn new(width: i32, height: i32) -> Self {
         Self {
-            img: DynamicImage::new_rgba8(256, 256).to_rgba8(),
+            image: DynamicImage::new_rgba8(256, 256).to_rgba8(),
             font: None,
         }
     }
     pub fn set_font(&mut self, font: &'a FontVec) {
         self.font = Some(font);
     }
-    pub fn draw_glyph(&mut self, txt: &str, x: f32, y: f32, size: f32) {
+    pub fn draw_glyph(&mut self, c: char, x: f32, y: f32, size: f32, color: Color) -> Result<()> {
+        let Some(f) = self.font else {
+            bail!("no font");
+        };
+        let glyph: Glyph = f
+            .glyph_id(c)
+            .with_scale_and_position(size, point(x, y));
+        let Some(outline) = f.outline_glyph(glyph) else {
+            bail!("could not find glyph: '{c}'");
+        };
+        let x0 = x as u32;
+        let y0 = y as u32;
+        outline.draw(|x, y, c| {
+            let px = self.image.get_pixel_mut(x0 + x, y0 + y);
+            *px = Rgba([
+                color.0.0[0],
+                color.0.0[1],
+                color.0.0[2],
+                px.0[3].saturating_add((c * 255.0) as u8),
+            ]);
+        });
 
+        Ok(())
     }
     pub fn save(&self, filename: &str) -> Result<()> {
-        Ok(self.img.save(filename)?)
+        Ok(self.image.save(filename)?)
     }
 }
 
@@ -35,33 +64,11 @@ pub fn test(filename: &str) -> Result<()> {
 
     let font = FontVec::try_from_vec(Vec::from(include_bytes!("../fonts/Lato-Regular.ttf")))?;
     canvas.set_font(&font);
+    let color = Color::new(150, 0, 0);
 
-    assert_eq!(font.glyph_id('s'), ab_glyph::GlyphId(118));
-    // Get a glyph for 'q' with a scale & position.
-    let q_glyph: Glyph = font
-        .glyph_id('q')
-        .with_scale_and_position(24.0, point(100.0, 0.0));
+    canvas.draw_glyph('&', 100.0, 100.0, 48.0, color)?;
+    canvas.save(filename)?;
 
-    // Draw it.
-    let img_left = 100;
-    let img_top = 100;
-    /// Dark red colour
-    const COLOUR: (u8, u8, u8) = (150, 0, 0);
-
-    if let Some(q) = font.outline_glyph(q_glyph) {
-        q.draw(|x, y, c| {
-            /* draw pixel `(x, y)` with coverage: `c` */
-            let px = image.get_pixel_mut(img_left + x, img_top + y);
-            // Turn the coverage into an alpha value (blended with any previous)
-            *px = Rgba([
-                COLOUR.0,
-                COLOUR.1,
-                COLOUR.2,
-                px.0[3].saturating_add((c * 255.0) as u8),
-            ]);
-        });
-    }
-    image.save(filename)?;
     Ok(())
 }
 

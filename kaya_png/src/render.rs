@@ -25,6 +25,11 @@ impl Color {
     }
 }
 
+fn pixmap_pixel_mut(pixmap: &mut Pixmap, x: u32, y: u32) -> Option<&mut PremultipliedColorU8> {
+    let idx = pixmap.width().checked_mul(y)?.checked_add(x)?;
+    Some(&mut pixmap.pixels_mut()[idx as usize])
+}
+
 impl Canvas {
     pub fn new(width: u32, height: u32) -> Result<Self> {
         let Some(pixmap) = Pixmap::new(width, height) else {
@@ -114,6 +119,10 @@ impl Canvas {
             let y0 = bounds.min.y as u32;
             glyph.draw(|x, y, c| {
                 let px = self.image.get_pixel_mut(x0 + x, y0 + y);
+                if let Some(pmx) = pixmap_pixel_mut(&mut self.pixmap, x0 + x, y0 + y) {
+                    *pmx = PremultipliedColorU8::from_rgba(0, 0, 0, 255).expect("create color");
+                    //*pmx;
+                }
                 // Blend alpha with previous, sum opacity
                 *px = Rgba([
                     color.0.0[0],

@@ -185,6 +185,29 @@ impl Drawable for GBox {
     }
 }
 
+pub struct GMargin {
+    item: Box<dyn Drawable>,
+    // margin is left, top, right, bottom
+    margin: (f32, f32, f32, f32),
+}
+
+impl Drawable for GMargin {
+    fn translate(&mut self, t: Point) {
+        self.item.translate(t);
+    }
+    fn bounding_box(&self, canvas: &Canvas) -> Result<Rect> {
+        let mut bb = self.item.bounding_box(&canvas)?;
+        bb.min.x -= self.margin.0;
+        bb.min.y -= self.margin.1;
+        bb.max.x += self.margin.2;
+        bb.max.y += self.margin.3;
+        Ok(bb)
+    }
+    fn draw(&self, canvas: &mut Canvas) -> Result<()> {
+        Ok(self.item.draw(canvas)?)
+    }
+}
+
 pub struct GArray {
     items: Vec<Box<dyn Drawable>>,
 }

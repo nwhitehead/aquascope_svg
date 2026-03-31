@@ -128,9 +128,13 @@ mod tests {
         let mut rs = RenderState::default();
         rs.style.add_string("value.number.font", "mono");
         rs.style.add_number("value.number.font_size", 48.0);
-        rs.style.add_color("value.number.color", color("#bccfa9")?);
+        rs.style.add_color("value.number.color", color("#bccfa980")?);
         let mut v = render_value(&Value::Number(42.0), &mut rs);
         v.translate(point(400.0, 400.0));
+        v.draw(&mut canvas)?;
+        v.translate(point(10.0, 5.0));
+        v.draw(&mut canvas)?;
+        v.translate(point(10.0, 5.0));
         v.draw(&mut canvas)?;
         canvas.save("test_render_value.png")?;
 

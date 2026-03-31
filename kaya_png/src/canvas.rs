@@ -104,7 +104,7 @@ impl Canvas {
             .into_iter()
             .filter_map(|g| font.outline_glyph(g))
             .collect();
-        let color = &state.text_color;
+        let color = &state.text_color.premultiply();
         // Now draw the outlines
         for glyph in outlined {
             let bounds = glyph.px_bounds();
@@ -114,12 +114,14 @@ impl Canvas {
                 if let Some(pmx) =
                     pixmap_pixel_mut(&mut self.pixmap, x0 + (x as i32), y0 + (y as i32))
                 {
+                    // Final dst alpha is: alpha_src + (1-alpha_src) * alpha_dst
+                    // Final r is: r_src + r_dst * (1-alpha_src)
                     // Blend alpha with previous, sum opacity
                     let mcolor = ColorU8::from_rgba(
                         color.red(),
                         color.green(),
                         color.blue(),
-                        pmx.alpha().saturating_add((c * 255.0) as u8),
+                        pmx.alpha().saturating_add((c * (color.alpha() as f32)) as u8),
                     );
                     *pmx = mcolor.premultiply();
                 }

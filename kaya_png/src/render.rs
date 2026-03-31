@@ -1,7 +1,7 @@
 use ab_glyph::{Point, Rect, point};
 use anyhow::{Result, bail};
 use std::collections::HashMap;
-use tiny_skia::ColorU8;
+use tiny_skia::{Color, ColorU8};
 
 use crate::canvas::Canvas;
 use crate::draw::{Drawable, GText};
@@ -54,13 +54,12 @@ pub fn render_value(value: &Value, render_state: &mut RenderState) -> Box<dyn Dr
     // s.border_clip = (false, false, false, false);
     // s.padding = (60.0, 30.0, 60.0, 30.0);
     // s.margin = (40.0, 10.0, 40.0, 10.0);
-    panic!("unreachable");
 }
 
 fn color(txt: &str) -> Result<ColorU8> {
-    let mut r = 255;
-    let mut g = 255;
-    let mut b = 255;
+    let mut r;
+    let mut g;
+    let mut b;
     let mut a = 255;
     if !txt.starts_with('#') {
         bail!("colors must start with #");
@@ -118,6 +117,7 @@ mod tests {
     #[test]
     pub fn test_render_value() -> Result<()> {
         let mut canvas = Canvas::new(800, 800)?;
+        //canvas.pixmap.fill(Color::from_rgba(0.0, 0.0, 0.0, 1.0).unwrap());
 
         canvas.load_font(
             "mono",
@@ -128,7 +128,7 @@ mod tests {
         let mut rs = RenderState::default();
         rs.style.add_string("value.number.font", "mono");
         rs.style.add_number("value.number.font_size", 48.0);
-        rs.style.add_color("value.number.color", color("#f00")?);
+        rs.style.add_color("value.number.color", color("#bccfa9")?);
         let mut v = render_value(&Value::Number(42.0), &mut rs);
         v.translate(point(400.0, 400.0));
         v.draw(&mut canvas)?;

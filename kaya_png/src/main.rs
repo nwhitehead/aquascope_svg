@@ -77,7 +77,7 @@ fn main() -> Result<()> {
             .map_err(|err| anyhow!("{}, could not read input filename: {}", err, input_filename))?;
         let program = parse(&contents)?;
 
-        render::test(&output_filename)?;
+        // TODO
     }
     Ok(())
 }

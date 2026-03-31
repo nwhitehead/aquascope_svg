@@ -466,56 +466,63 @@ pub fn box_around(item: &dyn Drawable, d: f32, canvas: &Canvas, state: &DrawStat
     })
 }
 
-pub fn test(filename: &str) -> Result<()> {
-    let mut canvas = Canvas::new(800, 400)?;
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    canvas.load_font(
-        "mono",
-        include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf"),
-    )?;
-    canvas.load_font("serif", include_bytes!("../fonts/Lato/Lato-Regular.ttf"))?;
-    let state = DrawState {
-        font: "mono".into(),
-        text_color: ColorU8::from_rgba(150, 0, 0, 255),
-        font_size: 48.0,
-        ..Default::default()
-    };
+    #[test]
+    pub fn test_drawing() -> Result<()> {
+        let filename = "output.png";
+        let mut canvas = Canvas::new(800, 400)?;
 
-    let txt = GText {
-        text: "✕✖✗✘×•●○◯42".into(),
-        position: point(100.0, 100.0),
-        state,
-    };
-    let bb = txt.bounding_box(&canvas)?;
-    let bx = GBox::new_with_options(bb, 4.0, ColorU8::from_rgba(0, 120, 0, 255));
-    let mut ga = GArray::new();
-    ga.push(Box::new(txt));
-    ga.push(Box::new(bx));
-    let bx2 = GBox::new_with_options(
-        Rect {
-            min: point(0.0, 0.0),
-            max: point(100.0, 120.0),
-        },
-        4.0,
-        ColorU8::from_rgba(0, 120, 120, 255),
-    );
-    let stk = vstack_right(vec![Box::new(ga), Box::new(bx2)], &canvas)?;
-    for item in &stk.items {
-        println!("bb item = {:?}", item.bounding_box(&canvas)?);
+        canvas.load_font(
+            "mono",
+            include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf"),
+        )?;
+        canvas.load_font("serif", include_bytes!("../fonts/Lato/Lato-Regular.ttf"))?;
+        let state = DrawState {
+            font: "mono".into(),
+            text_color: ColorU8::from_rgba(150, 0, 0, 255),
+            font_size: 48.0,
+            ..Default::default()
+        };
+
+        let txt = GText {
+            text: "✕✖✗✘×•●○◯42".into(),
+            position: point(100.0, 100.0),
+            state,
+        };
+        let bb = txt.bounding_box(&canvas)?;
+        let bx = GBox::new_with_options(bb, 4.0, ColorU8::from_rgba(0, 120, 0, 255));
+        let mut ga = GArray::new();
+        ga.push(Box::new(txt));
+        ga.push(Box::new(bx));
+        let bx2 = GBox::new_with_options(
+            Rect {
+                min: point(0.0, 0.0),
+                max: point(100.0, 120.0),
+            },
+            4.0,
+            ColorU8::from_rgba(0, 120, 120, 255),
+        );
+        let stk = vstack_right(vec![Box::new(ga), Box::new(bx2)], &canvas)?;
+        for item in &stk.items {
+            println!("bb item = {:?}", item.bounding_box(&canvas)?);
+        }
+        let bb_stk = stk.bounding_box(&canvas)?;
+        println!("bb_stk = {:?}", &bb_stk);
+        let mut bx_state = DrawState {
+            ..Default::default()
+        };
+        bx_state.stroke_color = ColorU8::from_rgba(0, 0, 255, 255);
+        bx_state.stroke.width = 12.0;
+        bx_state.border_radius = (40.0, 50.0, 40.0, 30.0);
+        bx_state.border_clip = (false, false, true, false);
+        let bx_bb_stk = box_around(&stk, 10.0, &canvas, &bx_state)?;
+        stk.draw(&mut canvas)?;
+        bx_bb_stk.draw(&mut canvas)?;
+
+        canvas.save(filename)?;
+        Ok(())
     }
-    let bb_stk = stk.bounding_box(&canvas)?;
-    println!("bb_stk = {:?}", &bb_stk);
-    let mut bx_state = DrawState {
-        ..Default::default()
-    };
-    bx_state.stroke_color = ColorU8::from_rgba(0, 0, 255, 255);
-    bx_state.stroke.width = 12.0;
-    bx_state.border_radius = (40.0, 50.0, 40.0, 30.0);
-    bx_state.border_clip = (false, false, true, false);
-    let bx_bb_stk = box_around(&stk, 10.0, &canvas, &bx_state)?;
-    stk.draw(&mut canvas)?;
-    bx_bb_stk.draw(&mut canvas)?;
-
-    canvas.save(filename)?;
-    Ok(())
 }

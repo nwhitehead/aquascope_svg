@@ -101,6 +101,7 @@ impl Drawable for GBox {
             pb.line_to(self.r.max.x, self.r.max.y);
             pb.line_to(self.r.min.x, self.r.max.y);
             pb.line_to(self.r.min.x, self.r.min.y);
+            pb.close();
             pb.finish()
         }) else {
             bail!("could not make path");
@@ -333,6 +334,16 @@ pub fn vstack_right(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GA
     Ok(stack_general(items, FormulaType::AlignHigh, FormulaType::Sequenced, canvas)?)
 }
 
+pub fn outline(r: Rect, d: f32) -> Rect {
+    Rect { min: point(r.min.x - d, r.min.y - d), max: point(r.max.x + d, r.max.y + d) }
+}
+
+pub fn box_around(item: &dyn Drawable, d: f32, canvas: &Canvas, state: &DrawState) -> Result<GBox> {
+    let bb = item.bounding_box(canvas)?;
+    let r = outline(bb, d);
+    Ok(GBox { r, state: state.clone() })
+}
+
 pub fn test(filename: &str) -> Result<()> {
     let mut canvas = Canvas::new(800, 400)?;
 
@@ -368,7 +379,10 @@ pub fn test(filename: &str) -> Result<()> {
     }
     let bb_stk = stk.bounding_box(&canvas)?;
     println!("bb_stk = {:?}", &bb_stk);
-    let bx_bb_stk = GBox::new_with_options(bb_stk, 4.0, ColorU8::from_rgba(100, 100, 100, 255));
+    let mut bx_state = DrawState { ..Default::default() };
+    bx_state.stroke_color = ColorU8::from_rgba(0, 0, 255, 255);
+    bx_state.stroke.width = 12.0;
+    let bx_bb_stk = box_around(&stk, 10.0, &canvas, &bx_state)?;
     stk.draw(&mut canvas)?;
     bx_bb_stk.draw(&mut canvas)?;
 

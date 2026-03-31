@@ -6,8 +6,9 @@ use std::fs;
 use kaya_lib::parser::parse;
 mod canvas;
 mod draw;
-mod style;
 mod draw_state;
+mod render;
+mod style;
 
 #[derive(Debug, Parser)]
 #[command(name = "render_states")]

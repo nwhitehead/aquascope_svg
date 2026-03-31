@@ -46,23 +46,49 @@ impl Drawable for GText {
 
 #[derive(Clone, Debug)]
 pub struct GLine {
-    p0: Point,
-    p1: Point,
+    start: Point,
+    end: Point,
     state: DrawState,
+}
+
+impl GLine {
+    pub fn new(start: Point, end: Point, state: DrawState) -> Self {
+        Self { start, end, state }
+    }
 }
 
 impl Drawable for GLine {
     fn translate(&mut self, t: Point) {
-        self.p0 += t;
-        self.p1 += t;
+        self.start += t;
+        self.end += t;
     }
     fn bounding_box(&self, canvas: &Canvas) -> Result<Rect> {
-        let p0 = self.p0;
-        let p1 = self.p1;
+        let p0 = self.start;
+        let p1 = self.end;
         Ok(Rect { min: point(p0.x.min(p1.x), p0.y.min(p1.y)),
             max: point(p0.x.max(p1.x), p0.y.max(p1.y)) })
     }
     fn draw(&self, canvas: &mut Canvas) -> Result<()> {
+        let color = self.state.stroke_color;
+        let mut paint = Paint::default();
+        paint.set_color_rgba8(color.red(), color.green(), color.blue(), color.alpha());
+        paint.anti_alias = true;
+        let Some(path) = ({
+            let mut pb = PathBuilder::new();
+            pb.move_to(self.start.x, self.start.y);
+            pb.line_to(self.end.x, self.end.y);
+            pb.finish()
+        }) else {
+            bail!("could not make path");
+        };
+        canvas.pixmap.stroke_path(
+            &path,
+            &paint,
+            &self.state.stroke,
+            Transform::identity(),
+            None,
+        );
+
         Ok(())
     }
 }
@@ -471,6 +497,9 @@ mod tests {
         )?;
         let vs = vstack_left(vec![g1, g2], &canvas)?;
         vs.draw(&mut canvas)?;
+
+        let vline = GLine { start: point(80.0, 100.0), end: point(80.0, 200.0), state: s.clone() };
+        vline.draw(&mut canvas)?;
 
         canvas.save("test_drawing.png")?;
         Ok(())

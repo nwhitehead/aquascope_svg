@@ -13,6 +13,7 @@ struct DrawState {
     stroke_color: ColorU8,
     stroke: Stroke,
     border_radius: (f32, f32, f32, f32),
+    border_clip: (bool, bool, bool, bool),
 }
 
 pub struct Canvas {
@@ -93,19 +94,62 @@ impl Drawable for GBox {
     fn draw(&self, canvas: &mut Canvas) -> Result<()> {
         let color = self.state.stroke_color;
         let br = self.state.border_radius;
+        let bc = self.state.border_clip;
         let mut paint = Paint::default();
         paint.set_color_rgba8(color.red(), color.green(), color.blue(), color.alpha());
         paint.anti_alias = true;
+        let kappa = 1.0 - 0.552228;
         let Some(path) = ({
             let mut pb = PathBuilder::new();
             pb.move_to(self.r.min.x + br.0, self.r.min.y);
+            // top side
             pb.line_to(self.r.max.x - br.1, self.r.min.y);
-            pb.line_to(self.r.max.x, self.r.min.y + br.1);
+            // upper right corner
+            if bc.1 {
+                pb.line_to(self.r.max.x, self.r.min.y + br.1);
+            } else {
+                pb.cubic_to(
+                    self.r.max.x - br.1 * kappa, self.r.min.y,
+                    self.r.max.x, self.r.min.y + br.1 * kappa,
+                    self.r.max.x, self.r.min.y + br.1
+                );
+            }
+            // right side
             pb.line_to(self.r.max.x, self.r.max.y - br.2);
-            pb.line_to(self.r.max.x - br.2, self.r.max.y);
+            // lower right corner
+            if bc.2 {
+                pb.line_to(self.r.max.x - br.2, self.r.max.y);
+            } else {
+                pb.cubic_to(
+                    self.r.max.x, self.r.max.y - br.2 * kappa,
+                    self.r.max.x - br.2 * kappa, self.r.max.y,
+                    self.r.max.x - br.2, self.r.max.y
+                );
+            }
+            // bottom side
             pb.line_to(self.r.min.x + br.3, self.r.max.y);
-            pb.line_to(self.r.min.x, self.r.max.y - br.3);
+            // lower left corner
+            if bc.3 {
+                pb.line_to(self.r.min.x, self.r.max.y - br.3);
+            } else {
+                pb.cubic_to(
+                    self.r.min.x + br.3 * kappa, self.r.max.y,
+                    self.r.min.x, self.r.max.y - br.3 * kappa,
+                    self.r.min.x, self.r.max.y - br.3
+                );
+            }
+            // left side
             pb.line_to(self.r.min.x, self.r.min.y + br.0);
+            // upper left corner
+            if bc.0 {
+                pb.line_to(self.r.min.x + br.0, self.r.min.y);
+            } else {
+                pb.cubic_to(
+                    self.r.min.x, self.r.min.y + br.0 * kappa,
+                    self.r.min.x + br.0 * kappa, self.r.min.y,
+                    self.r.min.x + br.0, self.r.min.y
+                );
+            }
             pb.close();
             pb.finish()
         }) else {
@@ -166,6 +210,7 @@ impl Default for DrawState {
             text_color: ColorU8::from_rgba(0, 0, 0, 255),
             stroke: Default::default(),
             border_radius: (0.0, 0.0, 0.0, 0.0),
+            border_clip: (false, false, false, false),
         }
     }
 }
@@ -389,6 +434,7 @@ pub fn test(filename: &str) -> Result<()> {
     bx_state.stroke_color = ColorU8::from_rgba(0, 0, 255, 255);
     bx_state.stroke.width = 12.0;
     bx_state.border_radius = (40.0, 50.0, 40.0, 30.0);
+    bx_state.border_clip = (false, false, true, false);
     let bx_bb_stk = box_around(&stk, 10.0, &canvas, &bx_state)?;
     stk.draw(&mut canvas)?;
     bx_bb_stk.draw(&mut canvas)?;

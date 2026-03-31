@@ -19,6 +19,16 @@ pub struct GText {
     state: DrawState,
 }
 
+impl GText {
+    pub fn new(text: &str, position: Point, state: DrawState) -> Self {
+        Self {
+            text: text.to_string(),
+            position,
+            state,
+        }
+    }
+}
+
 impl Drawable for GText {
     fn translate(&mut self, t: Point) {
         self.position += t;
@@ -167,10 +177,10 @@ pub struct GPadding {
 }
 
 impl GPadding {
-    pub fn new(item: Box<dyn Drawable>, left: f32, top: f32, right: f32, bottom: f32) -> Self {
+    pub fn new(item: Box<dyn Drawable>, padding: (f32, f32, f32, f32)) -> Self {
         Self {
             item,
-            padding: (left, top, right, bottom),
+            padding,
         }
     }
 }
@@ -337,13 +347,26 @@ pub fn outline(r: Rect, d: f32) -> Rect {
     }
 }
 
-pub fn box_around(item: &dyn Drawable, d: f32, canvas: &Canvas, state: &DrawState) -> Result<GBox> {
+pub fn box_around(item: &dyn Drawable, d: f32, canvas: &Canvas, state: DrawState) -> Result<GBox> {
     let bb = item.bounding_box(canvas)?;
     let r = outline(bb, d);
     Ok(GBox {
         r,
-        state: state.clone(),
+        state,
     })
+}
+
+/// A border has padding around an item, then drawn border, then margin around the result
+// Get all stuff from drawstate not args here
+pub fn border(item: Box<dyn Drawable>, canvas: &Canvas, state: DrawState) -> Result<Box<dyn Drawable>> {
+    let mut res = GArray::new();
+    let padded_item = GPadding::new(item, state.padding);
+    let bb = padded_item.bounding_box(canvas)?;
+    let border_padded_item = GBox { r: bb, state: state.clone() };
+    res.push(Box::new(padded_item));
+    res.push(Box::new(border_padded_item));
+    let padded_garray = GPadding::new(Box::new(res), state.margin);
+    Ok(Box::new(padded_garray))
 }
 
 #[cfg(test)]
@@ -353,7 +376,7 @@ mod tests {
     #[test]
     pub fn test_drawing() -> Result<()> {
         let filename = "output.png";
-        let mut canvas = Canvas::new(800, 400)?;
+        let mut canvas = Canvas::new(800, 800)?;
 
         canvas.load_font(
             "mono",
@@ -398,9 +421,27 @@ mod tests {
         bx_state.stroke.width = 12.0;
         bx_state.border_radius = (40.0, 50.0, 40.0, 30.0);
         bx_state.border_clip = (false, false, true, false);
-        let bx_bb_stk = box_around(&stk, 10.0, &canvas, &bx_state)?;
+        let bx_bb_stk = box_around(&stk, 10.0, &canvas, bx_state)?;
         stk.draw(&mut canvas)?;
         bx_bb_stk.draw(&mut canvas)?;
+
+        let mut s = DrawState {
+            ..Default::default()
+        };
+        s.font = "mono".to_string();
+        s.stroke_color = ColorU8::from_rgba(128, 0, 128, 255);
+        s.stroke.width = 2.0;
+        s.border_radius = (5.0, 5.0, 5.0, 5.0);
+        s.border_clip = (false, false, false, false);
+        s.padding = (60.0, 30.0, 60.0, 30.0);
+        s.margin = (40.0, 10.0, 40.0, 10.0);
+
+        let g1 = border(Box::new(GText::new("CSS", point(200.0, 400.0), s.clone())), &canvas, s.clone())?;
+        let g2 = border(Box::new(GText::new("w/ layout", point(200.0, 400.0), s.clone())), &canvas, s.clone())?;
+        let vs = vstack_left(vec![g1, g2], &canvas)?;
+        vs.draw(&mut canvas)?;
+        // g1.draw(&mut canvas)?;
+        // g2.draw(&mut canvas)?;
 
         canvas.save(filename)?;
         Ok(())

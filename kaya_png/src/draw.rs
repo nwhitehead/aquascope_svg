@@ -2,7 +2,7 @@ use ab_glyph::{Font, Glyph, Point, Rect, ScaleFont, point};
 use ab_glyph::{FontVec, PxScale};
 use anyhow::{Result, bail};
 use std::collections::HashMap;
-use tiny_skia::*;
+use tiny_skia::{ColorU8, Paint, PathBuilder, Stroke, Transform};
 
 use crate::canvas::Canvas;
 use crate::draw_state::DrawState;
@@ -178,10 +178,7 @@ pub struct GPadding {
 
 impl GPadding {
     pub fn new(item: Box<dyn Drawable>, padding: (f32, f32, f32, f32)) -> Self {
-        Self {
-            item,
-            padding,
-        }
+        Self { item, padding }
     }
 }
 
@@ -350,19 +347,23 @@ pub fn outline(r: Rect, d: f32) -> Rect {
 pub fn box_around(item: &dyn Drawable, d: f32, canvas: &Canvas, state: DrawState) -> Result<GBox> {
     let bb = item.bounding_box(canvas)?;
     let r = outline(bb, d);
-    Ok(GBox {
-        r,
-        state,
-    })
+    Ok(GBox { r, state })
 }
 
 /// A border has padding around an item, then drawn border, then margin around the result
 // Get all stuff from drawstate not args here
-pub fn border(item: Box<dyn Drawable>, canvas: &Canvas, state: DrawState) -> Result<Box<dyn Drawable>> {
+pub fn border(
+    item: Box<dyn Drawable>,
+    canvas: &Canvas,
+    state: DrawState,
+) -> Result<Box<dyn Drawable>> {
     let mut res = GArray::new();
     let padded_item = GPadding::new(item, state.padding);
     let bb = padded_item.bounding_box(canvas)?;
-    let border_padded_item = GBox { r: bb, state: state.clone() };
+    let border_padded_item = GBox {
+        r: bb,
+        state: state.clone(),
+    };
     res.push(Box::new(padded_item));
     res.push(Box::new(border_padded_item));
     let padded_garray = GPadding::new(Box::new(res), state.margin);
@@ -436,8 +437,16 @@ mod tests {
         s.padding = (60.0, 30.0, 60.0, 30.0);
         s.margin = (40.0, 10.0, 40.0, 10.0);
 
-        let g1 = border(Box::new(GText::new("CSS", point(200.0, 400.0), s.clone())), &canvas, s.clone())?;
-        let g2 = border(Box::new(GText::new("w/ layout", point(200.0, 400.0), s.clone())), &canvas, s.clone())?;
+        let g1 = border(
+            Box::new(GText::new("CSS", point(200.0, 400.0), s.clone())),
+            &canvas,
+            s.clone(),
+        )?;
+        let g2 = border(
+            Box::new(GText::new("w/ layout", point(200.0, 400.0), s.clone())),
+            &canvas,
+            s.clone(),
+        )?;
         let vs = vstack_left(vec![g1, g2], &canvas)?;
         vs.draw(&mut canvas)?;
         // g1.draw(&mut canvas)?;

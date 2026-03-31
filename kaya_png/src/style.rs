@@ -30,7 +30,8 @@ impl Styling {
         self.data.insert(key.to_string(), AnyValue::Bool(value));
     }
     pub fn add_string(&mut self, key: &str, value: &str) {
-        self.data.insert(key.to_string(), AnyValue::String(value.to_string()));
+        self.data
+            .insert(key.to_string(), AnyValue::String(value.to_string()));
     }
     pub fn get_number(&self, key: &str) -> Option<f32> {
         match self.data.get(key) {
@@ -50,7 +51,6 @@ impl Styling {
             _ => None,
         }
     }
-
 }
 
 #[cfg(test)]

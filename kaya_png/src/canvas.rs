@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use ab_glyph::{Font, Glyph, Point, Rect, ScaleFont, point};
 use ab_glyph::{FontVec, PxScale};
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use tiny_skia::{ColorU8, Pixmap, PremultipliedColorU8};
 
 use crate::draw_state::DrawState;
@@ -117,13 +117,14 @@ impl Canvas {
                     // Final dst alpha is: alpha_src + (1-alpha_src) * alpha_dst
                     // Final r is: r_src + r_dst * (1-alpha_src)
                     // Blend alpha with previous, sum opacity
-                    let mcolor = ColorU8::from_rgba(
-                        color.red(),
-                        color.green(),
-                        color.blue(),
+                    let mcolor = PremultipliedColorU8::from_rgba(
+                        (c * (color.red() as f32)) as u8,
+                        (c * (color.green() as f32)) as u8,
+                        (c * (color.blue() as f32)) as u8,
                         pmx.alpha().saturating_add((c * (color.alpha() as f32)) as u8),
-                    );
-                    *pmx = mcolor.premultiply();
+                    ).with_context(|| format!("color={:?} c={} pmx={:?}", color, c, pmx))
+                    .expect("pixel color");
+                    *pmx = mcolor;
                 }
             });
         }

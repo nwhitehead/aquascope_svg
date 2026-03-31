@@ -117,7 +117,7 @@ mod tests {
     #[test]
     pub fn test_render_value() -> Result<()> {
         let mut canvas = Canvas::new(800, 800)?;
-        //canvas.pixmap.fill(Color::from_rgba(0.0, 0.0, 0.0, 1.0).unwrap());
+        canvas.pixmap.fill(Color::from_rgba(0.0, 0.0, 0.0, 1.0).unwrap());
 
         canvas.load_font(
             "mono",

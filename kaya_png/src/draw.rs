@@ -4,17 +4,7 @@ use anyhow::{Result, bail};
 use std::collections::HashMap;
 use tiny_skia::*;
 
-#[derive(Clone, Debug)]
-pub struct DrawState {
-    font: String,
-    font_size: f32,
-    font_max_width: f32,
-    text_color: ColorU8,
-    stroke_color: ColorU8,
-    stroke: Stroke,
-    border_radius: (f32, f32, f32, f32),
-    border_clip: (bool, bool, bool, bool),
-}
+use crate::draw_state::DrawState;
 
 pub struct Canvas {
     pixmap: Pixmap,
@@ -185,22 +175,31 @@ impl Drawable for GBox {
     }
 }
 
-pub struct GMargin {
+pub struct GPadding {
     item: Box<dyn Drawable>,
-    // margin is left, top, right, bottom
-    margin: (f32, f32, f32, f32),
+    // padding is left, top, right, bottom
+    padding: (f32, f32, f32, f32),
 }
 
-impl Drawable for GMargin {
+impl GPadding {
+    pub fn new(item: Box<dyn Drawable>, left: f32, top: f32, right: f32, bottom: f32) -> Self {
+        Self {
+            item,
+            padding: (left, top, right, bottom),
+        }
+    }
+}
+
+impl Drawable for GPadding {
     fn translate(&mut self, t: Point) {
         self.item.translate(t);
     }
     fn bounding_box(&self, canvas: &Canvas) -> Result<Rect> {
         let mut bb = self.item.bounding_box(&canvas)?;
-        bb.min.x -= self.margin.0;
-        bb.min.y -= self.margin.1;
-        bb.max.x += self.margin.2;
-        bb.max.y += self.margin.3;
+        bb.min.x -= self.padding.0;
+        bb.min.y -= self.padding.1;
+        bb.max.x += self.padding.2;
+        bb.max.y += self.padding.3;
         Ok(bb)
     }
     fn draw(&self, canvas: &mut Canvas) -> Result<()> {
@@ -248,21 +247,6 @@ impl Drawable for GArray {
             item.draw(canvas)?;
         }
         Ok(())
-    }
-}
-
-impl Default for DrawState {
-    fn default() -> Self {
-        Self {
-            font: "".into(),
-            font_size: 24.0,
-            font_max_width: 9999.0,
-            stroke_color: ColorU8::from_rgba(0, 0, 0, 255),
-            text_color: ColorU8::from_rgba(0, 0, 0, 255),
-            stroke: Default::default(),
-            border_radius: (0.0, 0.0, 0.0, 0.0),
-            border_clip: (false, false, false, false),
-        }
     }
 }
 

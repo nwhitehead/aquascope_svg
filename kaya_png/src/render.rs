@@ -16,6 +16,16 @@ pub struct RenderState {
     style: Styling,
 }
 
+fn max_height(values: &Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<f32> {
+    let mut res: f32 = 0.0;
+    for value in values {
+        let bb = value.bounding_box(&canvas)?;
+        let h = bb.max.y - bb.min.y;
+        res = res.max(h);
+    }
+    Ok(res)
+}
+
 pub fn render_value(value: &Value, render_state: &mut RenderState) -> Box<dyn Drawable> {
     let style = &render_state.style;
     let mut ds = DrawState::default();
@@ -49,9 +59,9 @@ pub fn render_value(value: &Value, render_state: &mut RenderState) -> Box<dyn Dr
 }
 
 fn color(txt: &str) -> Result<ColorU8> {
-    let mut r;
-    let mut g;
-    let mut b;
+    let r;
+    let g;
+    let b;
     let mut a = 255;
     if !txt.starts_with('#') {
         bail!("colors must start with #");

@@ -45,6 +45,29 @@ impl Drawable for GText {
 }
 
 #[derive(Clone, Debug)]
+pub struct GLine {
+    p0: Point,
+    p1: Point,
+    state: DrawState,
+}
+
+impl Drawable for GLine {
+    fn translate(&mut self, t: Point) {
+        self.p0 += t;
+        self.p1 += t;
+    }
+    fn bounding_box(&self, canvas: &Canvas) -> Result<Rect> {
+        let p0 = self.p0;
+        let p1 = self.p1;
+        Ok(Rect { min: point(p0.x.min(p1.x), p0.y.min(p1.y)),
+            max: point(p0.x.max(p1.x), p0.y.max(p1.y)) })
+    }
+    fn draw(&self, canvas: &mut Canvas) -> Result<()> {
+        Ok(())
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct GBox {
     r: Rect,
     state: DrawState,

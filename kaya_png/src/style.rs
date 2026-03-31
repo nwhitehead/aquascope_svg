@@ -1,4 +1,5 @@
 use anyhow::{Result, bail};
+use tiny_skia::ColorU8;
 use std::collections::HashMap;
 
 /// Encode values into one datatype for remembering styling info
@@ -10,9 +11,10 @@ pub enum AnyValue {
     Number(f32),
     Bool(bool),
     String(String),
+    Color(ColorU8),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Styling {
     data: HashMap<String, AnyValue>,
 }
@@ -33,6 +35,10 @@ impl Styling {
         self.data
             .insert(key.to_string(), AnyValue::String(value.to_string()));
     }
+    pub fn add_color(&mut self, key: &str, value: ColorU8) {
+        self.data
+            .insert(key.to_string(), AnyValue::Color(value));
+    }
     pub fn get_number(&self, key: &str) -> Option<f32> {
         match self.data.get(key) {
             Some(AnyValue::Number(x)) => Some(*x),
@@ -50,6 +56,24 @@ impl Styling {
             Some(AnyValue::String(x)) => Some(x.clone()),
             _ => None,
         }
+    }
+    pub fn get_color(&self, key: &str) -> Option<ColorU8> {
+        match self.data.get(key) {
+            Some(AnyValue::Color(x)) => Some(*x),
+            _ => None,
+        }
+    }
+    pub fn get_number_or(&self, key: &str, value: f32) -> f32 {
+        self.get_number(key).unwrap_or(value)
+    }
+    pub fn get_bool_or(&self, key: &str, value: bool) -> bool {
+        self.get_bool(key).unwrap_or(value)
+    }
+    pub fn get_string_or(&self, key: &str, value: &str) -> String {
+        self.get_string(key).unwrap_or(value.to_string())
+    }
+    pub fn get_color_or(&self, key: &str, value: ColorU8) -> ColorU8 {
+        self.get_color(key).unwrap_or(value)
     }
 }
 
@@ -73,5 +97,8 @@ mod tests {
         s.add_string("value.font", "mono");
         assert_eq!(s.get_string("value.font"), Some("mono".to_string()));
         assert_eq!(s.get_string("value.style"), None);
+        s.add_color("value.color", ColorU8::from_rgba(255, 0, 128, 255));
+        assert_eq!(s.get_color("value.color"), Some(ColorU8::from_rgba(255, 0, 128, 255)));
+        assert_eq!(s.get_string("value.color"), None);
     }
 }

@@ -376,7 +376,6 @@ mod tests {
 
     #[test]
     pub fn test_drawing() -> Result<()> {
-        let filename = "output.png";
         let mut canvas = Canvas::new(800, 800)?;
 
         canvas.load_font(
@@ -449,10 +448,8 @@ mod tests {
         )?;
         let vs = vstack_left(vec![g1, g2], &canvas)?;
         vs.draw(&mut canvas)?;
-        // g1.draw(&mut canvas)?;
-        // g2.draw(&mut canvas)?;
 
-        canvas.save(filename)?;
+        canvas.save("test_drawing.png")?;
         Ok(())
     }
 }

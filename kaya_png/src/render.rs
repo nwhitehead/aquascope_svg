@@ -57,8 +57,12 @@ pub fn render_value(value: &Value, render_state: &mut RenderState, canvas: &Canv
         Value::Array(a) => {
             // Draw all the parts separately
             let a_draws: Vec<Box<dyn Drawable>> = a.into_iter().map(|x| render_value(&x, render_state, canvas)).collect();
+            // reborrow style again
+            let style = &render_state.style;
             // Now measure the height for divider lines
             let h = max_height(&a_draws, &canvas);
+            let sep_margin = style.get_number_or("value.array.separator.margin", 5.0);
+            // intersperse vertical lines
             panic!()
         }
         _ => panic!("not handled"),

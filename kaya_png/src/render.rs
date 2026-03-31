@@ -117,7 +117,7 @@ mod tests {
     #[test]
     pub fn test_render_value() -> Result<()> {
         let mut canvas = Canvas::new(800, 800)?;
-        canvas.pixmap.fill(Color::from_rgba(0.0, 0.0, 0.0, 1.0).unwrap());
+        canvas.pixmap.fill(Color::from_rgba(0.2, 0.1, 0.3, 1.0).unwrap());
 
         canvas.load_font(
             "mono",
@@ -136,6 +136,16 @@ mod tests {
         v.draw(&mut canvas)?;
         v.translate(point(10.0, 5.0));
         v.draw(&mut canvas)?;
+
+        rs.style.add_color("value.number.color", color("#cfa9bc80")?);
+        let mut v2 = render_value(&Value::Number(67.0), &mut rs);
+        v2.translate(point(400.0, 430.0));
+        v2.draw(&mut canvas)?;
+        v2.translate(point(10.0, -7.0));
+        v2.draw(&mut canvas)?;
+        v2.translate(point(10.0, -7.0));
+        v2.draw(&mut canvas)?;
+
         canvas.save("test_render_value.png")?;
 
         Ok(())

@@ -4,7 +4,7 @@ use clap::Parser;
 use std::fs;
 
 use kaya_lib::parser::parse;
-mod render;
+mod draw;
 mod style;
 
 #[derive(Debug, Parser)]

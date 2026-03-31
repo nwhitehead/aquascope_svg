@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use tiny_skia::{Color, ColorU8};
 
 use crate::canvas::Canvas;
-use crate::draw::{Drawable, GText};
+use crate::draw::{Drawable, GText, GLine};
 use crate::draw_state::DrawState;
 use crate::style::Styling;
 
@@ -26,7 +26,7 @@ fn max_height(values: &Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<f32> {
     Ok(res)
 }
 
-pub fn render_value(value: &Value, render_state: &mut RenderState, canvas: &Canvas) -> Box<dyn Drawable> {
+pub fn render_value(value: &Value, render_state: &mut RenderState, canvas: &Canvas) -> Result<Box<dyn Drawable>> {
     let style = &render_state.style;
     let mut ds = DrawState::default();
     let mono = "mono";
@@ -37,14 +37,14 @@ pub fn render_value(value: &Value, render_state: &mut RenderState, canvas: &Canv
             ds.text_color = style.get_color_or("value.number.color", black);
             ds.font_size = style.get_number_or("value.number.font_size", 24.0);
             let text = format!("{}", v);
-            return Box::new(GText::new(&text, point(0.0, 0.0), ds));
+            return Ok(Box::new(GText::new(&text, point(0.0, 0.0), ds)));
         }
         Value::Char(c) => {
             ds.font = style.get_string_or("value.char.font", mono);
             ds.text_color = style.get_color_or("value.char.color", black);
             ds.font_size = style.get_number_or("value.char.font_size", 24.0);
             let text = format!("'{}'", c);
-            return Box::new(GText::new(&text, point(0.0, 0.0), ds));
+            return Ok(Box::new(GText::new(&text, point(0.0, 0.0), ds)));
         }
         Value::Pointer(p) => {
             ds.font = style.get_string_or("value.pointer.font", mono);
@@ -52,17 +52,23 @@ pub fn render_value(value: &Value, render_state: &mut RenderState, canvas: &Canv
             ds.font_size = style.get_number_or("value.pointer.font_size", 24.0);
             // ✕✖✗✘×•●○◯42
             let text = "●";
-            return Box::new(GText::new(&text, point(0.0, 0.0), ds));
+            return Ok(Box::new(GText::new(&text, point(0.0, 0.0), ds)));
         }
         Value::Array(a) => {
             // Draw all the parts separately
-            let a_draws: Vec<Box<dyn Drawable>> = a.into_iter().map(|x| render_value(&x, render_state, canvas)).collect();
+            let mut a_draws: Vec<Box<dyn Drawable>> = vec![];
+            for x in a {
+                let draw = render_value(&x, render_state, canvas)?;
+                a_draws.push(draw);
+            }
             // reborrow style again
             let style = &render_state.style;
             // Now measure the height for divider lines
-            let h = max_height(&a_draws, &canvas);
+            let h = max_height(&a_draws, &canvas)?;
             let sep_margin = style.get_number_or("value.array.separator.margin", 5.0);
             // intersperse vertical lines
+            ds.stroke_color = style.get_color_or("value.array.separator.color", black);
+            let sep = GLine::new(point(0.0, 0.0), point(0.0, h - sep_margin), ds);
             panic!()
         }
         _ => panic!("not handled"),
@@ -152,7 +158,7 @@ mod tests {
         rs.style
             .add_color("value.number.color", color("#bccfa980")?);
 
-        let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas);
+        let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas)?;
         v.translate(point(400.0, 400.0));
         v.draw(&mut canvas)?;
         v.translate(point(10.0, 5.0));
@@ -162,7 +168,7 @@ mod tests {
 
         rs.style
             .add_color("value.number.color", color("#cfa9bc80")?);
-        let mut v2 = render_value(&Value::Number(67.0), &mut rs, &canvas);
+        let mut v2 = render_value(&Value::Number(67.0), &mut rs, &canvas)?;
         v2.translate(point(400.0, 430.0));
         v2.draw(&mut canvas)?;
         v2.translate(point(10.0, -7.0));
@@ -192,7 +198,7 @@ mod tests {
         rs.style.add_number("value.number.font_size", 24.0);
         rs.style.add_color("value.number.color", color("#bccfa9")?);
 
-        let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas);
+        let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas)?;
         v.translate(point(200.0, 200.0));
         v.draw(&mut canvas)?;
 
@@ -200,7 +206,7 @@ mod tests {
         rs.style.add_number("value.char.font_size", 24.0);
         rs.style.add_color("value.char.color", color("#bf947a")?);
 
-        let mut v = render_value(&Value::Char('H'), &mut rs, &canvas);
+        let mut v = render_value(&Value::Char('H'), &mut rs, &canvas)?;
         v.translate(point(250.0, 200.0));
         v.draw(&mut canvas)?;
 
@@ -217,9 +223,11 @@ mod tests {
             }),
             &mut rs,
             &canvas
-        );
+        )?;
         v.translate(point(300.0, 200.0));
         v.draw(&mut canvas)?;
+
+        rs.style.add_color("value.array.separator.color", color("#7197d580")?);
 
         canvas.save("test_render_value.png")?;
 

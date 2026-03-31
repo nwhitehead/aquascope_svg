@@ -1,4 +1,4 @@
-use tiny_skia::*;
+use tiny_skia::{ColorU8, Stroke};
 
 #[derive(Clone, Debug)]
 pub struct DrawState {

@@ -4,6 +4,7 @@ use clap::Parser;
 use std::fs;
 
 use kaya_lib::parser::parse;
+mod canvas;
 mod draw;
 mod style;
 mod draw_state;

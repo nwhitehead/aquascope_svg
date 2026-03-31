@@ -68,17 +68,24 @@ pub struct GBox {
 impl GBox {
     fn new_xywh(x: f32, y: f32, w: f32, h: f32) -> Self {
         Self {
-            r: Rect { min: point(x, y), max: point(x + w, y + h) },
+            r: Rect {
+                min: point(x, y),
+                max: point(x + w, y + h),
+            },
             state: Default::default(),
         }
     }
     fn new_with_options(r: Rect, width: f32, color: ColorU8) -> Self {
         Self {
             r,
-            state: DrawState { 
+            state: DrawState {
                 stroke_color: color,
-                stroke: Stroke { width, ..Default::default() },
-                ..Default::default() },
+                stroke: Stroke {
+                    width,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
         }
     }
 }
@@ -109,9 +116,12 @@ impl Drawable for GBox {
                 pb.line_to(self.r.max.x, self.r.min.y + br.1);
             } else {
                 pb.cubic_to(
-                    self.r.max.x - br.1 * kappa, self.r.min.y,
-                    self.r.max.x, self.r.min.y + br.1 * kappa,
-                    self.r.max.x, self.r.min.y + br.1
+                    self.r.max.x - br.1 * kappa,
+                    self.r.min.y,
+                    self.r.max.x,
+                    self.r.min.y + br.1 * kappa,
+                    self.r.max.x,
+                    self.r.min.y + br.1,
                 );
             }
             // right side
@@ -121,9 +131,12 @@ impl Drawable for GBox {
                 pb.line_to(self.r.max.x - br.2, self.r.max.y);
             } else {
                 pb.cubic_to(
-                    self.r.max.x, self.r.max.y - br.2 * kappa,
-                    self.r.max.x - br.2 * kappa, self.r.max.y,
-                    self.r.max.x - br.2, self.r.max.y
+                    self.r.max.x,
+                    self.r.max.y - br.2 * kappa,
+                    self.r.max.x - br.2 * kappa,
+                    self.r.max.y,
+                    self.r.max.x - br.2,
+                    self.r.max.y,
                 );
             }
             // bottom side
@@ -133,9 +146,12 @@ impl Drawable for GBox {
                 pb.line_to(self.r.min.x, self.r.max.y - br.3);
             } else {
                 pb.cubic_to(
-                    self.r.min.x + br.3 * kappa, self.r.max.y,
-                    self.r.min.x, self.r.max.y - br.3 * kappa,
-                    self.r.min.x, self.r.max.y - br.3
+                    self.r.min.x + br.3 * kappa,
+                    self.r.max.y,
+                    self.r.min.x,
+                    self.r.max.y - br.3 * kappa,
+                    self.r.min.x,
+                    self.r.max.y - br.3,
                 );
             }
             // left side
@@ -145,9 +161,12 @@ impl Drawable for GBox {
                 pb.line_to(self.r.min.x + br.0, self.r.min.y);
             } else {
                 pb.cubic_to(
-                    self.r.min.x, self.r.min.y + br.0 * kappa,
-                    self.r.min.x + br.0 * kappa, self.r.min.y,
-                    self.r.min.x + br.0, self.r.min.y
+                    self.r.min.x,
+                    self.r.min.y + br.0 * kappa,
+                    self.r.min.x + br.0 * kappa,
+                    self.r.min.y,
+                    self.r.min.x + br.0,
+                    self.r.min.y,
                 );
             }
             pb.close();
@@ -155,7 +174,13 @@ impl Drawable for GBox {
         }) else {
             bail!("could not make path");
         };
-        canvas.pixmap.stroke_path(&path, &paint, &self.state.stroke, Transform::identity(), None);
+        canvas.pixmap.stroke_path(
+            &path,
+            &paint,
+            &self.state.stroke,
+            Transform::identity(),
+            None,
+        );
         Ok(())
     }
 }
@@ -181,7 +206,10 @@ impl Drawable for GArray {
     }
 
     fn bounding_box(&self, canvas: &Canvas) -> Result<Rect> {
-        let mut rbb: Rect = Rect { min: point(1000.0, 1000.0), max: point(-1000.0, -1000.0) };
+        let mut rbb: Rect = Rect {
+            min: point(1000.0, 1000.0),
+            max: point(-1000.0, -1000.0),
+        };
         for item in &self.items {
             let bb = item.bounding_box(&canvas)?;
             rbb.min.x = rbb.min.x.min(bb.min.x);
@@ -346,7 +374,7 @@ fn stack_general(
     items: Vec<Box<dyn Drawable>>,
     tx_formula: FormulaType,
     ty_formula: FormulaType,
-    canvas: &Canvas
+    canvas: &Canvas,
 ) -> Result<GArray> {
     let mut bb: Option<Rect> = None;
     let mut c = GArray::new();
@@ -364,35 +392,76 @@ fn stack_general(
     Ok(c)
 }
 pub fn stack(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
-    Ok(stack_general(items, FormulaType::Centered, FormulaType::Centered, canvas)?)
+    Ok(stack_general(
+        items,
+        FormulaType::Centered,
+        FormulaType::Centered,
+        canvas,
+    )?)
 }
 pub fn hstack(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
-    Ok(stack_general(items, FormulaType::Sequenced, FormulaType::Centered, canvas)?)
+    Ok(stack_general(
+        items,
+        FormulaType::Sequenced,
+        FormulaType::Centered,
+        canvas,
+    )?)
 }
 pub fn hstack_top(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
-    Ok(stack_general(items, FormulaType::Sequenced, FormulaType::AlignLow, canvas)?)
+    Ok(stack_general(
+        items,
+        FormulaType::Sequenced,
+        FormulaType::AlignLow,
+        canvas,
+    )?)
 }
 pub fn hstack_bottom(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
-    Ok(stack_general(items, FormulaType::Sequenced, FormulaType::AlignHigh, canvas)?)
+    Ok(stack_general(
+        items,
+        FormulaType::Sequenced,
+        FormulaType::AlignHigh,
+        canvas,
+    )?)
 }
 pub fn vstack(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
-    Ok(stack_general(items, FormulaType::Centered, FormulaType::Sequenced, canvas)?)
+    Ok(stack_general(
+        items,
+        FormulaType::Centered,
+        FormulaType::Sequenced,
+        canvas,
+    )?)
 }
 pub fn vstack_left(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
-    Ok(stack_general(items, FormulaType::AlignLow, FormulaType::Sequenced, canvas)?)
+    Ok(stack_general(
+        items,
+        FormulaType::AlignLow,
+        FormulaType::Sequenced,
+        canvas,
+    )?)
 }
 pub fn vstack_right(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
-    Ok(stack_general(items, FormulaType::AlignHigh, FormulaType::Sequenced, canvas)?)
+    Ok(stack_general(
+        items,
+        FormulaType::AlignHigh,
+        FormulaType::Sequenced,
+        canvas,
+    )?)
 }
 
 pub fn outline(r: Rect, d: f32) -> Rect {
-    Rect { min: point(r.min.x - d, r.min.y - d), max: point(r.max.x + d, r.max.y + d) }
+    Rect {
+        min: point(r.min.x - d, r.min.y - d),
+        max: point(r.max.x + d, r.max.y + d),
+    }
 }
 
 pub fn box_around(item: &dyn Drawable, d: f32, canvas: &Canvas, state: &DrawState) -> Result<GBox> {
     let bb = item.bounding_box(canvas)?;
     let r = outline(bb, d);
-    Ok(GBox { r, state: state.clone() })
+    Ok(GBox {
+        r,
+        state: state.clone(),
+    })
 }
 
 pub fn test(filename: &str) -> Result<()> {
@@ -402,10 +471,7 @@ pub fn test(filename: &str) -> Result<()> {
         "mono",
         include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf"),
     )?;
-    canvas.load_font(
-        "serif",
-        include_bytes!("../fonts/Lato/Lato-Regular.ttf"),
-    )?;
+    canvas.load_font("serif", include_bytes!("../fonts/Lato/Lato-Regular.ttf"))?;
     let state = DrawState {
         font: "mono".into(),
         text_color: ColorU8::from_rgba(150, 0, 0, 255),
@@ -416,21 +482,30 @@ pub fn test(filename: &str) -> Result<()> {
     let txt = GText {
         text: "✕✖✗✘×•●○◯42".into(),
         position: point(100.0, 100.0),
-        state
+        state,
     };
     let bb = txt.bounding_box(&canvas)?;
     let bx = GBox::new_with_options(bb, 4.0, ColorU8::from_rgba(0, 120, 0, 255));
     let mut ga = GArray::new();
     ga.push(Box::new(txt));
     ga.push(Box::new(bx));
-    let bx2 = GBox::new_with_options(Rect { min: point(0.0, 0.0), max: point(100.0, 120.0) }, 4.0, ColorU8::from_rgba(0, 120, 120, 255));
+    let bx2 = GBox::new_with_options(
+        Rect {
+            min: point(0.0, 0.0),
+            max: point(100.0, 120.0),
+        },
+        4.0,
+        ColorU8::from_rgba(0, 120, 120, 255),
+    );
     let stk = vstack_right(vec![Box::new(ga), Box::new(bx2)], &canvas)?;
     for item in &stk.items {
         println!("bb item = {:?}", item.bounding_box(&canvas)?);
     }
     let bb_stk = stk.bounding_box(&canvas)?;
     println!("bb_stk = {:?}", &bb_stk);
-    let mut bx_state = DrawState { ..Default::default() };
+    let mut bx_state = DrawState {
+        ..Default::default()
+    };
     bx_state.stroke_color = ColorU8::from_rgba(0, 0, 255, 255);
     bx_state.stroke.width = 12.0;
     bx_state.border_radius = (40.0, 50.0, 40.0, 30.0);

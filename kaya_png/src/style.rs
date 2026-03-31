@@ -1,6 +1,6 @@
 use anyhow::{Result, bail};
-use tiny_skia::ColorU8;
 use std::collections::HashMap;
+use tiny_skia::ColorU8;
 
 /// Encode values into one datatype for remembering styling info
 // This simplifies the interface to the styling data
@@ -36,8 +36,7 @@ impl Styling {
             .insert(key.to_string(), AnyValue::String(value.to_string()));
     }
     pub fn add_color(&mut self, key: &str, value: ColorU8) {
-        self.data
-            .insert(key.to_string(), AnyValue::Color(value));
+        self.data.insert(key.to_string(), AnyValue::Color(value));
     }
     pub fn get_number(&self, key: &str) -> Option<f32> {
         match self.data.get(key) {
@@ -98,7 +97,10 @@ mod tests {
         assert_eq!(s.get_string("value.font"), Some("mono".to_string()));
         assert_eq!(s.get_string("value.style"), None);
         s.add_color("value.color", ColorU8::from_rgba(255, 0, 128, 255));
-        assert_eq!(s.get_color("value.color"), Some(ColorU8::from_rgba(255, 0, 128, 255)));
+        assert_eq!(
+            s.get_color("value.color"),
+            Some(ColorU8::from_rgba(255, 0, 128, 255))
+        );
         assert_eq!(s.get_string("value.color"), None);
     }
 }

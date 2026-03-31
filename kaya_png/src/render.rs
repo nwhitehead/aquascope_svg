@@ -8,7 +8,7 @@ use crate::draw::{Drawable, GText};
 use crate::draw_state::DrawState;
 use crate::style::Styling;
 
-use kaya_lib::states::{Def, Location, Program, Region, Step, Value};
+use kaya_lib::states::{Def, Location, Program, Ptr, Region, Step, Value};
 
 #[derive(Clone, Debug, Default)]
 pub struct RenderState {
@@ -28,32 +28,24 @@ pub fn render_value(value: &Value, render_state: &mut RenderState) -> Box<dyn Dr
             ds.font_size = style.get_number_or("value.number.font_size", 24.0);
             let text = format!("{}", v);
             return Box::new(GText::new(&text, point(0.0, 0.0), ds));
-        },
+        }
+        Value::Char(c) => {
+            ds.font = style.get_string_or("value.char.font", mono);
+            ds.text_color = style.get_color_or("value.char.color", black);
+            ds.font_size = style.get_number_or("value.char.font_size", 24.0);
+            let text = format!("'{}'", c);
+            return Box::new(GText::new(&text, point(0.0, 0.0), ds));
+        }
+        Value::Pointer(p) => {
+            ds.font = style.get_string_or("value.pointer.font", mono);
+            ds.text_color = style.get_color_or("value.pointer.color", black);
+            ds.font_size = style.get_number_or("value.pointer.font_size", 24.0);
+            // ✕✖✗✘×•●○◯42
+            let text = "●";
+            return Box::new(GText::new(&text, point(0.0, 0.0), ds));
+        }
         _ => panic!("not handled"),
     }
-
-    // Ok(format!(
-    //     "<span id=\"{}\" class=\"value number\">{}</span>",
-    //     &state.id_prefix, v
-    // )),
-
-    // render_state.locations.insert(
-    //     "d2".to_string(),
-    //     Rect {
-    //         min: point(0.0, 0.0),
-    //         max: point(0.0, 0.0),
-    //     },
-    // );
-    // let mut s = DrawState {
-    //     ..Default::default()
-    // };
-    // s.font = "mono".to_string();
-    // s.stroke_color = ColorU8::from_rgba(128, 0, 128, 255);
-    // s.stroke.width = 2.0;
-    // s.border_radius = (5.0, 5.0, 5.0, 5.0);
-    // s.border_clip = (false, false, false, false);
-    // s.padding = (60.0, 30.0, 60.0, 30.0);
-    // s.margin = (40.0, 10.0, 40.0, 10.0);
 }
 
 fn color(txt: &str) -> Result<ColorU8> {
@@ -70,24 +62,24 @@ fn color(txt: &str) -> Result<ColorU8> {
             r = u8::from_str_radix(&txt[0..1], 16)? * (0x10 + 0x01);
             g = u8::from_str_radix(&txt[1..2], 16)? * (0x10 + 0x01);
             b = u8::from_str_radix(&txt[2..3], 16)? * (0x10 + 0x01);
-        },
+        }
         4 => {
             r = u8::from_str_radix(&txt[0..1], 16)? * (0x10 + 0x01);
             g = u8::from_str_radix(&txt[1..2], 16)? * (0x10 + 0x01);
             b = u8::from_str_radix(&txt[2..3], 16)? * (0x10 + 0x01);
             a = u8::from_str_radix(&txt[3..4], 16)? * (0x10 + 0x01);
-        },
+        }
         6 => {
             r = u8::from_str_radix(&txt[0..2], 16)?;
             g = u8::from_str_radix(&txt[2..4], 16)?;
             b = u8::from_str_radix(&txt[4..6], 16)?;
-        },
+        }
         8 => {
             r = u8::from_str_radix(&txt[0..2], 16)?;
             g = u8::from_str_radix(&txt[2..4], 16)?;
             b = u8::from_str_radix(&txt[4..6], 16)?;
             a = u8::from_str_radix(&txt[6..8], 16)?;
-        },
+        }
         _ => bail!("unknown color length"),
     }
     Ok(ColorU8::from_rgba(r, g, b, a))
@@ -105,8 +97,14 @@ mod tests {
         assert_eq!(color("#00a")?, ColorU8::from_rgba(0, 0, 0xaa, 0xff));
         assert_eq!(color("#0008")?, ColorU8::from_rgba(0, 0, 0, 0x88));
         assert_eq!(color("#1234")?, ColorU8::from_rgba(0x11, 0x22, 0x33, 0x44));
-        assert_eq!(color("#123456")?, ColorU8::from_rgba(0x12, 0x34, 0x56, 0xff));
-        assert_eq!(color("#12345678")?, ColorU8::from_rgba(0x12, 0x34, 0x56, 0x78));
+        assert_eq!(
+            color("#123456")?,
+            ColorU8::from_rgba(0x12, 0x34, 0x56, 0xff)
+        );
+        assert_eq!(
+            color("#12345678")?,
+            ColorU8::from_rgba(0x12, 0x34, 0x56, 0x78)
+        );
         assert!(color("000").is_err());
         assert!(color("#12345").is_err());
         assert!(color("#0g3456").is_err());
@@ -115,9 +113,11 @@ mod tests {
     }
 
     #[test]
-    pub fn test_render_value() -> Result<()> {
+    pub fn test_render_alpha() -> Result<()> {
         let mut canvas = Canvas::new(800, 800)?;
-        canvas.pixmap.fill(Color::from_rgba(0.2, 0.1, 0.3, 1.0).unwrap());
+        canvas
+            .pixmap
+            .fill(Color::from_rgba(0.2, 0.1, 0.3, 1.0).unwrap());
 
         canvas.load_font(
             "mono",
@@ -128,7 +128,9 @@ mod tests {
         let mut rs = RenderState::default();
         rs.style.add_string("value.number.font", "mono");
         rs.style.add_number("value.number.font_size", 48.0);
-        rs.style.add_color("value.number.color", color("#bccfa980")?);
+        rs.style
+            .add_color("value.number.color", color("#bccfa980")?);
+
         let mut v = render_value(&Value::Number(42.0), &mut rs);
         v.translate(point(400.0, 400.0));
         v.draw(&mut canvas)?;
@@ -137,7 +139,8 @@ mod tests {
         v.translate(point(10.0, 5.0));
         v.draw(&mut canvas)?;
 
-        rs.style.add_color("value.number.color", color("#cfa9bc80")?);
+        rs.style
+            .add_color("value.number.color", color("#cfa9bc80")?);
         let mut v2 = render_value(&Value::Number(67.0), &mut rs);
         v2.translate(point(400.0, 430.0));
         v2.draw(&mut canvas)?;
@@ -145,6 +148,56 @@ mod tests {
         v2.draw(&mut canvas)?;
         v2.translate(point(10.0, -7.0));
         v2.draw(&mut canvas)?;
+
+        canvas.save("test_render_alpha.png")?;
+
+        Ok(())
+    }
+
+    #[test]
+    pub fn test_render_value() -> Result<()> {
+        let mut canvas = Canvas::new(800, 800)?;
+        canvas
+            .pixmap
+            .fill(Color::from_rgba(0.2, 0.2, 0.2, 1.0).unwrap());
+        canvas.load_font(
+            "mono",
+            include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf"),
+        )?;
+        canvas.load_font("serif", include_bytes!("../fonts/Lato/Lato-Regular.ttf"))?;
+
+        let mut rs = RenderState::default();
+        rs.style.add_string("value.number.font", "mono");
+        rs.style.add_number("value.number.font_size", 24.0);
+        rs.style.add_color("value.number.color", color("#bccfa9")?);
+
+        let mut v = render_value(&Value::Number(42.0), &mut rs);
+        v.translate(point(200.0, 200.0));
+        v.draw(&mut canvas)?;
+
+        rs.style.add_string("value.char.font", "mono");
+        rs.style.add_number("value.char.font_size", 24.0);
+        rs.style.add_color("value.char.color", color("#bf947a")?);
+
+        let mut v = render_value(&Value::Char('H'), &mut rs);
+        v.translate(point(250.0, 200.0));
+        v.draw(&mut canvas)?;
+
+        rs.style.add_string("value.pointer.font", "mono");
+        rs.style.add_number("value.pointer.font_size", 24.0);
+        rs.style.add_color("value.pointer.color", color("#ccc")?);
+
+        let mut v = render_value(
+            &Value::Pointer(Ptr {
+                name: "".to_string(),
+                selectors: vec![],
+                borrow: 0,
+                help: vec![],
+            }),
+            &mut rs,
+        );
+        v.translate(point(300.0, 200.0));
+        v.draw(&mut canvas)?;
 
         canvas.save("test_render_value.png")?;
 

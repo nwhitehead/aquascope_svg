@@ -118,18 +118,20 @@ impl Canvas {
                     let alpha_src_255 = c * (color.alpha() as f32); // 0-255
                     let alpha_src = alpha_src_255 / 255.0; // 0-1
                     let one_minus_alpha_src = 1.0 - alpha_src; // 0-1
-                    let rr: f32 = (c * (color.red() as f32)); // 0-255
+                    let rr: f32 = c * (color.red() as f32); // 0-255
                     let rr_dst: f32 = one_minus_alpha_src * (pmx.red() as f32); // 0-255
-                    let gg: f32 = (c * (color.green() as f32)); // 0-255
+                    let gg: f32 = c * (color.green() as f32); // 0-255
                     let gg_dst: f32 = one_minus_alpha_src * (pmx.green() as f32); // 0-255
-                    let bb: f32 = (c * (color.blue() as f32)); // 0-255
+                    let bb: f32 = c * (color.blue() as f32); // 0-255
                     let bb_dst: f32 = one_minus_alpha_src * (pmx.blue() as f32); // 0-255
                     let mcolor = PremultipliedColorU8::from_rgba(
                         (rr as u8).saturating_add(rr_dst as u8),
                         (gg as u8).saturating_add(gg_dst as u8),
                         (bb as u8).saturating_add(bb_dst as u8),
-                        (alpha_src_255 as u8).saturating_add((one_minus_alpha_src * (pmx.alpha() as f32)) as u8),
-                    ).with_context(|| format!("color={:?} c={} pmx={:?}", color, c, pmx))
+                        (alpha_src_255 as u8)
+                            .saturating_add((one_minus_alpha_src * (pmx.alpha() as f32)) as u8),
+                    )
+                    .with_context(|| format!("color={:?} c={} pmx={:?}", color, c, pmx))
                     .expect("pixel color");
                     *pmx = mcolor;
                 }

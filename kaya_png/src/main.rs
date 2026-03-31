@@ -5,6 +5,7 @@ use std::fs;
 
 use kaya_lib::parser::parse;
 mod render;
+mod style;
 
 #[derive(Debug, Parser)]
 #[command(name = "render_states")]

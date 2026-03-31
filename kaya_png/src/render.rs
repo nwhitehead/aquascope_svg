@@ -4,8 +4,10 @@ use anyhow::{Result, bail};
 use std::collections::HashMap;
 use tiny_skia::*;
 
+use crate::style::Styling;
+
 #[derive(Clone, Debug)]
-struct DrawState {
+pub struct DrawState {
     font: String,
     font_size: f32,
     font_max_width: f32,

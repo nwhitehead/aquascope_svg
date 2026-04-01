@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use tiny_skia::{Color, ColorU8};
 
 use crate::canvas::Canvas;
-use crate::draw::{Drawable, GText, GLine, hstack};
+use crate::draw::{Drawable, GPadding, GText, GLine, hstack};
 use crate::draw_state::DrawState;
 use crate::style::Styling;
 
@@ -36,8 +36,16 @@ pub fn render_value(value: &Value, render_state: &mut RenderState, canvas: &Canv
             ds.font = style.get_string_or("value.number.font", mono);
             ds.text_color = style.get_color_or("value.number.color", black);
             ds.font_size = style.get_number_or("value.number.font_size", 24.0);
+            let left = style.get_number_or("value.number.padding.left", 5.0);
+            let top = style.get_number_or("value.number.padding.top", 5.0);
+            let right = style.get_number_or("value.number.padding.right", 5.0);
+            let bottom = style.get_number_or("value.number.padding.bottom", 5.0);
+            let padding = (left, top, right, bottom);
             let text = format!("{}", v);
-            return Ok(Box::new(GText::new(&text, point(0.0, 0.0), ds)));
+            let gtxt = GText::new(&text, point(0.0, 0.0), ds);
+            let padded_gtxt = GPadding::new(Box::new(gtxt), padding);
+
+            return Ok(Box::new(padded_gtxt));
         }
         Value::Char(c) => {
             ds.font = style.get_string_or("value.char.font", mono);

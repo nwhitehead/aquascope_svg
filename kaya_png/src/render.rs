@@ -573,7 +573,7 @@ mod tests {
         rs.style.add_number("def.separator.padding.left", 3.0);
         rs.style.add_number("def.separator.padding.right", 3.0);
         rs.style.add_number("def.left.padding.bottom", 3.0);
-        rs.style.add_number("def.value.padding", 3.0);
+        rs.style.add_number("def.value.padding", 8.0);
         rs.style.add_number("def.value.margin", 3.0);
         rs.style.add_color("def.value.border.color", color("#282828")?);
         rs.style.add_number("def.value.border.width", 1.5);
@@ -620,12 +620,25 @@ mod tests {
         let mut v = render_def(
             &Def {
                 label: "a".to_string(),
-                value: Value::Number(7.0),
+                value: Value::Array(vec![
+                    Value::Number(42.0),
+                ]),
             },
             &mut rs,
             &canvas,
         )?;
         v.translate(point(200.0, 300.0));
+        v.draw(&mut canvas)?;
+
+        let mut v = render_def(
+            &Def {
+                label: "x".to_string(),
+                value: Value::Number(42.0),
+            },
+            &mut rs,
+            &canvas,
+        )?;
+        v.translate(point(200.0, 350.0));
         v.draw(&mut canvas)?;
 
         canvas.save("test_render_value.png")?;

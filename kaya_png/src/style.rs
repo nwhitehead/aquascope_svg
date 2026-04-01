@@ -73,6 +73,25 @@ impl Styling {
     pub fn get_color_or(&self, key: &str, value: ColorU8) -> ColorU8 {
         self.get_color(key).unwrap_or(value)
     }
+    // Synthetic methods, computing values for simplicity of queries
+    pub fn get_padding(&self, key: &str, value: f32) -> (f32, f32, f32, f32) {
+        let v = self.get_number_or(key, value);
+        (
+            self.get_number_or(&format!("{}.left", key), v),
+            self.get_number_or(&format!("{}.top", key), v),
+            self.get_number_or(&format!("{}.right", key), v),
+            self.get_number_or(&format!("{}.bottom", key), v),
+        )
+    }
+    pub fn get_radius(&self, key: &str, value: f32) -> (f32, f32, f32, f32) {
+        let v = self.get_number_or(key, value);
+        (
+            self.get_number_or(&format!("{}.nw", key), v),
+            self.get_number_or(&format!("{}.ne", key), v),
+            self.get_number_or(&format!("{}.se", key), v),
+            self.get_number_or(&format!("{}.sw", key), v),
+        )
+    }
 }
 
 #[cfg(test)]

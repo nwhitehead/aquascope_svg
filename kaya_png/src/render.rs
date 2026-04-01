@@ -56,12 +56,7 @@ fn render_value_array(
     // intersperse vertical lines
     ds.stroke_color = style.get_color_or("value.array.separator.color", color("#000")?);
     let sep = GLine::new(point(0.0, 0.0), point(0.0, h - sep_margin), ds.clone());
-    let sep_padding = (
-        style.get_number_or("value.array.separator.padding.left", 5.0),
-        style.get_number_or("value.array.separator.padding.top", 5.0),
-        style.get_number_or("value.array.separator.padding.right", 5.0),
-        style.get_number_or("value.array.separator.padding.bottom", 5.0),
-    );
+    let sep_padding = style.get_padding("value.array.separator.padding", 5.0);
     let padded_sep = GPadding::new(Box::new(sep), sep_padding);
     let mut a_draws_sep: Vec<Box<dyn Drawable>> = vec![];
     let mut any_elems_yet = false;
@@ -74,18 +69,10 @@ fn render_value_array(
         a_draws_sep.push(x);
     }
     let stk = hstack(a_draws_sep, canvas)?;
-    ds.padding.0 = style.get_number_or("value.array.padding.left", 5.0);
-    ds.padding.1 = style.get_number_or("value.array.padding.top", 5.0);
-    ds.padding.2 = style.get_number_or("value.array.padding.right", 5.0);
-    ds.padding.3 = style.get_number_or("value.array.padding.bottom", 5.0);
+    ds.padding = style.get_padding("value.array.padding", 5.0);
     ds.stroke_color = style.get_color_or("value.array.border.color", color("#000")?);
     ds.stroke.width = style.get_number_or("value.array.border.width", 4.0);
-    let radius = style.get_number_or("value.array.border.radius", 5.0);
-    let radius_nw = style.get_number_or("value.array.border.radius.nw", radius);
-    let radius_ne = style.get_number_or("value.array.border.radius.ne", radius);
-    let radius_sw = style.get_number_or("value.array.border.radius.sw", radius);
-    let radius_se = style.get_number_or("value.array.border.radius.se", radius);
-    ds.border_radius = (radius_nw, radius_ne, radius_se, radius_sw);
+    ds.border_radius = style.get_radius("value.array.border.radius", 5.0);
     let res = border(Box::new(stk), canvas, ds)?;
     Ok(res)
 }

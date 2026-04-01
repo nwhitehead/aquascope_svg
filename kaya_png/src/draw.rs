@@ -11,8 +11,10 @@ pub trait Drawable {
     fn translate(&mut self, t: Point);
     fn bounding_box(&self, canvas: &Canvas) -> Result<Rect>;
     fn draw(&self, canvas: &mut Canvas) -> Result<()>;
+    fn clone_box(&self) -> Box<dyn Drawable>;
 }
 
+#[derive(Clone, Debug)]
 pub struct GText {
     text: String,
     position: Point,
@@ -41,6 +43,9 @@ impl Drawable for GText {
     }
     fn draw(&self, canvas: &mut Canvas) -> Result<()> {
         Ok(canvas.draw_text(&self.text, self.position, &self.state)?)
+    }
+    fn clone_box(&self) -> Box<dyn Drawable> {
+        Box::new(self.clone())
     }
 }
 
@@ -90,6 +95,9 @@ impl Drawable for GLine {
         );
 
         Ok(())
+    }
+    fn clone_box(&self) -> Box<dyn Drawable> {
+        Box::new(self.clone())
     }
 }
 
@@ -217,6 +225,9 @@ impl Drawable for GBox {
         );
         Ok(())
     }
+    fn clone_box(&self) -> Box<dyn Drawable> {
+        Box::new(self.clone())
+    }
 }
 
 pub struct GPadding {
@@ -245,6 +256,9 @@ impl Drawable for GPadding {
     }
     fn draw(&self, canvas: &mut Canvas) -> Result<()> {
         Ok(self.item.draw(canvas)?)
+    }
+    fn clone_box(&self) -> Box<dyn Drawable> {
+        Box::new(GPadding { item: self.item.clone_box(), padding: self.padding })
     }
 }
 
@@ -288,6 +302,14 @@ impl Drawable for GArray {
             item.draw(canvas)?;
         }
         Ok(())
+    }
+
+    fn clone_box(&self) -> Box<dyn Drawable> {
+        let mut items = vec![];
+        for item in &self.items {
+            items.push(item.clone_box());
+        }
+        Box::new(GArray { items })
     }
 }
 

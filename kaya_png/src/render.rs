@@ -75,12 +75,19 @@ pub fn render_value(value: &Value, render_state: &mut RenderState, canvas: &Canv
             let sep_margin = style.get_number_or("value.array.separator.vmargin", 5.0);
             // intersperse vertical lines
             ds.stroke_color = style.get_color_or("value.array.separator.color", black);
-            let sep = Box::new(GLine::new(point(0.0, 0.0), point(0.0, h - sep_margin), ds.clone()));
+            let sep = GLine::new(point(0.0, 0.0), point(0.0, h - sep_margin), ds.clone());
+            let sep_padding = (
+                style.get_number_or("value.array.separator.padding.left", 5.0),
+                style.get_number_or("value.array.separator.padding.top", 5.0),
+                style.get_number_or("value.array.separator.padding.right", 5.0),
+                style.get_number_or("value.array.separator.padding.bottom", 5.0),
+            );
+            let padded_sep = GPadding::new(Box::new(sep), sep_padding);
             let mut a_draws_sep: Vec<Box<dyn Drawable>> = vec![];
             let mut any_elems_yet = false;
             for x in a_draws {
                 if any_elems_yet {
-                    a_draws_sep.push(sep.clone());
+                    a_draws_sep.push(padded_sep.clone_box());
                 } else {
                     any_elems_yet = true;
                 }
@@ -91,6 +98,8 @@ pub fn render_value(value: &Value, render_state: &mut RenderState, canvas: &Canv
             ds.padding.1 = style.get_number_or("value.array.padding.top", 5.0);
             ds.padding.2 = style.get_number_or("value.array.padding.right", 5.0);
             ds.padding.3 = style.get_number_or("value.array.padding.bottom", 5.0);
+            ds.stroke_color = style.get_color_or("value.array.border.color", black);
+            ds.stroke.width = style.get_number_or("value.array.border.width", 4.0);
             let res = border(Box::new(stk), &canvas, ds)?;
             return Ok(res);
         }
@@ -209,7 +218,7 @@ mod tests {
         let mut canvas = Canvas::new(800, 800)?;
         canvas
             .pixmap
-            .fill(Color::from_rgba(0.121, 0.121, 0.121, 1.0).unwrap());
+            .fill(Color::from_rgba8(0x19, 0x19, 0x19, 0xff));
         canvas.load_font(
             "mono",
             include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf"),
@@ -218,28 +227,40 @@ mod tests {
 
         let mut rs = RenderState::default();
         rs.style.add_string("value.number.font", "mono");
-        rs.style.add_number("value.number.font_size", 24.0);
+        rs.style.add_number("value.number.font_size", 22.0);
         rs.style.add_color("value.number.color", color("#bccfa9")?);
         rs.style.add_number("value.number.padding.left", 5.0);
         rs.style.add_number("value.number.padding.top", 5.0);
         rs.style.add_number("value.number.padding.right", 5.0);
         rs.style.add_number("value.number.padding.bottom", 8.0);
+        rs.style.add_string("value.char.font", "mono");
+        rs.style.add_number("value.char.font_size", 24.0);
+        rs.style.add_color("value.char.color", color("#bf947a")?);
+        rs.style.add_string("value.pointer.font", "mono");
+        rs.style.add_number("value.pointer.font_size", 24.0);
+        rs.style.add_color("value.pointer.color", color("#ccc")?);
+        rs.style.add_color("value.array.separator.color", color("#7197d580")?);
+        rs.style.add_number("value.array.separator.vmargin", 5.0);
+        rs.style.add_number("value.array.separator.padding.left", 5.0);
+        rs.style.add_number("value.array.separator.padding.top", 5.0);
+        rs.style.add_number("value.array.separator.padding.right", 5.0);
+        rs.style.add_number("value.array.separator.padding.bottom", 5.0);
+        rs.style.add_number("value.array.padding.left", 5.0);
+        rs.style.add_number("value.array.padding.top", 2.0);
+        rs.style.add_number("value.array.padding.right", 5.0);
+        rs.style.add_number("value.array.padding.bottom", 2.0);
+        rs.style.add_color("value.array.border.color", color("#7197d5")?);
+        rs.style.add_number("value.array.border.width", 4.0);
 
         let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas)?;
         v.translate(point(200.0, 200.0));
         v.draw(&mut canvas)?;
 
-        rs.style.add_string("value.char.font", "mono");
-        rs.style.add_number("value.char.font_size", 24.0);
-        rs.style.add_color("value.char.color", color("#bf947a")?);
 
         let mut v = render_value(&Value::Char('H'), &mut rs, &canvas)?;
         v.translate(point(250.0, 200.0));
         v.draw(&mut canvas)?;
 
-        rs.style.add_string("value.pointer.font", "mono");
-        rs.style.add_number("value.pointer.font_size", 24.0);
-        rs.style.add_color("value.pointer.color", color("#ccc")?);
 
         let mut v = render_value(
             &Value::Pointer(Ptr {
@@ -253,13 +274,6 @@ mod tests {
         )?;
         v.translate(point(300.0, 200.0));
         v.draw(&mut canvas)?;
-
-        rs.style.add_color("value.array.separator.color", color("#7197d580")?);
-        rs.style.add_number("value.array.separator.vmargin", 5.0);
-        rs.style.add_number("value.array.padding.left", 5.0);
-        rs.style.add_number("value.array.padding.top", 2.0);
-        rs.style.add_number("value.array.padding.right", 5.0);
-        rs.style.add_number("value.array.padding.bottom", 2.0);
 
         let mut v = render_value(&Value::Array(vec![
             Value::Number(42.0),

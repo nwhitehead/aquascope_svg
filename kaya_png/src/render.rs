@@ -150,6 +150,104 @@ fn render_value_tuple(
     return Ok(res);
 }
 
+fn render_def(
+    def: &Def,
+    render_state: &mut RenderState,
+    canvas: &Canvas,
+) -> Result<Box<dyn Drawable>> {
+    let style = &render_state.style;
+    let mut ds = DrawState::default();
+    ds.font = style.get_string_or("def.label.font", "mono");
+    ds.font_size = style.get_number_or("def.label.font_size", 24.0);
+    ds.text_color = style.get_color_or("def.label.color", color("#000")?);
+
+    let sep_pad = style.get_number_or("def.separator.padding", 5.0);
+    let left = style.get_number_or("def.padding.left", 5.0);
+    let top = style.get_number_or("def.padding.top", 5.0);
+    let right = style.get_number_or("def.padding.right", 5.0);
+    let bottom = style.get_number_or("def.padding.bottom", 5.0);
+
+    let pad = style.get_number_or("def.padding", 5.0);
+    let left = style.get_number_or("def.padding.left", pad);
+    let top = style.get_number_or("def.padding.top", pad);
+    let right = style.get_number_or("def.padding.right", pad);
+    let bottom = style.get_number_or("def.padding.bottom", pad);
+    let padding = (left, top, right, bottom);
+
+    let g_label = GText::new(&def.label, point(0.0, 0.0), ds.clone());
+
+    ds.font = style.get_string_or("def.separator.font", "mono");
+    ds.font_size = style.get_number_or("def.separator.font_size", 24.0);
+    ds.text_color = style.get_color_or("def.separator.color", color("#000")?);
+    let sep_text = style.get_string_or("def.separator.text", ":");
+    let g_separator = GText::new(&sep_text, point(0.0, 0.0), ds.clone());
+
+    //let padded_gtxt = GPadding::new(Box::new(gtxt), padding);
+    Ok(Box::new(g_separator))
+}
+
+// fn render_value_struct(
+//     named_struct: &NamedStruct,
+//     render_state: &mut RenderState,
+//     canvas: &Canvas,
+// ) -> Result<Box<dyn Drawable>> {
+//     // Draw all the parts separately
+//     let mut field_draws: Vec<Box<dyn Drawable>> = vec![];
+//     for x in named_struct.fields {
+//         let draw = render_value(&x, render_state, canvas)?;
+//         a_draws.push(draw);
+//     }
+//     let style = &render_state.style;
+//     if a_draws.is_empty() {
+//         a_draws.push(
+//             GSpace::new(
+//                 style.get_number_or("value.tuple.empty.w", 5.0),
+//                 style.get_number_or("value.tuple.empty.h", 5.0),
+//             )
+//             .clone_box(),
+//         );
+//     }
+//     let mut ds = DrawState::default();
+//     // Now measure the height for divider lines
+//     let h = max_height(&a_draws, &canvas)?;
+//     let sep_margin = style.get_number_or("value.tuple.separator.vmargin", 5.0);
+//     // intersperse vertical lines
+//     ds.stroke_color = style.get_color_or("value.tuple.separator.color", color("#000")?);
+//     let sep = GLine::new(point(0.0, 0.0), point(0.0, h - sep_margin), ds.clone());
+//     let sep_padding = (
+//         style.get_number_or("value.tuple.separator.padding.left", 5.0),
+//         style.get_number_or("value.tuple.separator.padding.top", 5.0),
+//         style.get_number_or("value.tuple.separator.padding.right", 5.0),
+//         style.get_number_or("value.tuple.separator.padding.bottom", 5.0),
+//     );
+//     let padded_sep = GPadding::new(Box::new(sep), sep_padding);
+//     let mut a_draws_sep: Vec<Box<dyn Drawable>> = vec![];
+//     let mut any_elems_yet = false;
+//     for x in a_draws {
+//         if any_elems_yet {
+//             a_draws_sep.push(padded_sep.clone_box());
+//         } else {
+//             any_elems_yet = true;
+//         }
+//         a_draws_sep.push(x);
+//     }
+//     let stk = hstack(a_draws_sep, canvas)?;
+//     ds.padding.0 = style.get_number_or("value.tuple.padding.left", 5.0);
+//     ds.padding.1 = style.get_number_or("value.tuple.padding.top", 5.0);
+//     ds.padding.2 = style.get_number_or("value.tuple.padding.right", 5.0);
+//     ds.padding.3 = style.get_number_or("value.tuple.padding.bottom", 5.0);
+//     ds.stroke_color = style.get_color_or("value.tuple.border.color", color("#000")?);
+//     ds.stroke.width = style.get_number_or("value.tuple.border.width", 4.0);
+//     let radius = style.get_number_or("value.tuple.border.radius", 5.0);
+//     let radius_nw = style.get_number_or("value.tuple.border.radius.nw", radius);
+//     let radius_ne = style.get_number_or("value.tuple.border.radius.ne", radius);
+//     let radius_sw = style.get_number_or("value.tuple.border.radius.sw", radius);
+//     let radius_se = style.get_number_or("value.tuple.border.radius.se", radius);
+//     ds.border_radius = (radius_nw, radius_ne, radius_se, radius_sw);
+//     let res = border(Box::new(stk), &canvas, ds)?;
+//     return Ok(res);
+// }
+
 fn render_value_number(
     v: f64,
     render_state: &mut RenderState,
@@ -335,17 +433,17 @@ mod tests {
 
         let mut rs = RenderState::default();
         rs.style.add_string("value.number.font", "mono");
-        rs.style.add_number("value.number.font_size", 22.0);
+        rs.style.add_number("value.number.font_size", 23.0);
         rs.style.add_color("value.number.color", color("#bccfa9")?);
         rs.style.add_number("value.number.padding.left", 5.0);
         rs.style.add_number("value.number.padding.top", 5.0);
         rs.style.add_number("value.number.padding.right", 5.0);
         rs.style.add_number("value.number.padding.bottom", 8.0);
         rs.style.add_string("value.char.font", "mono");
-        rs.style.add_number("value.char.font_size", 24.0);
+        rs.style.add_number("value.char.font_size", 23.0);
         rs.style.add_color("value.char.color", color("#bf947a")?);
         rs.style.add_string("value.pointer.font", "mono");
-        rs.style.add_number("value.pointer.font_size", 24.0);
+        rs.style.add_number("value.pointer.font_size", 23.0);
         rs.style.add_color("value.pointer.color", color("#ccc")?);
         rs.style.add_number("value.array.empty.w", 0.0);
         rs.style.add_number("value.array.empty.h", 20.0);
@@ -392,6 +490,14 @@ mod tests {
         rs.style.add_number("value.tuple.border.radius", 5.0);
         rs.style.add_number("value.tuple.border.radius.nw", 0.0);
         rs.style.add_number("value.tuple.border.radius.se", 0.0);
+        rs.style.add_string("def.label.font", "mono");
+        rs.style.add_number("def.label.font_size", 23.0);
+        rs.style.add_color("def.label.color", color("#b2d9fd")?);
+        rs.style.add_string("def.separator.font", "mono");
+        rs.style.add_number("def.separator.font_size", 23.0);
+        rs.style.add_color("def.separator.color", color("#ccc")?);
+        rs.style.add_string("def.separator.text", ":");
+
 
         let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas)?;
         v.translate(point(200.0, 200.0));
@@ -429,6 +535,17 @@ mod tests {
             &canvas,
         )?;
         v.translate(point(350.0, 200.0));
+        v.draw(&mut canvas)?;
+
+        let mut v = render_def(
+            &Def{
+                label: "a".to_string(),
+                value: Value::Number(7.0),
+            },
+            &mut rs,
+            &canvas,
+        )?;
+        v.translate(point(200.0, 300.0));
         v.draw(&mut canvas)?;
 
         canvas.save("test_render_value.png")?;

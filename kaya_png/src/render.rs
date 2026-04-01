@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use tiny_skia::{Color, ColorU8};
 
 use crate::canvas::Canvas;
-use crate::draw::{Drawable, GPadding, GText, GLine, hstack};
+use crate::draw::{Drawable, GPadding, GText, GLine, border, hstack};
 use crate::draw_state::DrawState;
 use crate::style::Styling;
 
@@ -44,7 +44,6 @@ pub fn render_value(value: &Value, render_state: &mut RenderState, canvas: &Canv
             let text = format!("{}", v);
             let gtxt = GText::new(&text, point(0.0, 0.0), ds);
             let padded_gtxt = GPadding::new(Box::new(gtxt), padding);
-
             return Ok(Box::new(padded_gtxt));
         }
         Value::Char(c) => {
@@ -73,10 +72,10 @@ pub fn render_value(value: &Value, render_state: &mut RenderState, canvas: &Canv
             let style = &render_state.style;
             // Now measure the height for divider lines
             let h = max_height(&a_draws, &canvas)?;
-            let sep_margin = style.get_number_or("value.array.separator.margin", 5.0);
+            let sep_margin = style.get_number_or("value.array.separator.vmargin", 5.0);
             // intersperse vertical lines
             ds.stroke_color = style.get_color_or("value.array.separator.color", black);
-            let sep = Box::new(GLine::new(point(0.0, 0.0), point(0.0, h - sep_margin), ds));
+            let sep = Box::new(GLine::new(point(0.0, 0.0), point(0.0, h - sep_margin), ds.clone()));
             let mut a_draws_sep: Vec<Box<dyn Drawable>> = vec![];
             let mut any_elems_yet = false;
             for x in a_draws {
@@ -87,7 +86,13 @@ pub fn render_value(value: &Value, render_state: &mut RenderState, canvas: &Canv
                 }
                 a_draws_sep.push(x);
             }
-            return Ok(Box::new(hstack(a_draws_sep, canvas)?));
+            let stk = hstack(a_draws_sep, canvas)?;
+            ds.padding.0 = style.get_number_or("value.array.padding.left", 5.0);
+            ds.padding.1 = style.get_number_or("value.array.padding.top", 5.0);
+            ds.padding.2 = style.get_number_or("value.array.padding.right", 5.0);
+            ds.padding.3 = style.get_number_or("value.array.padding.bottom", 5.0);
+            let res = border(Box::new(stk), &canvas, ds)?;
+            return Ok(res);
         }
         _ => panic!("not handled"),
     }
@@ -204,7 +209,7 @@ mod tests {
         let mut canvas = Canvas::new(800, 800)?;
         canvas
             .pixmap
-            .fill(Color::from_rgba(0.2, 0.2, 0.2, 1.0).unwrap());
+            .fill(Color::from_rgba(0.121, 0.121, 0.121, 1.0).unwrap());
         canvas.load_font(
             "mono",
             include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf"),
@@ -215,6 +220,10 @@ mod tests {
         rs.style.add_string("value.number.font", "mono");
         rs.style.add_number("value.number.font_size", 24.0);
         rs.style.add_color("value.number.color", color("#bccfa9")?);
+        rs.style.add_number("value.number.padding.left", 5.0);
+        rs.style.add_number("value.number.padding.top", 5.0);
+        rs.style.add_number("value.number.padding.right", 5.0);
+        rs.style.add_number("value.number.padding.bottom", 8.0);
 
         let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas)?;
         v.translate(point(200.0, 200.0));
@@ -246,7 +255,11 @@ mod tests {
         v.draw(&mut canvas)?;
 
         rs.style.add_color("value.array.separator.color", color("#7197d580")?);
-        rs.style.add_number("value.array.separator.margin", 0.0);
+        rs.style.add_number("value.array.separator.vmargin", 5.0);
+        rs.style.add_number("value.array.padding.left", 5.0);
+        rs.style.add_number("value.array.padding.top", 2.0);
+        rs.style.add_number("value.array.padding.right", 5.0);
+        rs.style.add_number("value.array.padding.bottom", 2.0);
 
         let mut v = render_value(&Value::Array(vec![
             Value::Number(42.0),

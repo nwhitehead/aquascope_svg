@@ -70,7 +70,11 @@ fn render_value_array(
     ds.stroke_color = style.get_color_or("value.array.border.color", color("#000")?);
     ds.stroke.width = style.get_number_or("value.array.border.width", 4.0);
     let radius = style.get_number_or("value.array.border.radius", 5.0);
-    ds.border_radius = (radius, radius, radius, radius);
+    let radius_nw = style.get_number_or("value.array.border.radius.nw", radius);
+    let radius_ne = style.get_number_or("value.array.border.radius.ne", radius);
+    let radius_sw = style.get_number_or("value.array.border.radius.sw", radius);
+    let radius_se = style.get_number_or("value.array.border.radius.se", radius);
+    ds.border_radius = (radius_nw, radius_ne, radius_se, radius_sw);
     let res = border(Box::new(stk), &canvas, ds)?;
     return Ok(res);
 }
@@ -119,7 +123,11 @@ fn render_value_tuple(
     ds.stroke_color = style.get_color_or("value.tuple.border.color", color("#000")?);
     ds.stroke.width = style.get_number_or("value.tuple.border.width", 4.0);
     let radius = style.get_number_or("value.tuple.border.radius", 5.0);
-    ds.border_radius = (radius, radius, radius, radius);
+    let radius_nw = style.get_number_or("value.tuple.border.radius.nw", radius);
+    let radius_ne = style.get_number_or("value.tuple.border.radius.ne", radius);
+    let radius_sw = style.get_number_or("value.tuple.border.radius.sw", radius);
+    let radius_se = style.get_number_or("value.tuple.border.radius.se", radius);
+    ds.border_radius = (radius_nw, radius_ne, radius_se, radius_sw);
     let res = border(Box::new(stk), &canvas, ds)?;
     return Ok(res);
 }
@@ -359,6 +367,8 @@ mod tests {
             .add_color("value.tuple.border.color", color("#b785c0")?);
         rs.style.add_number("value.tuple.border.width", 1.5);
         rs.style.add_number("value.tuple.border.radius", 5.0);
+        rs.style.add_number("value.tuple.border.radius.nw", 0.0);
+        rs.style.add_number("value.tuple.border.radius.se", 0.0);
 
         let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas)?;
         v.translate(point(200.0, 200.0));
@@ -385,7 +395,11 @@ mod tests {
             &Value::Array(vec![
                 Value::Number(42.0),
                 Value::Number(67.0),
-                Value::Tuple(vec![Value::Number(3.0), Value::Number(4.0)]),
+                Value::Tuple(vec![
+                    Value::Number(3.0),
+                    Value::Number(4.0),
+                    Value::Array(vec![]),
+                ]),
             ]),
             &mut rs,
             &canvas,

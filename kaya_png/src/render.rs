@@ -4,7 +4,9 @@ use std::collections::HashMap;
 use tiny_skia::{Color, ColorU8};
 
 use crate::canvas::Canvas;
-use crate::draw::{Drawable, FormulaType, GArray, GLine, GPadding, GSpace, GText, border, compute_align, hstack};
+use crate::draw::{
+    Drawable, FormulaType, GArray, GLine, GPadding, GSpace, GText, border, compute_align, hstack,
+};
 use crate::draw_state::DrawState;
 use crate::style::Styling;
 
@@ -191,7 +193,12 @@ fn render_def(
     // Move label left to align right side to separator
     let label_bb = g_label.bounding_box(canvas)?;
     let sep_bb = g_padded_sep.bounding_box(canvas)?;
-    let p = compute_align(&label_bb, &sep_bb, FormulaType::Sequenced, FormulaType::Centered);
+    let p = compute_align(
+        &label_bb,
+        &sep_bb,
+        FormulaType::Sequenced,
+        FormulaType::Centered,
+    );
     g_label.translate(point(-p.x, -p.y));
     let mut left = GArray::new();
     left.push(Box::new(g_label));
@@ -213,7 +220,12 @@ fn render_def(
     let value_bb = g_value.bounding_box(canvas)?;
     println!("left_bb = {:?}", &left_bb);
     println!("value_bb = {:?}", &value_bb);
-    let p = compute_align(&left_bb, &value_bb, FormulaType::Sequenced, FormulaType::Centered);
+    let p = compute_align(
+        &left_bb,
+        &value_bb,
+        FormulaType::Sequenced,
+        FormulaType::Centered,
+    );
     g_value.translate(p);
 
     let mut g_array = GArray::new();
@@ -538,7 +550,6 @@ mod tests {
         rs.style.add_number("def.separator.padding.right", 3.0);
         rs.style.add_number("def.left.padding.bottom", 3.0);
 
-
         let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas)?;
         v.translate(point(200.0, 200.0));
         v.draw(&mut canvas)?;
@@ -578,7 +589,7 @@ mod tests {
         v.draw(&mut canvas)?;
 
         let mut v = render_def(
-            &Def{
+            &Def {
                 label: "a".to_string(),
                 value: Value::Number(7.0),
             },

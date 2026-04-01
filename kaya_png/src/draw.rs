@@ -374,8 +374,20 @@ pub fn compute_align(
     tx_formula: FormulaType,
     ty_formula: FormulaType,
 ) -> Point {
-    let tx = apply_formula(&tx_formula, left.min.x, left.max.x, right.min.x, right.max.x);
-    let ty = apply_formula(&ty_formula, left.min.y, left.max.y, right.min.y, right.max.y);
+    let tx = apply_formula(
+        &tx_formula,
+        left.min.x,
+        left.max.x,
+        right.min.x,
+        right.max.x,
+    );
+    let ty = apply_formula(
+        &ty_formula,
+        left.min.y,
+        left.max.y,
+        right.min.y,
+        right.max.y,
+    );
     point(tx, ty)
 }
 

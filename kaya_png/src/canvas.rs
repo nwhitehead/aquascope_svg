@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use ab_glyph::{Font, Glyph, Point, Rect, ScaleFont, point};
 use ab_glyph::{FontVec, PxScale};
 use anyhow::{Context, Result, bail};
-use tiny_skia::{ColorU8, Pixmap, PremultipliedColorU8};
+use tiny_skia::{Pixmap, PremultipliedColorU8};
 
 use crate::draw_state::DrawState;
 

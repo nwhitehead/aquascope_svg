@@ -10,7 +10,7 @@ use crate::draw::{
 use crate::draw_state::DrawState;
 use crate::style::Styling;
 
-use kaya_lib::states::{Def, Ptr, Value};
+use kaya_lib::states::{Def, Ptr, Value, NamedStruct};
 
 #[derive(Clone, Debug, Default)]
 pub struct RenderState {
@@ -190,71 +190,89 @@ fn render_def(
     let mut g_array = GArray::new();
     g_array.push(Box::new(g_left));
     g_array.push(g_border_value);
-    //let padded_gtxt = GPadding::new(Box::new(gtxt), padding);
     Ok(Box::new(g_array))
 }
 
-// fn render_value_struct(
-//     named_struct: &NamedStruct,
-//     render_state: &mut RenderState,
-//     canvas: &Canvas,
-// ) -> Result<Box<dyn Drawable>> {
-//     // Draw all the parts separately
-//     let mut field_draws: Vec<Box<dyn Drawable>> = vec![];
-//     for x in named_struct.fields {
-//         let draw = render_value(&x, render_state, canvas)?;
-//         a_draws.push(draw);
-//     }
-//     let style = &render_state.style;
-//     if a_draws.is_empty() {
-//         a_draws.push(
-//             GSpace::new(
-//                 style.get_number_or("value.tuple.empty.w", 5.0),
-//                 style.get_number_or("value.tuple.empty.h", 5.0),
-//             )
-//             .clone_box(),
-//         );
-//     }
-//     let mut ds = DrawState::default();
-//     // Now measure the height for divider lines
-//     let h = max_height(&a_draws, &canvas)?;
-//     let sep_margin = style.get_number_or("value.tuple.separator.vmargin", 5.0);
-//     // intersperse vertical lines
-//     ds.stroke_color = style.get_color_or("value.tuple.separator.color", color("#000")?);
-//     let sep = GLine::new(point(0.0, 0.0), point(0.0, h - sep_margin), ds.clone());
-//     let sep_padding = (
-//         style.get_number_or("value.tuple.separator.padding.left", 5.0),
-//         style.get_number_or("value.tuple.separator.padding.top", 5.0),
-//         style.get_number_or("value.tuple.separator.padding.right", 5.0),
-//         style.get_number_or("value.tuple.separator.padding.bottom", 5.0),
-//     );
-//     let padded_sep = GPadding::new(Box::new(sep), sep_padding);
-//     let mut a_draws_sep: Vec<Box<dyn Drawable>> = vec![];
-//     let mut any_elems_yet = false;
-//     for x in a_draws {
-//         if any_elems_yet {
-//             a_draws_sep.push(padded_sep.clone_box());
-//         } else {
-//             any_elems_yet = true;
-//         }
-//         a_draws_sep.push(x);
-//     }
-//     let stk = hstack(a_draws_sep, canvas)?;
-//     ds.padding.0 = style.get_number_or("value.tuple.padding.left", 5.0);
-//     ds.padding.1 = style.get_number_or("value.tuple.padding.top", 5.0);
-//     ds.padding.2 = style.get_number_or("value.tuple.padding.right", 5.0);
-//     ds.padding.3 = style.get_number_or("value.tuple.padding.bottom", 5.0);
-//     ds.stroke_color = style.get_color_or("value.tuple.border.color", color("#000")?);
-//     ds.stroke.width = style.get_number_or("value.tuple.border.width", 4.0);
-//     let radius = style.get_number_or("value.tuple.border.radius", 5.0);
-//     let radius_nw = style.get_number_or("value.tuple.border.radius.nw", radius);
-//     let radius_ne = style.get_number_or("value.tuple.border.radius.ne", radius);
-//     let radius_sw = style.get_number_or("value.tuple.border.radius.sw", radius);
-//     let radius_se = style.get_number_or("value.tuple.border.radius.se", radius);
-//     ds.border_radius = (radius_nw, radius_ne, radius_se, radius_sw);
-//     let res = border(Box::new(stk), &canvas, ds)?;
-//     return Ok(res);
-// }
+fn render_value_struct(
+    named_struct: &NamedStruct,
+    render_state: &mut RenderState,
+    canvas: &Canvas,
+) -> Result<Box<dyn Drawable>> {
+    let style = &render_state.style;
+    let mut ds = DrawState::default();
+    ds.font = style.get_string_or("value.struct.name.font", "mono");
+    ds.font_size = style.get_number_or("value.struct.name.font_size", 24.0);
+    ds.text_color = style.get_color_or("value.struct.name.color", color("#000")?);
+
+    let mut g_name = GText::new(&named_struct.name, point(0.0, 0.0), ds.clone());
+
+    let mut body: Vec<Box<dyn Drawable>> = vec![];
+
+    for p in &named_struct.fields {
+        let label = &p.0;
+        let value = &p.1;
+        ds.font = style.get_string_or("value.struct.label.font", "mono");
+        ds.font_size = style.get_number_or("value.struct.label.font_size", 24.0);
+        ds.text_color = style.get_color_or("value.struct.label.color", color("#000")?);
+        let mut g_label = GText::new(&label, point(0.0, 0.0), ds.clone());
+
+        ds.font = style.get_string_or("value.struct.separator.font", "mono");
+        ds.font_size = style.get_number_or("value.struct.separator.font_size", 24.0);
+        ds.text_color = style.get_color_or("value.struct.separator.color", color("#000")?);
+        let sep_text = style.get_string_or("value.struct.separator.text", ":");
+        let g_separator = GText::new(&sep_text, point(0.0, 0.0), ds.clone());
+
+        let sep_padding = style.get_padding("value.struct.separator.padding", 0.0);
+        let g_padded_sep = GPadding::new(Box::new(g_separator), sep_padding);
+        body.push(Box::new(g_label));
+    }
+    let g_body = hstack(body, canvas)?;
+
+    ds.padding = style.get_padding("value.struct.padding", 0.0);
+    ds.margin = style.get_padding("value.struct.margin", 0.0);
+    ds.stroke_color = style.get_color_or("value.struct.border.color", color("#000")?);
+    ds.stroke.width = style.get_number_or("value.struct.border.width", 4.0);
+    ds.border_radius = style.get_radius("value.struct.border.radius", 5.0);
+    let g_border_body = border(Box::new(g_body), canvas, ds.clone())?;
+
+    // let label_bb = g_label.bounding_box(canvas)?;
+    // let sep_bb = g_padded_sep.bounding_box(canvas)?;
+    // let p = compute_align(
+    //     &label_bb,
+    //     &sep_bb,
+    //     FormulaType::Sequenced,
+    //     FormulaType::Centered,
+    // );
+    // g_label.translate(point(-p.x, -p.y));
+    // let mut left = GArray::new();
+    // left.push(Box::new(g_label));
+    // left.push(Box::new(g_padded_sep));
+
+    // let left_padding = style.get_padding("def.left.padding", 0.0);
+    // let g_left = GPadding::new(Box::new(left), left_padding);
+    // let left_bb = g_left.bounding_box(canvas)?;
+
+    // ds.padding = style.get_padding("def.value.padding", 0.0);
+    // ds.margin = style.get_padding("def.value.margin", 0.0);
+    // ds.stroke_color = style.get_color_or("def.value.border.color", color("#000")?);
+    // ds.stroke.width = style.get_number_or("def.value.border.width", 4.0);
+    // ds.border_radius = style.get_radius("def.value.border.radius", 5.0);
+    // let g_value = render_value(&def.value, render_state, canvas)?;
+    // let mut g_border_value = border(g_value, canvas, ds.clone())?;
+
+    // // Now align the value to right of separator, centered vertically
+    // let value_bb = g_border_value.bounding_box(canvas)?;
+    // let p = compute_align(
+    //     &left_bb,
+    //     &value_bb,
+    //     FormulaType::Sequenced,
+    //     FormulaType::Centered,
+    // );
+    // g_border_value.translate(p);
+
+    let g_array = hstack(vec![Box::new(g_name), g_border_body], canvas)?;
+    Ok(Box::new(g_array))
+}
 
 fn render_value_number(
     v: f64,
@@ -317,6 +335,7 @@ pub fn render_value(
         Value::Pointer(p) => Ok(render_value_pointer(p, render_state, canvas)?),
         Value::Array(a) => Ok(render_value_array(a, render_state, canvas)?),
         Value::Tuple(a) => Ok(render_value_tuple(a, render_state, canvas)?),
+        Value::Struct(a) => Ok(render_value_struct(a, render_state, canvas)?),
         _ => panic!("not handled"),
     }
 }
@@ -453,6 +472,7 @@ mod tests {
         rs.style.add_string("value.pointer.font", "mono");
         rs.style.add_number("value.pointer.font_size", 23.0);
         rs.style.add_color("value.pointer.color", color("#ccc")?);
+
         rs.style.add_number("value.array.empty.w", 0.0);
         rs.style.add_number("value.array.empty.h", 20.0);
         rs.style
@@ -498,6 +518,7 @@ mod tests {
         rs.style.add_number("value.tuple.border.radius", 5.0);
         rs.style.add_number("value.tuple.border.radius.nw", 0.0);
         rs.style.add_number("value.tuple.border.radius.se", 0.0);
+
         rs.style.add_string("def.label.font", "mono");
         rs.style.add_number("def.label.font_size", 23.0);
         rs.style.add_color("def.label.color", color("#b2d9fd")?);
@@ -513,6 +534,26 @@ mod tests {
         rs.style.add_color("def.value.border.color", color("#282828")?);
         rs.style.add_number("def.value.border.width", 1.5);
         rs.style.add_number("def.value.border.radius", 5.0);
+
+        rs.style.add_string("value.struct.name.font", "mono");
+        rs.style.add_number("value.struct.name.font_size", 23.0);
+        rs.style.add_color("value.struct.name.color", color("#7fc8b0")?);
+        rs.style.add_string("value.struct.label.font", "mono");
+        rs.style.add_number("value.struct.label.font_size", 23.0);
+        rs.style.add_color("value.struct.label.color", color("#7fc8b0")?);
+        rs.style.add_string("value.struct.separator.font", "mono");
+        rs.style.add_number("value.struct.separator.font_size", 23.0);
+        rs.style.add_color("value.struct.separator.color", color("#ccc")?);
+        rs.style.add_string("value.struct.separator.text", ":");
+        rs.style.add_number("value.struct.separator.padding.left", 3.0);
+        rs.style.add_number("value.struct.separator.padding.right", 3.0);
+
+        rs.style.add_number("value.struct.padding", 10.0);
+        rs.style.add_number("value.struct.margin.left", 10.0);
+        rs.style
+            .add_color("value.struct.border.color", color("#789a56")?);
+        rs.style.add_number("value.struct.border.width", 1.5);
+        rs.style.add_number("value.struct.border.radius", 5.0);
 
         let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas)?;
         v.translate(point(200.0, 200.0));
@@ -568,12 +609,15 @@ mod tests {
         let mut v = render_def(
             &Def {
                 label: "x".to_string(),
-                value: Value::Number(42.0),
+                value: Value::Struct( NamedStruct { name: "Rect".to_string(), fields: vec![
+                    ("pos".to_string(), Value::Number(42.0)),
+                    ("w".to_string(), Value::Number(3.0)),
+                ] }),
             },
             &mut rs,
             &canvas,
         )?;
-        v.translate(point(200.0, 350.0));
+        v.translate(point(200.0, 380.0));
         v.draw(&mut canvas)?;
 
         canvas.save("test_render_value.png")?;

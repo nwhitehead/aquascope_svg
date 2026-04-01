@@ -26,15 +26,64 @@ fn max_height(values: &Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<f32> {
     Ok(res)
 }
 
+fn render_value_array(
+    a: &Vec<Value>,
+    render_state: &mut RenderState,
+    canvas: &Canvas,
+) -> Result<Box<dyn Drawable>> {
+    // Draw all the parts separately
+    let mut a_draws: Vec<Box<dyn Drawable>> = vec![];
+    for x in a {
+        let draw = render_value(&x, render_state, canvas)?;
+        a_draws.push(draw);
+    }
+    let style = &render_state.style;
+    let mut ds = DrawState::default();
+    // Now measure the height for divider lines
+    let h = max_height(&a_draws, &canvas)?;
+    let sep_margin = style.get_number_or("value.array.separator.vmargin", 5.0);
+    // intersperse vertical lines
+    ds.stroke_color = style.get_color_or("value.array.separator.color", color("#000")?);
+    let sep = GLine::new(point(0.0, 0.0), point(0.0, h - sep_margin), ds.clone());
+    let sep_padding = (
+        style.get_number_or("value.array.separator.padding.left", 5.0),
+        style.get_number_or("value.array.separator.padding.top", 5.0),
+        style.get_number_or("value.array.separator.padding.right", 5.0),
+        style.get_number_or("value.array.separator.padding.bottom", 5.0),
+    );
+    let padded_sep = GPadding::new(Box::new(sep), sep_padding);
+    let mut a_draws_sep: Vec<Box<dyn Drawable>> = vec![];
+    let mut any_elems_yet = false;
+    for x in a_draws {
+        if any_elems_yet {
+            a_draws_sep.push(padded_sep.clone_box());
+        } else {
+            any_elems_yet = true;
+        }
+        a_draws_sep.push(x);
+    }
+    let stk = hstack(a_draws_sep, canvas)?;
+    ds.padding.0 = style.get_number_or("value.array.padding.left", 5.0);
+    ds.padding.1 = style.get_number_or("value.array.padding.top", 5.0);
+    ds.padding.2 = style.get_number_or("value.array.padding.right", 5.0);
+    ds.padding.3 = style.get_number_or("value.array.padding.bottom", 5.0);
+    ds.stroke_color = style.get_color_or("value.array.border.color", color("#000")?);
+    ds.stroke.width = style.get_number_or("value.array.border.width", 4.0);
+    let radius = style.get_number_or("value.array.border.radius", 5.0);
+    ds.border_radius = (radius, radius, radius, radius);
+    let res = border(Box::new(stk), &canvas, ds)?;
+    return Ok(res);
+}
+
 pub fn render_value(
     value: &Value,
     render_state: &mut RenderState,
     canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
-    let style = &render_state.style;
-    let mut ds = DrawState::default();
     match value {
         Value::Number(v) => {
+            let style = &render_state.style;
+            let mut ds = DrawState::default();
             ds.font = style.get_string_or("value.number.font", "mono");
             ds.text_color = style.get_color_or("value.number.color", color("#000")?);
             ds.font_size = style.get_number_or("value.number.font_size", 24.0);
@@ -46,67 +95,28 @@ pub fn render_value(
             let text = format!("{}", v);
             let gtxt = GText::new(&text, point(0.0, 0.0), ds);
             let padded_gtxt = GPadding::new(Box::new(gtxt), padding);
-            return Ok(Box::new(padded_gtxt));
+            Ok(Box::new(padded_gtxt))
         }
         Value::Char(c) => {
+            let style = &render_state.style;
+            let mut ds = DrawState::default();
             ds.font = style.get_string_or("value.char.font", "mono");
             ds.text_color = style.get_color_or("value.char.color", color("#000")?);
             ds.font_size = style.get_number_or("value.char.font_size", 24.0);
             let text = format!("'{}'", c);
-            return Ok(Box::new(GText::new(&text, point(0.0, 0.0), ds)));
+            Ok(Box::new(GText::new(&text, point(0.0, 0.0), ds)))
         }
         Value::Pointer(p) => {
+            let style = &render_state.style;
+            let mut ds = DrawState::default();
             ds.font = style.get_string_or("value.pointer.font", "mono");
             ds.text_color = style.get_color_or("value.pointer.color", color("#000")?);
             ds.font_size = style.get_number_or("value.pointer.font_size", 24.0);
             // ✕✖✗✘×•●○◯42
             let text = "●";
-            return Ok(Box::new(GText::new(&text, point(0.0, 0.0), ds)));
+            Ok(Box::new(GText::new(&text, point(0.0, 0.0), ds)))
         }
-        Value::Array(a) => {
-            // Draw all the parts separately
-            let mut a_draws: Vec<Box<dyn Drawable>> = vec![];
-            for x in a {
-                let draw = render_value(&x, render_state, canvas)?;
-                a_draws.push(draw);
-            }
-            // reborrow style again
-            let style = &render_state.style;
-            // Now measure the height for divider lines
-            let h = max_height(&a_draws, &canvas)?;
-            let sep_margin = style.get_number_or("value.array.separator.vmargin", 5.0);
-            // intersperse vertical lines
-            ds.stroke_color = style.get_color_or("value.array.separator.color", color("#000")?);
-            let sep = GLine::new(point(0.0, 0.0), point(0.0, h - sep_margin), ds.clone());
-            let sep_padding = (
-                style.get_number_or("value.array.separator.padding.left", 5.0),
-                style.get_number_or("value.array.separator.padding.top", 5.0),
-                style.get_number_or("value.array.separator.padding.right", 5.0),
-                style.get_number_or("value.array.separator.padding.bottom", 5.0),
-            );
-            let padded_sep = GPadding::new(Box::new(sep), sep_padding);
-            let mut a_draws_sep: Vec<Box<dyn Drawable>> = vec![];
-            let mut any_elems_yet = false;
-            for x in a_draws {
-                if any_elems_yet {
-                    a_draws_sep.push(padded_sep.clone_box());
-                } else {
-                    any_elems_yet = true;
-                }
-                a_draws_sep.push(x);
-            }
-            let stk = hstack(a_draws_sep, canvas)?;
-            ds.padding.0 = style.get_number_or("value.array.padding.left", 5.0);
-            ds.padding.1 = style.get_number_or("value.array.padding.top", 5.0);
-            ds.padding.2 = style.get_number_or("value.array.padding.right", 5.0);
-            ds.padding.3 = style.get_number_or("value.array.padding.bottom", 5.0);
-            ds.stroke_color = style.get_color_or("value.array.border.color", color("#000")?);
-            ds.stroke.width = style.get_number_or("value.array.border.width", 4.0);
-            let radius = style.get_number_or("value.array.border.radius", 5.0);
-            ds.border_radius = (radius, radius, radius, radius);
-            let res = border(Box::new(stk), &canvas, ds)?;
-            return Ok(res);
-        }
+        Value::Array(a) => Ok(render_value_array(&a, render_state, &canvas)?),
         _ => panic!("not handled"),
     }
 }

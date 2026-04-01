@@ -214,6 +214,25 @@ fn render_def(
     let g_left = GPadding::new(Box::new(left), left_padding);
     let left_bb = g_left.bounding_box(canvas)?;
 
+    let v_pad = style.get_number_or("def.value.padding", 0.0);
+    let v_padding = (
+        style.get_number_or("def.value.padding.left", v_pad),
+        style.get_number_or("def.value.padding.top", v_pad),
+        style.get_number_or("def.value.padding.right", v_pad),
+        style.get_number_or("def.value.padding.bottom", v_pad),
+    );
+
+    let v_margin = style.get_number_or("def.value.margin", 0.0);
+    let v_margins = (
+        style.get_number_or("def.value.margin.left", v_margin),
+        style.get_number_or("def.value.margin.top", v_margin),
+        style.get_number_or("def.value.margin.right", v_margin),
+        style.get_number_or("def.value.margin.bottom", v_margin),
+    );
+    ds.margin = v_margins;
+    ds.padding = v_padding;
+    ds.stroke_color = style.get_color_or("def.value.border.color", color("#000")?);
+
     let mut g_value = render_value(&def.value, render_state, canvas)?;
 
     // Now align the value to right of separator, centered vertically
@@ -549,6 +568,8 @@ mod tests {
         rs.style.add_number("def.separator.padding.left", 3.0);
         rs.style.add_number("def.separator.padding.right", 3.0);
         rs.style.add_number("def.left.padding.bottom", 3.0);
+        rs.style.add_number("def.value.padding", 3.0);
+        rs.style.add_number("def.value.margin", 3.0);
 
         let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas)?;
         v.translate(point(200.0, 200.0));

@@ -1,7 +1,5 @@
-use ab_glyph::{Font, Glyph, Point, Rect, ScaleFont, point};
-use ab_glyph::{FontVec, PxScale};
+use ab_glyph::{Point, Rect, point};
 use anyhow::{Result, bail};
-use std::collections::HashMap;
 use tiny_skia::{ColorU8, Paint, PathBuilder, Stroke, Transform};
 
 use crate::canvas::Canvas;
@@ -42,7 +40,7 @@ impl Drawable for GText {
         Ok(r)
     }
     fn draw(&self, canvas: &mut Canvas) -> Result<()> {
-        Ok(canvas.draw_text(&self.text, self.position, &self.state)?)
+        canvas.draw_text(&self.text, self.position, &self.state)
     }
     fn clone_box(&self) -> Box<dyn Drawable> {
         Box::new(self.clone())
@@ -67,7 +65,7 @@ impl Drawable for GLine {
         self.start += t;
         self.end += t;
     }
-    fn bounding_box(&self, canvas: &Canvas) -> Result<Rect> {
+    fn bounding_box(&self, _canvas: &Canvas) -> Result<Rect> {
         let p0 = self.start;
         let p1 = self.end;
         Ok(Rect {
@@ -139,7 +137,7 @@ impl Drawable for GBox {
         self.r.min += t;
         self.r.max += t;
     }
-    fn bounding_box(&self, canvas: &Canvas) -> Result<Rect> {
+    fn bounding_box(&self, _canvas: &Canvas) -> Result<Rect> {
         Ok(self.r)
     }
     fn draw(&self, canvas: &mut Canvas) -> Result<()> {
@@ -253,10 +251,10 @@ impl Drawable for GSpace {
         self.r.min += t;
         self.r.max += t;
     }
-    fn bounding_box(&self, canvas: &Canvas) -> Result<Rect> {
+    fn bounding_box(&self, _canvas: &Canvas) -> Result<Rect> {
         Ok(self.r)
     }
-    fn draw(&self, canvas: &mut Canvas) -> Result<()> {
+    fn draw(&self, _canvas: &mut Canvas) -> Result<()> {
         Ok(())
     }
     fn clone_box(&self) -> Box<dyn Drawable> {
@@ -281,7 +279,7 @@ impl Drawable for GPadding {
         self.item.translate(t);
     }
     fn bounding_box(&self, canvas: &Canvas) -> Result<Rect> {
-        let mut bb = self.item.bounding_box(&canvas)?;
+        let mut bb = self.item.bounding_box(canvas)?;
         bb.min.x -= self.padding.0;
         bb.min.y -= self.padding.1;
         bb.max.x += self.padding.2;
@@ -289,7 +287,7 @@ impl Drawable for GPadding {
         Ok(bb)
     }
     fn draw(&self, canvas: &mut Canvas) -> Result<()> {
-        Ok(self.item.draw(canvas)?)
+        self.item.draw(canvas)
     }
     fn clone_box(&self) -> Box<dyn Drawable> {
         Box::new(GPadding {
@@ -325,7 +323,7 @@ impl Drawable for GArray {
             max: point(-1000.0, -1000.0),
         };
         for item in &self.items {
-            let bb = item.bounding_box(&canvas)?;
+            let bb = item.bounding_box(canvas)?;
             rbb.min.x = rbb.min.x.min(bb.min.x);
             rbb.min.y = rbb.min.y.min(bb.min.y);
             rbb.max.x = rbb.max.x.max(bb.max.x);
@@ -400,7 +398,7 @@ fn stack_general(
     let mut bb: Option<Rect> = None;
     let mut c = GArray::new();
     for mut item in items {
-        let item_bb = item.bounding_box(canvas)?.clone();
+        let item_bb = item.bounding_box(canvas)?;
         if let Some(ref b) = bb {
             let tx = apply_formula(&tx_formula, b.min.x, b.max.x, item_bb.min.x, item_bb.max.x);
             let ty = apply_formula(&ty_formula, b.min.y, b.max.y, item_bb.min.y, item_bb.max.y);
@@ -423,60 +421,60 @@ fn stack_general(
     Ok(c)
 }
 pub fn stack(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
-    Ok(stack_general(
+    stack_general(
         items,
         FormulaType::Centered,
         FormulaType::Centered,
         canvas,
-    )?)
+    )
 }
 pub fn hstack(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
-    Ok(stack_general(
+    stack_general(
         items,
         FormulaType::Sequenced,
         FormulaType::Centered,
         canvas,
-    )?)
+    )
 }
 pub fn hstack_top(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
-    Ok(stack_general(
+    stack_general(
         items,
         FormulaType::Sequenced,
         FormulaType::AlignLow,
         canvas,
-    )?)
+    )
 }
 pub fn hstack_bottom(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
-    Ok(stack_general(
+    stack_general(
         items,
         FormulaType::Sequenced,
         FormulaType::AlignHigh,
         canvas,
-    )?)
+    )
 }
 pub fn vstack(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
-    Ok(stack_general(
+    stack_general(
         items,
         FormulaType::Centered,
         FormulaType::Sequenced,
         canvas,
-    )?)
+    )
 }
 pub fn vstack_left(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
-    Ok(stack_general(
+    stack_general(
         items,
         FormulaType::AlignLow,
         FormulaType::Sequenced,
         canvas,
-    )?)
+    )
 }
 pub fn vstack_right(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
-    Ok(stack_general(
+    stack_general(
         items,
         FormulaType::AlignHigh,
         FormulaType::Sequenced,
         canvas,
-    )?)
+    )
 }
 
 pub fn outline(r: Rect, d: f32) -> Rect {

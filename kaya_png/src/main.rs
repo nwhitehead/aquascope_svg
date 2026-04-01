@@ -78,7 +78,7 @@ fn main() -> Result<()> {
         }
         let contents = fs::read_to_string(&input_filename)
             .map_err(|err| anyhow!("{}, could not read input filename: {}", err, input_filename))?;
-        let program = parse(&contents)?;
+        let _program = parse(&contents)?;
 
         // TODO
     }

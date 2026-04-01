@@ -87,7 +87,7 @@ impl Canvas {
         };
         let font = font.as_scaled(PxScale::from(state.font_size));
         let mut glyphs = vec![];
-        let caret = self.layout_text(text, point(0.0, 0.0), &state, &mut glyphs)?;
+        let caret = self.layout_text(text, point(0.0, 0.0), state, &mut glyphs)?;
         Ok(Rect {
             min: point(0.0, -font.ascent()),
             max: caret,
@@ -99,7 +99,7 @@ impl Canvas {
         };
         let font = font.as_scaled(PxScale::from(state.font_size));
         let mut glyphs = vec![];
-        let _ = self.layout_text(text, position, &state, &mut glyphs)?;
+        let _ = self.layout_text(text, position, state, &mut glyphs)?;
         let outlined: Vec<_> = glyphs
             .into_iter()
             .filter_map(|g| font.outline_glyph(g))

@@ -1,7 +1,7 @@
-use ab_glyph::{Point, Rect, point};
+use ab_glyph::{Rect, point};
 use anyhow::{Result, bail};
 use std::collections::HashMap;
-use tiny_skia::{Color, ColorU8};
+use tiny_skia::ColorU8;
 
 use crate::canvas::Canvas;
 use crate::draw::{
@@ -10,7 +10,7 @@ use crate::draw::{
 use crate::draw_state::DrawState;
 use crate::style::Styling;
 
-use kaya_lib::states::{Def, Location, Program, Ptr, Region, Step, Value};
+use kaya_lib::states::{Def, Ptr, Value};
 
 #[derive(Clone, Debug, Default)]
 pub struct RenderState {
@@ -21,7 +21,7 @@ pub struct RenderState {
 fn max_height(values: &Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<f32> {
     let mut res: f32 = 0.0;
     for value in values {
-        let bb = value.bounding_box(&canvas)?;
+        let bb = value.bounding_box(canvas)?;
         let h = bb.max.y - bb.min.y;
         res = res.max(h);
     }
@@ -36,7 +36,7 @@ fn render_value_array(
     // Draw all the parts separately
     let mut a_draws: Vec<Box<dyn Drawable>> = vec![];
     for x in a {
-        let draw = render_value(&x, render_state, canvas)?;
+        let draw = render_value(x, render_state, canvas)?;
         a_draws.push(draw);
     }
     let style = &render_state.style;
@@ -51,7 +51,7 @@ fn render_value_array(
     }
     let mut ds = DrawState::default();
     // Now measure the height for divider lines
-    let h = max_height(&a_draws, &canvas)?;
+    let h = max_height(&a_draws, canvas)?;
     let sep_margin = style.get_number_or("value.array.separator.vmargin", 5.0);
     // intersperse vertical lines
     ds.stroke_color = style.get_color_or("value.array.separator.color", color("#000")?);
@@ -86,8 +86,8 @@ fn render_value_array(
     let radius_sw = style.get_number_or("value.array.border.radius.sw", radius);
     let radius_se = style.get_number_or("value.array.border.radius.se", radius);
     ds.border_radius = (radius_nw, radius_ne, radius_se, radius_sw);
-    let res = border(Box::new(stk), &canvas, ds)?;
-    return Ok(res);
+    let res = border(Box::new(stk), canvas, ds)?;
+    Ok(res)
 }
 
 fn render_value_tuple(
@@ -98,7 +98,7 @@ fn render_value_tuple(
     // Draw all the parts separately
     let mut a_draws: Vec<Box<dyn Drawable>> = vec![];
     for x in a {
-        let draw = render_value(&x, render_state, canvas)?;
+        let draw = render_value(x, render_state, canvas)?;
         a_draws.push(draw);
     }
     let style = &render_state.style;
@@ -113,7 +113,7 @@ fn render_value_tuple(
     }
     let mut ds = DrawState::default();
     // Now measure the height for divider lines
-    let h = max_height(&a_draws, &canvas)?;
+    let h = max_height(&a_draws, canvas)?;
     let sep_margin = style.get_number_or("value.tuple.separator.vmargin", 5.0);
     // intersperse vertical lines
     ds.stroke_color = style.get_color_or("value.tuple.separator.color", color("#000")?);
@@ -148,8 +148,8 @@ fn render_value_tuple(
     let radius_sw = style.get_number_or("value.tuple.border.radius.sw", radius);
     let radius_se = style.get_number_or("value.tuple.border.radius.se", radius);
     ds.border_radius = (radius_nw, radius_ne, radius_se, radius_sw);
-    let res = border(Box::new(stk), &canvas, ds)?;
-    return Ok(res);
+    let res = border(Box::new(stk), canvas, ds)?;
+    Ok(res)
 }
 
 fn render_def(
@@ -168,7 +168,7 @@ fn render_def(
     let top = style.get_number_or("def.padding.top", pad);
     let right = style.get_number_or("def.padding.right", pad);
     let bottom = style.get_number_or("def.padding.bottom", pad);
-    let padding = (left, top, right, bottom);
+    let _padding = (left, top, right, bottom);
 
     let mut g_label = GText::new(&def.label, point(0.0, 0.0), ds.clone());
 
@@ -300,7 +300,7 @@ fn render_def(
 fn render_value_number(
     v: f64,
     render_state: &mut RenderState,
-    canvas: &Canvas,
+    _canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
     let style = &render_state.style;
     let mut ds = DrawState::default();
@@ -321,7 +321,7 @@ fn render_value_number(
 fn render_value_char(
     c: char,
     render_state: &mut RenderState,
-    canvas: &Canvas,
+    _canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
     let style = &render_state.style;
     let mut ds = DrawState::default();
@@ -333,9 +333,9 @@ fn render_value_char(
 }
 
 fn render_value_pointer(
-    p: &Ptr,
+    _p: &Ptr,
     render_state: &mut RenderState,
-    canvas: &Canvas,
+    _canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
     let style = &render_state.style;
     let mut ds = DrawState::default();
@@ -344,7 +344,7 @@ fn render_value_pointer(
     ds.font_size = style.get_number_or("value.pointer.font_size", 24.0);
     // ✕✖✗✘×•●○◯42
     let text = "●";
-    Ok(Box::new(GText::new(&text, point(0.0, 0.0), ds)))
+    Ok(Box::new(GText::new(text, point(0.0, 0.0), ds)))
 }
 
 pub fn render_value(
@@ -353,11 +353,11 @@ pub fn render_value(
     canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
     match value {
-        Value::Number(v) => Ok(render_value_number(*v, render_state, &canvas)?),
-        Value::Char(c) => Ok(render_value_char(*c, render_state, &canvas)?),
-        Value::Pointer(p) => Ok(render_value_pointer(p, render_state, &canvas)?),
-        Value::Array(a) => Ok(render_value_array(&a, render_state, &canvas)?),
-        Value::Tuple(a) => Ok(render_value_tuple(&a, render_state, &canvas)?),
+        Value::Number(v) => Ok(render_value_number(*v, render_state, canvas)?),
+        Value::Char(c) => Ok(render_value_char(*c, render_state, canvas)?),
+        Value::Pointer(p) => Ok(render_value_pointer(p, render_state, canvas)?),
+        Value::Array(a) => Ok(render_value_array(a, render_state, canvas)?),
+        Value::Tuple(a) => Ok(render_value_tuple(a, render_state, canvas)?),
         _ => panic!("not handled"),
     }
 }

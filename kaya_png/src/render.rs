@@ -100,6 +100,8 @@ pub fn render_value(value: &Value, render_state: &mut RenderState, canvas: &Canv
             ds.padding.3 = style.get_number_or("value.array.padding.bottom", 5.0);
             ds.stroke_color = style.get_color_or("value.array.border.color", black);
             ds.stroke.width = style.get_number_or("value.array.border.width", 4.0);
+            let radius = style.get_number_or("value.array.border.radius", 5.0);
+            ds.border_radius = (radius, radius, radius, radius);
             let res = border(Box::new(stk), &canvas, ds)?;
             return Ok(res);
         }
@@ -241,16 +243,17 @@ mod tests {
         rs.style.add_color("value.pointer.color", color("#ccc")?);
         rs.style.add_color("value.array.separator.color", color("#7197d580")?);
         rs.style.add_number("value.array.separator.vmargin", 5.0);
-        rs.style.add_number("value.array.separator.padding.left", 5.0);
+        rs.style.add_number("value.array.separator.padding.left", 10.0);
         rs.style.add_number("value.array.separator.padding.top", 5.0);
-        rs.style.add_number("value.array.separator.padding.right", 5.0);
+        rs.style.add_number("value.array.separator.padding.right", 10.0);
         rs.style.add_number("value.array.separator.padding.bottom", 5.0);
-        rs.style.add_number("value.array.padding.left", 5.0);
+        rs.style.add_number("value.array.padding.left", 10.0);
         rs.style.add_number("value.array.padding.top", 2.0);
-        rs.style.add_number("value.array.padding.right", 5.0);
+        rs.style.add_number("value.array.padding.right", 10.0);
         rs.style.add_number("value.array.padding.bottom", 2.0);
         rs.style.add_color("value.array.border.color", color("#7197d5")?);
-        rs.style.add_number("value.array.border.width", 4.0);
+        rs.style.add_number("value.array.border.width", 1.5);
+        rs.style.add_number("value.array.border.radius", 5.0);
 
         let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas)?;
         v.translate(point(200.0, 200.0));

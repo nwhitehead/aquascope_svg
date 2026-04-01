@@ -354,6 +354,7 @@ pub enum FormulaType {
     AlignHigh,
     Centered,
     Sequenced,
+    Zero,
 }
 
 fn apply_formula(formula: &FormulaType, x: f32, xx: f32, ix: f32, ixx: f32) -> f32 {
@@ -362,6 +363,7 @@ fn apply_formula(formula: &FormulaType, x: f32, xx: f32, ix: f32, ixx: f32) -> f
         FormulaType::AlignHigh => xx - ixx,
         FormulaType::Centered => (x + 0.5 * (xx - x)) - (ix + 0.5 * (ixx - ix)),
         FormulaType::Sequenced => xx - ix,
+        FormulaType::Zero => 0.0,
     }
 }
 
@@ -452,6 +454,14 @@ pub fn hstack_bottom(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<G
         canvas,
     )
 }
+pub fn hstack_none(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
+    stack_general(
+        items,
+        FormulaType::Sequenced,
+        FormulaType::Zero,
+        canvas,
+    )
+}
 pub fn vstack(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
     stack_general(
         items,
@@ -472,6 +482,14 @@ pub fn vstack_right(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GA
     stack_general(
         items,
         FormulaType::AlignHigh,
+        FormulaType::Sequenced,
+        canvas,
+    )
+}
+pub fn vstack_none(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
+    stack_general(
+        items,
+        FormulaType::Zero,
         FormulaType::Sequenced,
         canvas,
     )

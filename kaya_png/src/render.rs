@@ -1,7 +1,7 @@
 use ab_glyph::{Rect, point};
 use anyhow::{Result, bail};
 use std::collections::HashMap;
-use tiny_skia::ColorU8;
+use tiny_skia::{Color, ColorU8};
 
 use crate::canvas::Canvas;
 use crate::draw::{

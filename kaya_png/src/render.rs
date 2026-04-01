@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use tiny_skia::{Color, ColorU8};
 
 use crate::canvas::Canvas;
-use crate::draw::{Drawable, GText, GLine};
+use crate::draw::{Drawable, GText, GLine, hstack};
 use crate::draw_state::DrawState;
 use crate::style::Styling;
 
@@ -68,8 +68,18 @@ pub fn render_value(value: &Value, render_state: &mut RenderState, canvas: &Canv
             let sep_margin = style.get_number_or("value.array.separator.margin", 5.0);
             // intersperse vertical lines
             ds.stroke_color = style.get_color_or("value.array.separator.color", black);
-            let sep = GLine::new(point(0.0, 0.0), point(0.0, h - sep_margin), ds);
-            panic!()
+            let sep = Box::new(GLine::new(point(0.0, 0.0), point(0.0, h - sep_margin), ds));
+            let mut a_draws_sep: Vec<Box<dyn Drawable>> = vec![];
+            let mut any_elems_yet = false;
+            for x in a_draws {
+                if any_elems_yet {
+                    a_draws_sep.push(sep.clone());
+                } else {
+                    any_elems_yet = true;
+                }
+                a_draws_sep.push(x);
+            }
+            return Ok(Box::new(hstack(a_draws_sep, canvas)?));
         }
         _ => panic!("not handled"),
     }
@@ -228,6 +238,15 @@ mod tests {
         v.draw(&mut canvas)?;
 
         rs.style.add_color("value.array.separator.color", color("#7197d580")?);
+        rs.style.add_number("value.array.separator.margin", 0.0);
+
+        let mut v = render_value(&Value::Array(vec![
+            Value::Number(42.0),
+            Value::Number(67.0),
+            Value::Number(3.0),
+        ]), &mut rs, &canvas)?;
+        v.translate(point(350.0, 200.0));
+        v.draw(&mut canvas)?;
 
         canvas.save("test_render_value.png")?;
 

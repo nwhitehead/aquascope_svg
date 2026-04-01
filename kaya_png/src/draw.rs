@@ -322,6 +322,8 @@ fn stack_general(
             let tx = apply_formula(&tx_formula, b.min.x, b.max.x, item_bb.min.x, item_bb.max.x);
             let ty = apply_formula(&ty_formula, b.min.y, b.max.y, item_bb.min.y, item_bb.max.y);
             item.translate(point(tx, ty));
+            bb = Some(Rect { min: point(b.min.x.min(item_bb.min.x + tx), b.min.y.min(item_bb.min.y + ty)),
+                             max: point(b.max.x.max(item_bb.max.x + tx), b.max.y.max(item_bb.max.y + ty)) });
         } else {
             bb = Some(item.bounding_box(canvas)?);
         }

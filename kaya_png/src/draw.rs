@@ -70,8 +70,10 @@ impl Drawable for GLine {
     fn bounding_box(&self, canvas: &Canvas) -> Result<Rect> {
         let p0 = self.start;
         let p1 = self.end;
-        Ok(Rect { min: point(p0.x.min(p1.x), p0.y.min(p1.y)),
-            max: point(p0.x.max(p1.x), p0.y.max(p1.y)) })
+        Ok(Rect {
+            min: point(p0.x.min(p1.x), p0.y.min(p1.y)),
+            max: point(p0.x.max(p1.x), p0.y.max(p1.y)),
+        })
     }
     fn draw(&self, canvas: &mut Canvas) -> Result<()> {
         let color = self.state.stroke_color;
@@ -258,7 +260,10 @@ impl Drawable for GPadding {
         Ok(self.item.draw(canvas)?)
     }
     fn clone_box(&self) -> Box<dyn Drawable> {
-        Box::new(GPadding { item: self.item.clone_box(), padding: self.padding })
+        Box::new(GPadding {
+            item: self.item.clone_box(),
+            padding: self.padding,
+        })
     }
 }
 
@@ -344,8 +349,16 @@ fn stack_general(
             let tx = apply_formula(&tx_formula, b.min.x, b.max.x, item_bb.min.x, item_bb.max.x);
             let ty = apply_formula(&ty_formula, b.min.y, b.max.y, item_bb.min.y, item_bb.max.y);
             item.translate(point(tx, ty));
-            bb = Some(Rect { min: point(b.min.x.min(item_bb.min.x + tx), b.min.y.min(item_bb.min.y + ty)),
-                             max: point(b.max.x.max(item_bb.max.x + tx), b.max.y.max(item_bb.max.y + ty)) });
+            bb = Some(Rect {
+                min: point(
+                    b.min.x.min(item_bb.min.x + tx),
+                    b.min.y.min(item_bb.min.y + ty),
+                ),
+                max: point(
+                    b.max.x.max(item_bb.max.x + tx),
+                    b.max.y.max(item_bb.max.y + ty),
+                ),
+            });
         } else {
             bb = Some(item.bounding_box(canvas)?);
         }
@@ -522,7 +535,11 @@ mod tests {
         let vs = vstack_left(vec![g1, g2], &canvas)?;
         vs.draw(&mut canvas)?;
 
-        let vline = GLine { start: point(80.0, 100.0), end: point(80.0, 200.0), state: s.clone() };
+        let vline = GLine {
+            start: point(80.0, 100.0),
+            end: point(80.0, 200.0),
+            state: s.clone(),
+        };
         vline.draw(&mut canvas)?;
 
         canvas.save("test_drawing.png")?;

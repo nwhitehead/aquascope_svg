@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use tiny_skia::{Color, ColorU8};
 
 use crate::canvas::Canvas;
-use crate::draw::{Drawable, GLine, GPadding, GSpace, GText, border, hstack};
+use crate::draw::{Drawable, GArray, GLine, GPadding, GSpace, GText, border, hstack};
 use crate::draw_state::DrawState;
 use crate::style::Styling;
 
@@ -161,12 +161,6 @@ fn render_def(
     ds.font_size = style.get_number_or("def.label.font_size", 24.0);
     ds.text_color = style.get_color_or("def.label.color", color("#000")?);
 
-    let sep_pad = style.get_number_or("def.separator.padding", 5.0);
-    let left = style.get_number_or("def.padding.left", 5.0);
-    let top = style.get_number_or("def.padding.top", 5.0);
-    let right = style.get_number_or("def.padding.right", 5.0);
-    let bottom = style.get_number_or("def.padding.bottom", 5.0);
-
     let pad = style.get_number_or("def.padding", 5.0);
     let left = style.get_number_or("def.padding.left", pad);
     let top = style.get_number_or("def.padding.top", pad);
@@ -174,7 +168,7 @@ fn render_def(
     let bottom = style.get_number_or("def.padding.bottom", pad);
     let padding = (left, top, right, bottom);
 
-    let g_label = GText::new(&def.label, point(0.0, 0.0), ds.clone());
+    let mut g_label = GText::new(&def.label, point(0.0, 0.0), ds.clone());
 
     ds.font = style.get_string_or("def.separator.font", "mono");
     ds.font_size = style.get_number_or("def.separator.font_size", 24.0);
@@ -182,8 +176,25 @@ fn render_def(
     let sep_text = style.get_string_or("def.separator.text", ":");
     let g_separator = GText::new(&sep_text, point(0.0, 0.0), ds.clone());
 
+    let sep_pad = style.get_number_or("def.separator.padding", 0.0);
+    let sep_padding = (
+        style.get_number_or("def.separator.padding.left", sep_pad),
+        style.get_number_or("def.separator.padding.top", sep_pad),
+        style.get_number_or("def.separator.padding.right", sep_pad),
+        style.get_number_or("def.separator.padding.bottom", sep_pad),
+    );
+    let g_padded_sep = GPadding::new(Box::new(g_separator), sep_padding);
+
+    // Make sure final drawable has x=0 as the dividing line for separator
+    // (so we can align them later)
+    // Move label to align right side to separator
+    let label_bb = g_label.bounding_box(canvas)?;
+    g_label.translate(point(-label_bb.max.x - sep_padding.0, 0.0));
+    let mut g_array = GArray::new();
+    g_array.push(Box::new(g_label));
+    g_array.push(Box::new(g_padded_sep));
     //let padded_gtxt = GPadding::new(Box::new(gtxt), padding);
-    Ok(Box::new(g_separator))
+    Ok(Box::new(g_array))
 }
 
 // fn render_value_struct(
@@ -497,6 +508,8 @@ mod tests {
         rs.style.add_number("def.separator.font_size", 23.0);
         rs.style.add_color("def.separator.color", color("#ccc")?);
         rs.style.add_string("def.separator.text", ":");
+        rs.style.add_number("def.separator.padding.left", 3.0);
+        rs.style.add_number("def.separator.padding.right", 3.0);
 
 
         let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas)?;

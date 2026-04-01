@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use tiny_skia::{Color, ColorU8};
 
 use crate::canvas::Canvas;
-use crate::draw::{Drawable, GLine, GPadding, GText, border, hstack};
+use crate::draw::{Drawable, GLine, GPadding, GSpace, GText, border, hstack};
 use crate::draw_state::DrawState;
 use crate::style::Styling;
 
@@ -38,6 +38,12 @@ fn render_value_array(
         a_draws.push(draw);
     }
     let style = &render_state.style;
+    if a_draws.is_empty() {
+        a_draws.push(GSpace::new(
+            style.get_number_or("value.array.empty.w", 5.0),
+            style.get_number_or("value.array.empty.h", 5.0),
+        ).clone_box());
+    }
     let mut ds = DrawState::default();
     // Now measure the height for divider lines
     let h = max_height(&a_draws, &canvas)?;
@@ -91,6 +97,12 @@ fn render_value_tuple(
         a_draws.push(draw);
     }
     let style = &render_state.style;
+    if a_draws.is_empty() {
+        a_draws.push(GSpace::new(
+            style.get_number_or("value.tuple.empty.w", 5.0),
+            style.get_number_or("value.tuple.empty.h", 5.0),
+        ).clone_box());
+    }
     let mut ds = DrawState::default();
     // Now measure the height for divider lines
     let h = max_height(&a_draws, &canvas)?;
@@ -329,6 +341,8 @@ mod tests {
         rs.style.add_string("value.pointer.font", "mono");
         rs.style.add_number("value.pointer.font_size", 24.0);
         rs.style.add_color("value.pointer.color", color("#ccc")?);
+        rs.style.add_number("value.array.empty.w", 0.0);
+        rs.style.add_number("value.array.empty.h", 20.0);
         rs.style
             .add_color("value.array.separator.color", color("#7197d580")?);
         rs.style.add_number("value.array.separator.vmargin", 5.0);
@@ -348,6 +362,9 @@ mod tests {
             .add_color("value.array.border.color", color("#7197d5")?);
         rs.style.add_number("value.array.border.width", 1.5);
         rs.style.add_number("value.array.border.radius", 5.0);
+        rs.style.add_number("value.tuple.empty.w", 0.0);
+        rs.style.add_number("value.tuple.empty.h", 20.0);
+
         rs.style
             .add_color("value.tuple.separator.color", color("#b785c080")?);
         rs.style.add_number("value.tuple.separator.vmargin", 5.0);
@@ -395,6 +412,7 @@ mod tests {
             &Value::Array(vec![
                 Value::Number(42.0),
                 Value::Number(67.0),
+                Value::Tuple(vec![]),
                 Value::Tuple(vec![
                     Value::Number(3.0),
                     Value::Number(4.0),

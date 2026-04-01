@@ -232,6 +232,38 @@ impl Drawable for GBox {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct GSpace {
+    r: Rect,
+}
+
+impl GSpace {
+    pub fn new(w: f32, h: f32) -> Self {
+        Self {
+            r: Rect {
+                min: point(0.0, 0.0),
+                max: point(w, h),
+            },
+        }
+    }
+}
+
+impl Drawable for GSpace {
+    fn translate(&mut self, t: Point) {
+        self.r.min += t;
+        self.r.max += t;
+    }
+    fn bounding_box(&self, canvas: &Canvas) -> Result<Rect> {
+        Ok(self.r)
+    }
+    fn draw(&self, canvas: &mut Canvas) -> Result<()> {
+        Ok(())
+    }
+    fn clone_box(&self) -> Box<dyn Drawable> {
+        Box::new(self.clone())
+    }
+}
+
 pub struct GPadding {
     item: Box<dyn Drawable>,
     // padding is left, top, right, bottom

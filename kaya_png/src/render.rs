@@ -198,17 +198,37 @@ fn render_value_struct(
     render_state: &mut RenderState,
     canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
-    let style = &render_state.style;
+
+    // Draw all the inner values separately first (to measure for sep line height)
+    let mut v_draws: Vec<Box<dyn Drawable>> = vec![];
+    for p in &named_struct.fields {
+        let label = &p.0;
+        let value = &p.1;
+        let draw = render_value(value, render_state, canvas)?;
+        v_draws.push(draw);
+    }
+    // Now measure the height for divider lines
+    let h = max_height(&v_draws, canvas)?;
+
     let mut ds = DrawState::default();
+    let style = &render_state.style;
     ds.font = style.get_string_or("value.struct.name.font", "mono");
     ds.font_size = style.get_number_or("value.struct.name.font_size", 24.0);
     ds.text_color = style.get_color_or("value.struct.name.color", color("#000")?);
+
+    // let sep_margin = style.get_number_or("value.tuple.separator.vmargin", 5.0);
+    // // intersperse vertical lines
+    // ds.stroke_color = style.get_color_or("value.tuple.separator.color", color("#000")?);
+    // let sep = GLine::new(point(0.0, 0.0), point(0.0, h - sep_margin), ds.clone());
+    // let sep_padding = style.get_padding("value.tuple.separator.padding", 5.0);
+    // let padded_sep = GPadding::new(Box::new(sep), sep_padding);
+
 
     let mut g_name = GText::new(&named_struct.name, point(0.0, 0.0), ds.clone());
 
     let mut body: Vec<Box<dyn Drawable>> = vec![];
 
-    for p in &named_struct.fields {
+    for (i, p) in named_struct.fields.iter().enumerate() {
         let label = &p.0;
         let value = &p.1;
         ds.font = style.get_string_or("value.struct.label.font", "mono");
@@ -224,7 +244,15 @@ fn render_value_struct(
 
         let sep_padding = style.get_padding("value.struct.separator.padding", 0.0);
         let g_padded_sep = GPadding::new(Box::new(g_separator), sep_padding);
-        body.push(Box::new(g_label));
+
+        let mut left: Vec<Box<dyn Drawable>> = vec![];
+        left.push(Box::new(g_label));
+        left.push(Box::new(g_padded_sep));
+        let g_left = hstack(left, canvas)?;
+        let left_padding = style.get_padding("value.struct.left.padding", 0.0);
+        let g_padded_left = GPadding::new(Box::new(g_left), left_padding);
+        body.push(Box::new(g_padded_left));
+        body.push(v_draws[i].clone_box());
     }
     let g_body = hstack(body, canvas)?;
 
@@ -547,13 +575,14 @@ mod tests {
         rs.style.add_string("value.struct.separator.text", ":");
         rs.style.add_number("value.struct.separator.padding.left", 3.0);
         rs.style.add_number("value.struct.separator.padding.right", 3.0);
-
         rs.style.add_number("value.struct.padding", 10.0);
         rs.style.add_number("value.struct.margin.left", 10.0);
         rs.style
             .add_color("value.struct.border.color", color("#789a56")?);
         rs.style.add_number("value.struct.border.width", 1.5);
         rs.style.add_number("value.struct.border.radius", 5.0);
+
+        rs.style.add_number("value.struct.left.padding.bottom", 3.0);
 
         let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas)?;
         v.translate(point(200.0, 200.0));

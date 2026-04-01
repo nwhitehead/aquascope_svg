@@ -351,7 +351,7 @@ impl Drawable for GArray {
 }
 
 #[derive(Clone, Debug)]
-enum FormulaType {
+pub enum FormulaType {
     AlignLow,
     AlignHigh,
     Centered,
@@ -365,6 +365,18 @@ fn apply_formula(formula: &FormulaType, x: f32, xx: f32, ix: f32, ixx: f32) -> f
         FormulaType::Centered => (x + 0.5 * (xx - x)) - (ix + 0.5 * (ixx - ix)),
         FormulaType::Sequenced => xx - ix,
     }
+}
+
+// Given
+pub fn compute_align(
+    left: &Rect,
+    right: &Rect,
+    tx_formula: FormulaType,
+    ty_formula: FormulaType,
+) -> Point {
+    let tx = apply_formula(&tx_formula, left.min.x, left.max.x, right.min.x, right.max.x);
+    let ty = apply_formula(&ty_formula, left.min.y, left.max.y, right.min.y, right.max.y);
+    point(tx, ty)
 }
 
 fn stack_general(

@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use tiny_skia::{Color, ColorU8};
 
 use crate::canvas::Canvas;
-use crate::draw::{Drawable, GArray, GLine, GPadding, GSpace, GText, border, hstack};
+use crate::draw::{Drawable, FormulaType, GArray, GLine, GPadding, GSpace, GText, border, compute_align, hstack};
 use crate::draw_state::DrawState;
 use crate::style::Styling;
 
@@ -187,12 +187,38 @@ fn render_def(
 
     // Make sure final drawable has x=0 as the dividing line for separator
     // (so we can align them later)
-    // Move label to align right side to separator
+    // Instead of just doing hstack_... we compute the translation and use parts of it
+    // Move label left to align right side to separator
     let label_bb = g_label.bounding_box(canvas)?;
-    g_label.translate(point(-label_bb.max.x - sep_padding.0, 0.0));
+    let sep_bb = g_padded_sep.bounding_box(canvas)?;
+    let p = compute_align(&label_bb, &sep_bb, FormulaType::Sequenced, FormulaType::Centered);
+    g_label.translate(point(-p.x, -p.y));
+    let mut left = GArray::new();
+    left.push(Box::new(g_label));
+    left.push(Box::new(g_padded_sep));
+
+    let left_pad = style.get_number_or("def.left.padding", 0.0);
+    let left_padding = (
+        style.get_number_or("def.left.padding.left", left_pad),
+        style.get_number_or("def.left.padding.top", left_pad),
+        style.get_number_or("def.left.padding.right", left_pad),
+        style.get_number_or("def.left.padding.bottom", left_pad),
+    );
+    let g_left = GPadding::new(Box::new(left), left_padding);
+    let left_bb = g_left.bounding_box(canvas)?;
+
+    let mut g_value = render_value(&def.value, render_state, canvas)?;
+
+    // Now align the value to right of separator, centered vertically
+    let value_bb = g_value.bounding_box(canvas)?;
+    println!("left_bb = {:?}", &left_bb);
+    println!("value_bb = {:?}", &value_bb);
+    let p = compute_align(&left_bb, &value_bb, FormulaType::Sequenced, FormulaType::Centered);
+    g_value.translate(p);
+
     let mut g_array = GArray::new();
-    g_array.push(Box::new(g_label));
-    g_array.push(Box::new(g_padded_sep));
+    g_array.push(Box::new(g_left));
+    g_array.push(g_value);
     //let padded_gtxt = GPadding::new(Box::new(gtxt), padding);
     Ok(Box::new(g_array))
 }
@@ -510,6 +536,7 @@ mod tests {
         rs.style.add_string("def.separator.text", ":");
         rs.style.add_number("def.separator.padding.left", 3.0);
         rs.style.add_number("def.separator.padding.right", 3.0);
+        rs.style.add_number("def.left.padding.bottom", 3.0);
 
 
         let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas)?;

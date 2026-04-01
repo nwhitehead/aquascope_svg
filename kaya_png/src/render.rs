@@ -216,13 +216,12 @@ fn render_value_struct(
     ds.font_size = style.get_number_or("value.struct.name.font_size", 24.0);
     ds.text_color = style.get_color_or("value.struct.name.color", color("#000")?);
 
-    // let sep_margin = style.get_number_or("value.tuple.separator.vmargin", 5.0);
-    // // intersperse vertical lines
-    // ds.stroke_color = style.get_color_or("value.tuple.separator.color", color("#000")?);
-    // let sep = GLine::new(point(0.0, 0.0), point(0.0, h - sep_margin), ds.clone());
-    // let sep_padding = style.get_padding("value.tuple.separator.padding", 5.0);
-    // let padded_sep = GPadding::new(Box::new(sep), sep_padding);
-
+    // intersperse vertical lines
+    let div_margin = style.get_number_or("value.struct.divider.vmargin", 5.0);
+    ds.stroke_color = style.get_color_or("value.struct.divider.color", color("#000")?);
+    let div = GLine::new(point(0.0, 0.0), point(0.0, h - div_margin), ds.clone());
+    let div_padding = style.get_padding("value.struct.divider.padding", 5.0);
+    let padded_div = GPadding::new(Box::new(div), div_padding);
 
     let mut g_name = GText::new(&named_struct.name, point(0.0, 0.0), ds.clone());
 
@@ -251,6 +250,11 @@ fn render_value_struct(
         let g_left = hstack(left, canvas)?;
         let left_padding = style.get_padding("value.struct.left.padding", 0.0);
         let g_padded_left = GPadding::new(Box::new(g_left), left_padding);
+
+        if i > 0 {
+            // Add dividing line after 1st element before each field
+            body.push(padded_div.clone_box());
+        }
         body.push(Box::new(g_padded_left));
         body.push(v_draws[i].clone_box());
     }
@@ -262,41 +266,6 @@ fn render_value_struct(
     ds.stroke.width = style.get_number_or("value.struct.border.width", 4.0);
     ds.border_radius = style.get_radius("value.struct.border.radius", 5.0);
     let g_border_body = border(Box::new(g_body), canvas, ds.clone())?;
-
-    // let label_bb = g_label.bounding_box(canvas)?;
-    // let sep_bb = g_padded_sep.bounding_box(canvas)?;
-    // let p = compute_align(
-    //     &label_bb,
-    //     &sep_bb,
-    //     FormulaType::Sequenced,
-    //     FormulaType::Centered,
-    // );
-    // g_label.translate(point(-p.x, -p.y));
-    // let mut left = GArray::new();
-    // left.push(Box::new(g_label));
-    // left.push(Box::new(g_padded_sep));
-
-    // let left_padding = style.get_padding("def.left.padding", 0.0);
-    // let g_left = GPadding::new(Box::new(left), left_padding);
-    // let left_bb = g_left.bounding_box(canvas)?;
-
-    // ds.padding = style.get_padding("def.value.padding", 0.0);
-    // ds.margin = style.get_padding("def.value.margin", 0.0);
-    // ds.stroke_color = style.get_color_or("def.value.border.color", color("#000")?);
-    // ds.stroke.width = style.get_number_or("def.value.border.width", 4.0);
-    // ds.border_radius = style.get_radius("def.value.border.radius", 5.0);
-    // let g_value = render_value(&def.value, render_state, canvas)?;
-    // let mut g_border_value = border(g_value, canvas, ds.clone())?;
-
-    // // Now align the value to right of separator, centered vertically
-    // let value_bb = g_border_value.bounding_box(canvas)?;
-    // let p = compute_align(
-    //     &left_bb,
-    //     &value_bb,
-    //     FormulaType::Sequenced,
-    //     FormulaType::Centered,
-    // );
-    // g_border_value.translate(p);
 
     let g_array = hstack(vec![Box::new(g_name), g_border_body], canvas)?;
     Ok(Box::new(g_array))
@@ -581,9 +550,15 @@ mod tests {
             .add_color("value.struct.border.color", color("#789a56")?);
         rs.style.add_number("value.struct.border.width", 1.5);
         rs.style.add_number("value.struct.border.radius", 5.0);
-
         rs.style.add_number("value.struct.left.padding.bottom", 3.0);
 
+        rs.style.add_number("value.struct.divider.vmargin", 0.0);
+        rs.style.add_number("value.struct.divider.padding", 0.0);
+        rs.style.add_number("value.struct.divider.padding.left", 7.0);
+        rs.style.add_number("value.struct.divider.padding.right", 12.0);
+        rs.style.add_color("value.struct.divider.color", color("#789a5680")?);
+
+        
         let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas)?;
         v.translate(point(200.0, 200.0));
         v.draw(&mut canvas)?;

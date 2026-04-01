@@ -39,10 +39,13 @@ fn render_value_array(
     }
     let style = &render_state.style;
     if a_draws.is_empty() {
-        a_draws.push(GSpace::new(
-            style.get_number_or("value.array.empty.w", 5.0),
-            style.get_number_or("value.array.empty.h", 5.0),
-        ).clone_box());
+        a_draws.push(
+            GSpace::new(
+                style.get_number_or("value.array.empty.w", 5.0),
+                style.get_number_or("value.array.empty.h", 5.0),
+            )
+            .clone_box(),
+        );
     }
     let mut ds = DrawState::default();
     // Now measure the height for divider lines
@@ -98,10 +101,13 @@ fn render_value_tuple(
     }
     let style = &render_state.style;
     if a_draws.is_empty() {
-        a_draws.push(GSpace::new(
-            style.get_number_or("value.tuple.empty.w", 5.0),
-            style.get_number_or("value.tuple.empty.h", 5.0),
-        ).clone_box());
+        a_draws.push(
+            GSpace::new(
+                style.get_number_or("value.tuple.empty.w", 5.0),
+                style.get_number_or("value.tuple.empty.h", 5.0),
+            )
+            .clone_box(),
+        );
     }
     let mut ds = DrawState::default();
     // Now measure the height for divider lines
@@ -414,7 +420,7 @@ mod tests {
                 Value::Number(67.0),
                 Value::Tuple(vec![]),
                 Value::Tuple(vec![
-                    Value::Number(3.0),
+                    Value::Char('C'),
                     Value::Number(4.0),
                     Value::Array(vec![]),
                 ]),

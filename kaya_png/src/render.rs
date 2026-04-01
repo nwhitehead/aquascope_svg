@@ -105,12 +105,7 @@ fn render_value_tuple(
     // intersperse vertical lines
     ds.stroke_color = style.get_color_or("value.tuple.separator.color", color("#000")?);
     let sep = GLine::new(point(0.0, 0.0), point(0.0, h - sep_margin), ds.clone());
-    let sep_padding = (
-        style.get_number_or("value.tuple.separator.padding.left", 5.0),
-        style.get_number_or("value.tuple.separator.padding.top", 5.0),
-        style.get_number_or("value.tuple.separator.padding.right", 5.0),
-        style.get_number_or("value.tuple.separator.padding.bottom", 5.0),
-    );
+    let sep_padding = style.get_padding("value.tuple.separator.padding", 5.0);
     let padded_sep = GPadding::new(Box::new(sep), sep_padding);
     let mut a_draws_sep: Vec<Box<dyn Drawable>> = vec![];
     let mut any_elems_yet = false;
@@ -123,18 +118,10 @@ fn render_value_tuple(
         a_draws_sep.push(x);
     }
     let stk = hstack(a_draws_sep, canvas)?;
-    ds.padding.0 = style.get_number_or("value.tuple.padding.left", 5.0);
-    ds.padding.1 = style.get_number_or("value.tuple.padding.top", 5.0);
-    ds.padding.2 = style.get_number_or("value.tuple.padding.right", 5.0);
-    ds.padding.3 = style.get_number_or("value.tuple.padding.bottom", 5.0);
+    ds.padding = style.get_padding("value.tuple.padding", 5.0);
     ds.stroke_color = style.get_color_or("value.tuple.border.color", color("#000")?);
     ds.stroke.width = style.get_number_or("value.tuple.border.width", 4.0);
-    let radius = style.get_number_or("value.tuple.border.radius", 5.0);
-    let radius_nw = style.get_number_or("value.tuple.border.radius.nw", radius);
-    let radius_ne = style.get_number_or("value.tuple.border.radius.ne", radius);
-    let radius_sw = style.get_number_or("value.tuple.border.radius.sw", radius);
-    let radius_se = style.get_number_or("value.tuple.border.radius.se", radius);
-    ds.border_radius = (radius_nw, radius_ne, radius_se, radius_sw);
+    ds.border_radius = style.get_radius("value.tuple.border.radius", 5.0);
     let res = border(Box::new(stk), canvas, ds)?;
     Ok(res)
 }
@@ -150,13 +137,6 @@ fn render_def(
     ds.font_size = style.get_number_or("def.label.font_size", 24.0);
     ds.text_color = style.get_color_or("def.label.color", color("#000")?);
 
-    let pad = style.get_number_or("def.padding", 5.0);
-    let left = style.get_number_or("def.padding.left", pad);
-    let top = style.get_number_or("def.padding.top", pad);
-    let right = style.get_number_or("def.padding.right", pad);
-    let bottom = style.get_number_or("def.padding.bottom", pad);
-    let _padding = (left, top, right, bottom);
-
     let mut g_label = GText::new(&def.label, point(0.0, 0.0), ds.clone());
 
     ds.font = style.get_string_or("def.separator.font", "mono");
@@ -165,13 +145,7 @@ fn render_def(
     let sep_text = style.get_string_or("def.separator.text", ":");
     let g_separator = GText::new(&sep_text, point(0.0, 0.0), ds.clone());
 
-    let sep_pad = style.get_number_or("def.separator.padding", 0.0);
-    let sep_padding = (
-        style.get_number_or("def.separator.padding.left", sep_pad),
-        style.get_number_or("def.separator.padding.top", sep_pad),
-        style.get_number_or("def.separator.padding.right", sep_pad),
-        style.get_number_or("def.separator.padding.bottom", sep_pad),
-    );
+    let sep_padding = style.get_padding("def.separator.padding", 0.0);
     let g_padded_sep = GPadding::new(Box::new(g_separator), sep_padding);
 
     // Make sure final drawable has x=0 as the dividing line for separator
@@ -191,46 +165,20 @@ fn render_def(
     left.push(Box::new(g_label));
     left.push(Box::new(g_padded_sep));
 
-    let left_pad = style.get_number_or("def.left.padding", 0.0);
-    let left_padding = (
-        style.get_number_or("def.left.padding.left", left_pad),
-        style.get_number_or("def.left.padding.top", left_pad),
-        style.get_number_or("def.left.padding.right", left_pad),
-        style.get_number_or("def.left.padding.bottom", left_pad),
-    );
+    let left_padding = style.get_padding("def.left.padding", 0.0);
     let g_left = GPadding::new(Box::new(left), left_padding);
     let left_bb = g_left.bounding_box(canvas)?;
 
-    let v_pad = style.get_number_or("def.value.padding", 0.0);
-    ds.padding = (
-        style.get_number_or("def.value.padding.left", v_pad),
-        style.get_number_or("def.value.padding.top", v_pad),
-        style.get_number_or("def.value.padding.right", v_pad),
-        style.get_number_or("def.value.padding.bottom", v_pad),
-    );
-    let v_margin = style.get_number_or("def.value.margin", 0.0);
-    ds.margin = (
-        style.get_number_or("def.value.margin.left", v_margin),
-        style.get_number_or("def.value.margin.top", v_margin),
-        style.get_number_or("def.value.margin.right", v_margin),
-        style.get_number_or("def.value.margin.bottom", v_margin),
-    );
+    ds.padding = style.get_padding("def.value.padding", 0.0);
+    ds.margin = style.get_padding("def.value.margin", 0.0);
     ds.stroke_color = style.get_color_or("def.value.border.color", color("#000")?);
     ds.stroke.width = style.get_number_or("def.value.border.width", 4.0);
-    let radius = style.get_number_or("def.value.border.radius", 5.0);
-    ds.border_radius = (
-        style.get_number_or("def.value.border.radius.nw", radius), 
-        style.get_number_or("def.value.border.radius.ne", radius),
-        style.get_number_or("def.value.border.radius.sw", radius),
-        style.get_number_or("def.value.border.radius.se", radius)
-    );
+    ds.border_radius = style.get_radius("def.value.border.radius", 5.0);
     let g_value = render_value(&def.value, render_state, canvas)?;
     let mut g_border_value = border(g_value, canvas, ds.clone())?;
 
     // Now align the value to right of separator, centered vertically
     let value_bb = g_border_value.bounding_box(canvas)?;
-    println!("left_bb = {:?}", &left_bb);
-    println!("value_bb = {:?}", &value_bb);
     let p = compute_align(
         &left_bb,
         &value_bb,

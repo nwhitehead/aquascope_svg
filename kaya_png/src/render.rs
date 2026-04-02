@@ -15,18 +15,30 @@ use kaya_lib::states::{Def, Location, NamedStruct, Program, Ptr, Region, Step, V
 
 #[derive(Clone, Debug)]
 pub struct RenderState {
-    locations: HashMap<String, Rect>,
     style: Styling,
     skip_heap: bool,
+    ids: Vec<String>,
 }
 
 impl Default for RenderState {
     fn default() -> Self {
         Self {
-            locations: Default::default(),
             style: Default::default(),
             skip_heap: true,
+            ids: vec![],
         }
+    }
+}
+
+impl RenderState {
+    pub fn register(&mut self, id: &str) {
+        self.ids.push(id.to_string());
+    }
+    pub fn ids(&self) -> Vec<String> {
+        self.ids.clone()
+    }
+    pub fn clear_ids(&mut self) {
+        self.ids = vec![];
     }
 }
 
@@ -376,6 +388,7 @@ pub fn render_value(
         _ => panic!("not handled"),
     };
     let tagged = GTagged::new(item, prefix);
+    render_state.register(prefix);
     Ok(Box::new(tagged))
 }
 
@@ -875,6 +888,7 @@ mod tests {
         v.translate(point(200.0, 380.0));
         v.draw(&mut canvas)?;
 
+        rs.clear_ids();
         let mut v = render_program(
             &Program(
                 vec![
@@ -985,6 +999,12 @@ mod tests {
             &canvas,
         )?;
         v.translate(point(600.0, 500.0));
+        // Show some rects
+        println!("IDS: {:?}", rs.ids());
+        for id in rs.ids() {
+            let r = v.get_tagged(&id).unwrap().bounding_box(&canvas)?;
+            println!("{} => {:?}", id, r);
+        }
         v.draw(&mut canvas)?;
 
         canvas.save("test_render_value.png")?;

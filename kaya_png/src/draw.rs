@@ -50,7 +50,7 @@ impl Drawable for GTagged {
         if id == self.tag {
             Some(self.clone_box())
         } else {
-            None
+            self.item.get_tagged(id)
         }
     }
 }

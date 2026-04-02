@@ -423,28 +423,13 @@ fn stack_general(
     Ok(c)
 }
 pub fn stack(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
-    stack_general(
-        items,
-        FormulaType::Centered,
-        FormulaType::Centered,
-        canvas,
-    )
+    stack_general(items, FormulaType::Centered, FormulaType::Centered, canvas)
 }
 pub fn hstack(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
-    stack_general(
-        items,
-        FormulaType::Sequenced,
-        FormulaType::Centered,
-        canvas,
-    )
+    stack_general(items, FormulaType::Sequenced, FormulaType::Centered, canvas)
 }
 pub fn hstack_top(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
-    stack_general(
-        items,
-        FormulaType::Sequenced,
-        FormulaType::AlignLow,
-        canvas,
-    )
+    stack_general(items, FormulaType::Sequenced, FormulaType::AlignLow, canvas)
 }
 pub fn hstack_bottom(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
     stack_general(
@@ -455,28 +440,13 @@ pub fn hstack_bottom(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<G
     )
 }
 pub fn hstack_none(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
-    stack_general(
-        items,
-        FormulaType::Sequenced,
-        FormulaType::Zero,
-        canvas,
-    )
+    stack_general(items, FormulaType::Sequenced, FormulaType::Zero, canvas)
 }
 pub fn vstack(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
-    stack_general(
-        items,
-        FormulaType::Centered,
-        FormulaType::Sequenced,
-        canvas,
-    )
+    stack_general(items, FormulaType::Centered, FormulaType::Sequenced, canvas)
 }
 pub fn vstack_left(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
-    stack_general(
-        items,
-        FormulaType::AlignLow,
-        FormulaType::Sequenced,
-        canvas,
-    )
+    stack_general(items, FormulaType::AlignLow, FormulaType::Sequenced, canvas)
 }
 pub fn vstack_right(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
     stack_general(
@@ -487,12 +457,7 @@ pub fn vstack_right(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GA
     )
 }
 pub fn vstack_none(items: Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<GArray> {
-    stack_general(
-        items,
-        FormulaType::Zero,
-        FormulaType::Sequenced,
-        canvas,
-    )
+    stack_general(items, FormulaType::Zero, FormulaType::Sequenced, canvas)
 }
 
 pub fn outline(r: Rect, d: f32) -> Rect {

@@ -5,7 +5,8 @@ use tiny_skia::{Color, ColorU8};
 
 use crate::canvas::Canvas;
 use crate::draw::{
-    Drawable, FormulaType, GArray, GLine, GPadding, GSpace, GText, border, compute_align, hstack, hstack_top, vstack, vstack_none, vstack_left,
+    Drawable, FormulaType, GArray, GLine, GPadding, GSpace, GText, border, compute_align, hstack,
+    hstack_top, vstack, vstack_left, vstack_none,
 };
 use crate::draw_state::DrawState;
 use crate::style::Styling;
@@ -214,7 +215,6 @@ fn render_value_struct(
     render_state: &mut RenderState,
     canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
-
     // Draw all the inner values separately first (to measure for sep line height)
     let mut v_draws: Vec<Box<dyn Drawable>> = vec![];
     for p in &named_struct.fields {
@@ -301,7 +301,6 @@ fn render_value_invalid(
     let gtxt = GText::new(&text, point(0.0, 0.0), ds);
     let padded_gtxt = GPadding::new(Box::new(gtxt), padding);
     Ok(Box::new(padded_gtxt))
-
 }
 
 fn render_value_number(
@@ -372,7 +371,6 @@ pub fn render_region(
     render_state: &mut RenderState,
     canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
-
     // Header
     let style = &render_state.style;
     let mut ds = DrawState::default();
@@ -406,28 +404,31 @@ pub fn render_location(
     render_state: &mut RenderState,
     canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
-
     if !value.definitions.is_empty() {
         let region = Region {
             name: value.name.clone(),
             definitions: value.definitions.clone(),
         };
-        let old_skip_heap = render_state.skip_heap;
-        render_state.skip_heap = false;
-        let res = render_region(&region, render_state, canvas);
-        render_state.skip_heap = old_skip_heap;
-        return res;
+        return render_location(
+            &Location {
+                name: "".to_string(),
+                definitions: vec![],
+                regions: vec![region],
+            },
+            render_state,
+            canvas,
+        );
     }
-    // // Label
+    // Label
     let style = &render_state.style;
     let mut ds = DrawState::default();
-    // ds.font = style.get_string_or("region.header.font", "serif");
-    // ds.text_color = style.get_color_or("region.header.color", color("#000")?);
-    // ds.font_size = style.get_number_or("region.header.font_size", 24.0);
-    // let padding = style.get_padding("region.header.padding", 5.0);
-    // let text = format!("{}", value.name);
-    // let gtxt = GText::new(&text, point(0.0, 0.0), ds);
-    // let padded_gtxt = GPadding::new(Box::new(gtxt), padding);
+    ds.font = style.get_string_or("location.header.font", "serif");
+    ds.text_color = style.get_color_or("location.header.color", color("#000")?);
+    ds.font_size = style.get_number_or("location.header.font_size", 24.0);
+    let padding = style.get_padding("location.header.padding", 5.0);
+    let text = format!("{}", value.name);
+    let gtxt = GText::new(&text, point(0.0, 0.0), ds);
+    let padded_gtxt = GPadding::new(Box::new(gtxt), padding);
 
     // Body
     let mut body: Vec<Box<dyn Drawable>> = vec![];
@@ -440,9 +441,8 @@ pub fn render_location(
         body.push(g_region);
     }
     let g_body = hstack_top(body, canvas)?;
-//    let g_final = vstack_left(vec![Box::new(padded_gtxt), Box::new(g_body)], canvas)?;
+    //    let g_final = vstack_left(vec![Box::new(padded_gtxt), Box::new(g_body)], canvas)?;
     Ok(Box::new(g_body))
-
 }
 
 fn color(txt: &str) -> Result<ColorU8> {
@@ -637,22 +637,29 @@ mod tests {
         rs.style.add_number("def.value.margin", 0.0);
         rs.style.add_number("def.value.margin.top", 3.0);
         rs.style.add_number("def.value.margin.bottom", 3.0);
-        rs.style.add_color("def.value.border.color", color("#282828")?);
+        rs.style
+            .add_color("def.value.border.color", color("#282828")?);
         rs.style.add_number("def.value.border.width", 1.5);
         rs.style.add_number("def.value.border.radius", 5.0);
 
         rs.style.add_string("value.struct.name.font", "mono");
         rs.style.add_number("value.struct.name.font_size", 23.0);
-        rs.style.add_color("value.struct.name.color", color("#7fc8b0")?);
+        rs.style
+            .add_color("value.struct.name.color", color("#7fc8b0")?);
         rs.style.add_string("value.struct.label.font", "mono");
         rs.style.add_number("value.struct.label.font_size", 23.0);
-        rs.style.add_color("value.struct.label.color", color("#7fc8b0")?);
+        rs.style
+            .add_color("value.struct.label.color", color("#7fc8b0")?);
         rs.style.add_string("value.struct.separator.font", "mono");
-        rs.style.add_number("value.struct.separator.font_size", 23.0);
-        rs.style.add_color("value.struct.separator.color", color("#ccc")?);
+        rs.style
+            .add_number("value.struct.separator.font_size", 23.0);
+        rs.style
+            .add_color("value.struct.separator.color", color("#ccc")?);
         rs.style.add_string("value.struct.separator.text", ":");
-        rs.style.add_number("value.struct.separator.padding.left", 3.0);
-        rs.style.add_number("value.struct.separator.padding.right", 3.0);
+        rs.style
+            .add_number("value.struct.separator.padding.left", 3.0);
+        rs.style
+            .add_number("value.struct.separator.padding.right", 3.0);
         rs.style.add_number("value.struct.padding", 10.0);
         rs.style.add_number("value.struct.margin.left", 10.0);
         rs.style
@@ -663,9 +670,12 @@ mod tests {
 
         rs.style.add_number("value.struct.divider.vmargin", 0.0);
         rs.style.add_number("value.struct.divider.padding", 0.0);
-        rs.style.add_number("value.struct.divider.padding.left", 7.0);
-        rs.style.add_number("value.struct.divider.padding.right", 12.0);
-        rs.style.add_color("value.struct.divider.color", color("#789a5680")?);
+        rs.style
+            .add_number("value.struct.divider.padding.left", 7.0);
+        rs.style
+            .add_number("value.struct.divider.padding.right", 12.0);
+        rs.style
+            .add_color("value.struct.divider.color", color("#789a5680")?);
 
         rs.style.add_string("value.invalid.font", "mono");
         rs.style.add_number("value.invalid.font_size", 48.0);
@@ -681,6 +691,10 @@ mod tests {
         rs.style.add_number("region.padding", 5.0);
 
         rs.style.add_number("location.region.gap", 25.0);
+        rs.style.add_string("location.header.font", "serif_bold");
+        rs.style.add_number("location.header.font_size", 32.0);
+        rs.style.add_color("location.header.color", color("#ccc")?);
+        rs.style.add_number("location.header.padding", 0.0);
 
         let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas)?;
         v.translate(point(200.0, 200.0));
@@ -723,10 +737,7 @@ mod tests {
         let mut v = render_def(
             &Def {
                 label: "a".to_string(),
-                value: Value::Array(vec![
-                    Value::Number(42.0),
-                    Value::Invalid,
-                ]),
+                value: Value::Array(vec![Value::Number(42.0), Value::Invalid]),
             },
             &mut rs,
             &canvas,
@@ -738,10 +749,13 @@ mod tests {
         let mut v = render_def(
             &Def {
                 label: "x".to_string(),
-                value: Value::Struct( NamedStruct { name: "Rect".to_string(), fields: vec![
-                    ("pos".to_string(), Value::Number(42.0)),
-                    ("w".to_string(), Value::Number(3.0)),
-                ] }),
+                value: Value::Struct(NamedStruct {
+                    name: "Rect".to_string(),
+                    fields: vec![
+                        ("pos".to_string(), Value::Number(42.0)),
+                        ("w".to_string(), Value::Number(3.0)),
+                    ],
+                }),
             },
             &mut rs,
             &canvas,
@@ -750,48 +764,52 @@ mod tests {
         v.translate(point(200.0, 380.0));
         v.draw(&mut canvas)?;
 
-        let mut v = render_location( &Location {
-            name: "L0".to_string(),
-            regions: vec![
-                Region {
-                    name: "Stack".to_string(),
-                    definitions: vec![
-                        Def {
-                            label: "x".to_string(),
-                            value: Value::Struct( NamedStruct { name: "Rect".to_string(), fields: vec![
-                                ("pos".to_string(), Value::Number(42.0)),
-                                ("w".to_string(), Value::Number(3.0)),
-                            ] }),
-                        },
-                        Def {
-                            label: "y2".to_string(),
-                            value: Value::Array(vec![
-                                Value::Number(42.0),
-                                Value::Invalid,
-                            ]),
-                        },
-                        Def {
-                            label: "H0".to_string(),
-                            value: Value::Invalid,
-                        },
-                    ],
-                },
-                Region {
-                    name: "Heap".to_string(),
-                    definitions: vec![
-                        Def {
-                            label: "H0".to_string(),
-                            value: Value::Number(42.0),
-                        },
-                        Def {
-                            label: "z".to_string(),
-                            value: Value::Number(2.0),
-                        },
-                    ],
-                },
-            ],
-            definitions: vec![],
-        }, &mut rs, &canvas)?;
+        let mut v = render_location(
+            &Location {
+                name: "L0".to_string(),
+                regions: vec![
+                    Region {
+                        name: "Stack".to_string(),
+                        definitions: vec![
+                            Def {
+                                label: "x".to_string(),
+                                value: Value::Struct(NamedStruct {
+                                    name: "Rect".to_string(),
+                                    fields: vec![
+                                        ("pos".to_string(), Value::Number(42.0)),
+                                        ("w".to_string(), Value::Number(3.0)),
+                                    ],
+                                }),
+                            },
+                            Def {
+                                label: "y2".to_string(),
+                                value: Value::Array(vec![Value::Number(42.0), Value::Invalid]),
+                            },
+                            Def {
+                                label: "H0".to_string(),
+                                value: Value::Invalid,
+                            },
+                        ],
+                    },
+                    Region {
+                        name: "Heap".to_string(),
+                        definitions: vec![
+                            Def {
+                                label: "H0".to_string(),
+                                value: Value::Number(42.0),
+                            },
+                            Def {
+                                label: "z".to_string(),
+                                value: Value::Number(2.0),
+                            },
+                        ],
+                    },
+                ],
+                definitions: vec![],
+            },
+            &mut rs,
+            &canvas,
+        )?;
         v.translate(point(100.0, 500.0));
         v.draw(&mut canvas)?;
 

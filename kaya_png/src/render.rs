@@ -459,12 +459,20 @@ pub fn render_step(
     ds.font_size = style.get_number_or("step.header.font_size", 24.0);
     let padding = style.get_padding("step.header.padding", 5.0);
     let text = format!("{}", value.label);
-    let g_text = GText::new(&text, point(0.0, 0.0), ds);
+    let g_text = GText::new(&text, point(0.0, 0.0), ds.clone());
     let g_padded_text = GPadding::new(Box::new(g_text), padding);
+
+    // draw border on right side sized properly
+    ds.stroke_color = style.get_color_or("step.separator.color", color("#000")?);
+    let h = style.get_number_or("step.separator.size", 5.0);
+    let sep = GLine::new(point(0.0, 0.0), point(0.0, h), ds.clone());
+    let sep_padding = style.get_padding("step.separator.padding", 5.0);
+    let g_padded_sep = GPadding::new(Box::new(sep), sep_padding);
 
     let style = &render_state.style;
     let mut body: Vec<Box<dyn Drawable>> = vec![];
     body.push(Box::new(g_padded_text));
+    body.push(Box::new(g_padded_sep));
     let gap = style.get_number_or("step.location.gap", 5.0);
     for (idx, location) in value.locations.iter().enumerate() {
         let g_location = render_location(&location, render_state, canvas)?;
@@ -475,7 +483,15 @@ pub fn render_step(
     }
     let g_body = hstack_top(body, canvas)?;
 
-    Ok(Box::new(g_body))
+    let style = &render_state.style;
+    ds.padding = style.get_padding("step.padding", 5.0);
+    ds.margin = style.get_padding("step.margin", 5.0);
+    ds.stroke_color = style.get_color_or("step.border.color", color("#000")?);
+    ds.stroke.width = style.get_number_or("step.border.width", 4.0);
+    ds.border_radius = style.get_radius("step.border.radius", 5.0);
+    let res = border(Box::new(g_body), canvas, ds)?;
+
+    Ok(res)
 }
 
 fn color(txt: &str) -> Result<ColorU8> {
@@ -735,9 +751,18 @@ mod tests {
         rs.style.add_color("step.header.color", color("#dbdeab")?);
         rs.style.add_number("step.header.padding", 3.0);
         rs.style.add_number("step.header.padding.right", 20.0);
+        rs.style.add_color("step.separator.color", color("#404040")?);
+        rs.style.add_number("step.separator.size", 26.0);
+        rs.style.add_number("step.separator.padding", 5.0);
+        rs.style.add_number("step.separator.padding.right", 25.0);
         rs.style.add_number("step.location.gap", 40.0);
-        rs.style.add_number("step.padding", 5.0);
+        rs.style.add_number("step.padding", 20.0);
+        rs.style.add_number("step.padding.left", 40.0);
+        rs.style.add_number("step.padding.right", 40.0);
         rs.style.add_number("step.margin", 5.0);
+        rs.style.add_color("step.border.color", color("#404040")?);
+        rs.style.add_number("step.border.width", 1.5);
+        rs.style.add_number("step.border.radius", 5.0);
 
         let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas)?;
         v.translate(point(200.0, 200.0));

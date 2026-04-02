@@ -11,7 +11,7 @@ use crate::draw::{
 use crate::draw_state::DrawState;
 use crate::style::Styling;
 
-use kaya_lib::states::{Def, Location, NamedStruct, Ptr, Region, Step, Value};
+use kaya_lib::states::{Def, Location, NamedStruct, Program, Ptr, Region, Step, Value};
 
 #[derive(Clone, Debug)]
 pub struct RenderState {
@@ -494,6 +494,26 @@ pub fn render_step(
     let res = border(Box::new(g_body), canvas, ds)?;
 
     Ok(res)
+}
+
+pub fn render_program(
+    value: &Program,
+    render_state: &mut RenderState,
+    canvas: &Canvas,
+) -> Result<Box<dyn Drawable>> {
+
+    let style = &render_state.style;
+    let mut body: Vec<Box<dyn Drawable>> = vec![];
+    let gap = style.get_number_or("program.step.gap", 5.0);
+    for (idx, step) in value.0.iter().enumerate() {
+        let g_location = render_step(&step, render_state, canvas)?;
+        if idx > 0 {
+            body.push(Box::new(GSpace::new(0.0, gap)));
+        }
+        body.push(g_location);
+    }
+    let g_body = vstack_left(body, canvas)?;
+    Ok(Box::new(g_body))
 }
 
 fn color(txt: &str) -> Result<ColorU8> {

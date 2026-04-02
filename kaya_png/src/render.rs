@@ -775,11 +775,11 @@ mod tests {
 
         let mut v = render_location(
             &Location {
-                name: "".to_string(),
+                name: "Stack".to_string(),
                 definitions: vec![],
                 regions: vec![
                     Region {
-                        name: "Stack".to_string(),
+                        name: "main".to_string(),
                         definitions: vec![
                             Def {
                                 label: "x".to_string(),

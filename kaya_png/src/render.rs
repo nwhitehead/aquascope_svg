@@ -11,7 +11,7 @@ use crate::draw::{
 use crate::draw_state::DrawState;
 use crate::style::Styling;
 
-use kaya_lib::states::{Def, Location, NamedStruct, Ptr, Region, Value};
+use kaya_lib::states::{Def, Location, NamedStruct, Ptr, Region, Step, Value};
 
 #[derive(Clone, Debug)]
 pub struct RenderState {
@@ -419,18 +419,9 @@ pub fn render_location(
             canvas,
         );
     }
-    // Label
-    let style = &render_state.style;
-    let mut ds = DrawState::default();
-    ds.font = style.get_string_or("location.header.font", "serif");
-    ds.text_color = style.get_color_or("location.header.color", color("#000")?);
-    ds.font_size = style.get_number_or("location.header.font_size", 24.0);
-    let padding = style.get_padding("location.header.padding", 5.0);
-    let text = format!("{}", value.name);
-    let gtxt = GText::new(&text, point(0.0, 0.0), ds);
-    let padded_gtxt = GPadding::new(Box::new(gtxt), padding);
 
     // Body
+    let style = &render_state.style;
     let mut body: Vec<Box<dyn Drawable>> = vec![];
     let gap = style.get_number_or("location.region.gap", 5.0);
     for (idx, region) in value.regions.iter().enumerate() {
@@ -441,8 +432,26 @@ pub fn render_location(
         body.push(g_region);
     }
     let g_body = hstack_top(body, canvas)?;
-    //    let g_final = vstack_left(vec![Box::new(padded_gtxt), Box::new(g_body)], canvas)?;
     Ok(Box::new(g_body))
+}
+
+pub fn render_step(
+    value: &Step,
+    render_state: &mut RenderState,
+    canvas: &Canvas,
+) -> Result<Box<dyn Drawable>> {
+
+    // Label
+    let style = &render_state.style;
+    let mut ds = DrawState::default();
+    ds.font = style.get_string_or("step.header.font", "serif");
+    ds.text_color = style.get_color_or("step.header.color", color("#000")?);
+    ds.font_size = style.get_number_or("step.header.font_size", 24.0);
+    let padding = style.get_padding("step.header.padding", 5.0);
+    let text = format!("{}", value.label);
+    let g_text = GText::new(&text, point(0.0, 0.0), ds);
+    let g_padded_text = GPadding::new(Box::new(g_text), padding);
+    Ok(Box::new(g_padded_text))
 }
 
 fn color(txt: &str) -> Result<ColorU8> {
@@ -766,7 +775,8 @@ mod tests {
 
         let mut v = render_location(
             &Location {
-                name: "L0".to_string(),
+                name: "".to_string(),
+                definitions: vec![],
                 regions: vec![
                     Region {
                         name: "Stack".to_string(),
@@ -805,7 +815,6 @@ mod tests {
                         ],
                     },
                 ],
-                definitions: vec![],
             },
             &mut rs,
             &canvas,

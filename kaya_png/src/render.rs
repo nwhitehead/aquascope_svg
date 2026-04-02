@@ -271,6 +271,23 @@ fn render_value_struct(
     Ok(Box::new(g_array))
 }
 
+fn render_value_invalid(
+    render_state: &mut RenderState,
+    canvas: &Canvas,
+) -> Result<Box<dyn Drawable>> {
+    let style = &render_state.style;
+    let mut ds = DrawState::default();
+    ds.font = style.get_string_or("value.invalid.font", "mono");
+    ds.text_color = style.get_color_or("value.invalid.color", color("#000")?);
+    ds.font_size = style.get_number_or("value.invalid.font_size", 24.0);
+    let padding = style.get_padding("value.invalid.padding", 5.0);
+    let text = format!("×");
+    let gtxt = GText::new(&text, point(0.0, 0.0), ds);
+    let padded_gtxt = GPadding::new(Box::new(gtxt), padding);
+    Ok(Box::new(padded_gtxt))
+
+}
+
 fn render_value_number(
     v: f64,
     render_state: &mut RenderState,
@@ -281,11 +298,7 @@ fn render_value_number(
     ds.font = style.get_string_or("value.number.font", "mono");
     ds.text_color = style.get_color_or("value.number.color", color("#000")?);
     ds.font_size = style.get_number_or("value.number.font_size", 24.0);
-    let left = style.get_number_or("value.number.padding.left", 5.0);
-    let top = style.get_number_or("value.number.padding.top", 5.0);
-    let right = style.get_number_or("value.number.padding.right", 5.0);
-    let bottom = style.get_number_or("value.number.padding.bottom", 5.0);
-    let padding = (left, top, right, bottom);
+    let padding = style.get_padding("value.number.padding", 5.0);
     let text = format!("{}", v);
     let gtxt = GText::new(&text, point(0.0, 0.0), ds);
     let padded_gtxt = GPadding::new(Box::new(gtxt), padding);
@@ -333,6 +346,7 @@ pub fn render_value(
         Value::Array(a) => Ok(render_value_array(a, render_state, canvas)?),
         Value::Tuple(a) => Ok(render_value_tuple(a, render_state, canvas)?),
         Value::Struct(a) => Ok(render_value_struct(a, render_state, canvas)?),
+        Value::Invalid => Ok(render_value_invalid(render_state, canvas)?),
         _ => panic!("not handled"),
     }
 }
@@ -459,9 +473,7 @@ mod tests {
         rs.style.add_string("value.number.font", "mono");
         rs.style.add_number("value.number.font_size", 23.0);
         rs.style.add_color("value.number.color", color("#bccfa9")?);
-        rs.style.add_number("value.number.padding.left", 5.0);
-        rs.style.add_number("value.number.padding.top", 5.0);
-        rs.style.add_number("value.number.padding.right", 5.0);
+        rs.style.add_number("value.number.padding", 5.0);
         rs.style.add_number("value.number.padding.bottom", 8.0);
         rs.style.add_string("value.char.font", "mono");
         rs.style.add_number("value.char.font_size", 23.0);
@@ -558,7 +570,12 @@ mod tests {
         rs.style.add_number("value.struct.divider.padding.right", 12.0);
         rs.style.add_color("value.struct.divider.color", color("#789a5680")?);
 
-        
+        rs.style.add_string("value.invalid.font", "mono");
+        rs.style.add_number("value.invalid.font_size", 48.0);
+        rs.style.add_color("value.invalid.color", color("#e44")?);
+        rs.style.add_number("value.invalid.padding", 0.0);
+        rs.style.add_number("value.invalid.padding.bottom", 10.0);
+
         let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas)?;
         v.translate(point(200.0, 200.0));
         v.draw(&mut canvas)?;
@@ -602,6 +619,7 @@ mod tests {
                 label: "a".to_string(),
                 value: Value::Array(vec![
                     Value::Number(42.0),
+                    Value::Invalid,
                 ]),
             },
             &mut rs,

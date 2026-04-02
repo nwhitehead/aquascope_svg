@@ -5,12 +5,12 @@ use tiny_skia::{Color, ColorU8};
 
 use crate::canvas::Canvas;
 use crate::draw::{
-    Drawable, FormulaType, GArray, GLine, GPadding, GSpace, GText, border, compute_align, hstack,
+    Drawable, FormulaType, GArray, GLine, GPadding, GSpace, GText, border, compute_align, hstack, vstack, vstack_none, vstack_left,
 };
 use crate::draw_state::DrawState;
 use crate::style::Styling;
 
-use kaya_lib::states::{Def, Ptr, Value, NamedStruct};
+use kaya_lib::states::{Def, Ptr, Region, Value, NamedStruct};
 
 #[derive(Clone, Debug, Default)]
 pub struct RenderState {
@@ -351,6 +351,35 @@ pub fn render_value(
     }
 }
 
+pub fn render_region(
+    value: &Region,
+    render_state: &mut RenderState,
+    canvas: &Canvas,
+) -> Result<Box<dyn Drawable>> {
+
+    // Header
+    let style = &render_state.style;
+    let mut ds = DrawState::default();
+    ds.font = style.get_string_or("region.header.font", "serif");
+    ds.text_color = style.get_color_or("region.header.color", color("#000")?);
+    ds.font_size = style.get_number_or("region.header.font_size", 24.0);
+    let padding = style.get_padding("region.header.padding", 5.0);
+    let text = format!("{}", value.name);
+    let gtxt = GText::new(&text, point(0.0, 0.0), ds);
+    let padded_gtxt = GPadding::new(Box::new(gtxt), padding);
+
+    // Body
+    let mut body: Vec<Box<dyn Drawable>> = vec![];
+    for def in &value.definitions {
+        let g_def = render_def(&def, render_state, canvas)?;
+        body.push(g_def);
+    }
+    // stack vertically without moving horizontally (to keep : aligned)
+    let g_body = vstack_none(body, canvas)?;
+    let g_final = vstack_left(vec![Box::new(padded_gtxt), Box::new(g_body)], canvas)?;
+    Ok(Box::new(g_final))
+}
+
 fn color(txt: &str) -> Result<ColorU8> {
     let r;
     let g;
@@ -468,6 +497,7 @@ mod tests {
             include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf"),
         )?;
         canvas.load_font("serif", include_bytes!("../fonts/Lato/Lato-Regular.ttf"))?;
+        canvas.load_font("serif_bold", include_bytes!("../fonts/Lato/Lato-Bold.ttf"))?;
 
         let mut rs = RenderState::default();
         rs.style.add_string("value.number.font", "mono");
@@ -576,6 +606,12 @@ mod tests {
         rs.style.add_number("value.invalid.padding", 0.0);
         rs.style.add_number("value.invalid.padding.bottom", 10.0);
 
+        rs.style.add_string("region.header.font", "serif_bold");
+        rs.style.add_number("region.header.font_size", 26.0);
+        rs.style.add_color("region.header.color", color("#ccc")?);
+        rs.style.add_number("region.header.padding", 0.0);
+        rs.style.add_number("region.header.padding.bottom", 20.0);
+
         let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas)?;
         v.translate(point(200.0, 200.0));
         v.draw(&mut canvas)?;
@@ -640,6 +676,28 @@ mod tests {
             &canvas,
         )?;
         v.translate(point(200.0, 380.0));
+        v.draw(&mut canvas)?;
+
+        let mut v = render_region( &Region {
+            name: "Stack".to_string(),
+            definitions: vec![
+                Def {
+                    label: "x".to_string(),
+                    value: Value::Struct( NamedStruct { name: "Rect".to_string(), fields: vec![
+                        ("pos".to_string(), Value::Number(42.0)),
+                        ("w".to_string(), Value::Number(3.0)),
+                    ] }),
+                },
+                Def {
+                    label: "y2".to_string(),
+                    value: Value::Array(vec![
+                        Value::Number(42.0),
+                        Value::Invalid,
+                    ]),
+                },
+            ],
+        }, &mut rs, &canvas)?;
+        v.translate(point(100.0, 500.0));
         v.draw(&mut canvas)?;
 
         canvas.save("test_render_value.png")?;

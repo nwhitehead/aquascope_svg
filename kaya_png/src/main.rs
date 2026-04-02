@@ -1,7 +1,9 @@
+use ab_glyph::point;
 use anyhow::Result;
 use anyhow::anyhow;
 use clap::Parser;
 use std::fs;
+use tiny_skia::Color;
 
 use kaya_lib::parser::parse;
 mod canvas;
@@ -9,6 +11,10 @@ mod draw;
 mod draw_state;
 mod render;
 mod style;
+
+use crate::canvas::Canvas;
+use crate::render::{RenderState, render_program};
+use crate::style::standard_style;
 
 #[derive(Debug, Parser)]
 #[command(name = "render_states")]
@@ -78,9 +84,38 @@ fn main() -> Result<()> {
         }
         let contents = fs::read_to_string(&input_filename)
             .map_err(|err| anyhow!("{}, could not read input filename: {}", err, input_filename))?;
-        let _program = parse(&contents)?;
+        let program = parse(&contents)?;
 
-        // TODO
+        // Start with measurement, empty canvas
+        let mut canvas = Canvas::new(1, 1)?;
+        canvas.load_font(
+            "mono",
+            include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf"),
+        )?;
+        canvas.load_font("serif", include_bytes!("../fonts/Lato/Lato-Regular.ttf"))?;
+        canvas.load_font("serif_bold", include_bytes!("../fonts/Lato/Lato-Bold.ttf"))?;
+        let mut rs = RenderState::default();
+        rs.style = standard_style()?;
+        let mut v = render_program(&program, &mut rs, &canvas)?;
+        let bb = v.bounding_box(&canvas)?;
+        // Translate to 0, 0
+        v.translate(point(-bb.min.x, -bb.min.y));
+        let w = bb.max.x - bb.min.x;
+        let h = bb.max.y - bb.min.y;
+        // Now we know size, recreate canvas at right size with fonts
+        canvas = Canvas::new(w.ceil() as u32, h.ceil() as u32)?;
+        canvas
+            .pixmap
+            .fill(Color::from_rgba8(0x19, 0x19, 0x19, 0xff));
+        canvas.load_font(
+            "mono",
+            include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf"),
+        )?;
+        canvas.load_font("serif", include_bytes!("../fonts/Lato/Lato-Regular.ttf"))?;
+        canvas.load_font("serif_bold", include_bytes!("../fonts/Lato/Lato-Bold.ttf"))?;
+        v.draw(&mut canvas)?;
+
+        canvas.save(&output_filename)?;
     }
     Ok(())
 }

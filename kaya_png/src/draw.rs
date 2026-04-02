@@ -21,7 +21,8 @@ pub struct GTagged {
 impl GTagged {
     pub fn new(item: Box<dyn Drawable>, tag: &str) -> Self {
         Self {
-            item, tag: tag.to_string(),
+            item,
+            tag: tag.to_string(),
         }
     }
 }
@@ -413,7 +414,6 @@ impl Drawable for GArray {
         }
         return None;
     }
-
 }
 
 #[derive(Clone, Debug)]

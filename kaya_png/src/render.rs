@@ -5,17 +5,17 @@ use tiny_skia::{Color, ColorU8};
 
 use crate::canvas::Canvas;
 use crate::draw::{
-    Drawable, FormulaType, GArray, GLine, GPadding, GSpace, GTagged, GText, border, compute_align, hstack,
-    hstack_top, vstack, vstack_left, vstack_none,
+    Drawable, FormulaType, GArray, GLine, GPadding, GSpace, GTagged, GText, border, compute_align,
+    hstack, hstack_top, vstack, vstack_left, vstack_none,
 };
 use crate::draw_state::DrawState;
-use crate::style::Styling;
+use crate::style::{Styling, color, standard_style};
 
 use kaya_lib::states::{Def, Location, NamedStruct, Program, Ptr, Region, Step, Value};
 
 #[derive(Clone, Debug)]
 pub struct RenderState {
-    style: Styling,
+    pub style: Styling,
     skip_heap: bool,
     ids: Vec<String>,
 }
@@ -481,7 +481,6 @@ pub fn render_step(
     render_state: &mut RenderState,
     canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
-
     // Label
     let style = &render_state.style;
     let mut ds = DrawState::default();
@@ -506,7 +505,8 @@ pub fn render_step(
     body.push(Box::new(g_padded_sep));
     let gap = style.get_number_or("step.location.gap", 5.0);
     for (idx, location) in value.locations.iter().enumerate() {
-        let g_location = render_location(&location, &format!("{}", value.label), render_state, canvas)?;
+        let g_location =
+            render_location(&location, &format!("{}", value.label), render_state, canvas)?;
         if idx > 0 {
             body.push(Box::new(GSpace::new(gap, 0.0)));
         }
@@ -530,7 +530,6 @@ pub fn render_program(
     render_state: &mut RenderState,
     canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
-
     let style = &render_state.style;
     let mut body: Vec<Box<dyn Drawable>> = vec![];
     let gap = style.get_number_or("program.step.gap", 5.0);
@@ -543,43 +542,6 @@ pub fn render_program(
     }
     let g_body = vstack_left(body, canvas)?;
     Ok(Box::new(g_body))
-}
-
-fn color(txt: &str) -> Result<ColorU8> {
-    let r;
-    let g;
-    let b;
-    let mut a = 255;
-    if !txt.starts_with('#') {
-        bail!("colors must start with #");
-    }
-    let txt = txt.trim_start_matches('#');
-    match txt.len() {
-        3 => {
-            r = u8::from_str_radix(&txt[0..1], 16)? * (0x10 + 0x01);
-            g = u8::from_str_radix(&txt[1..2], 16)? * (0x10 + 0x01);
-            b = u8::from_str_radix(&txt[2..3], 16)? * (0x10 + 0x01);
-        }
-        4 => {
-            r = u8::from_str_radix(&txt[0..1], 16)? * (0x10 + 0x01);
-            g = u8::from_str_radix(&txt[1..2], 16)? * (0x10 + 0x01);
-            b = u8::from_str_radix(&txt[2..3], 16)? * (0x10 + 0x01);
-            a = u8::from_str_radix(&txt[3..4], 16)? * (0x10 + 0x01);
-        }
-        6 => {
-            r = u8::from_str_radix(&txt[0..2], 16)?;
-            g = u8::from_str_radix(&txt[2..4], 16)?;
-            b = u8::from_str_radix(&txt[4..6], 16)?;
-        }
-        8 => {
-            r = u8::from_str_radix(&txt[0..2], 16)?;
-            g = u8::from_str_radix(&txt[2..4], 16)?;
-            b = u8::from_str_radix(&txt[4..6], 16)?;
-            a = u8::from_str_radix(&txt[6..8], 16)?;
-        }
-        _ => bail!("unknown color length"),
-    }
-    Ok(ColorU8::from_rgba(r, g, b, a))
 }
 
 #[cfg(test)]
@@ -665,156 +627,7 @@ mod tests {
         canvas.load_font("serif_bold", include_bytes!("../fonts/Lato/Lato-Bold.ttf"))?;
 
         let mut rs = RenderState::default();
-        rs.style.add_string("value.number.font", "mono");
-        rs.style.add_number("value.number.font_size", 23.0);
-        rs.style.add_color("value.number.color", color("#bccfa9")?);
-        rs.style.add_number("value.number.padding", 5.0);
-        rs.style.add_number("value.number.padding.bottom", 8.0);
-        rs.style.add_string("value.char.font", "mono");
-        rs.style.add_number("value.char.font_size", 23.0);
-        rs.style.add_color("value.char.color", color("#bf947a")?);
-        rs.style.add_string("value.pointer.font", "mono");
-        rs.style.add_number("value.pointer.font_size", 23.0);
-        rs.style.add_color("value.pointer.color", color("#ccc")?);
-
-        rs.style.add_number("value.array.empty.w", 0.0);
-        rs.style.add_number("value.array.empty.h", 20.0);
-        rs.style
-            .add_color("value.array.separator.color", color("#7197d580")?);
-        rs.style.add_number("value.array.separator.vmargin", 5.0);
-        rs.style
-            .add_number("value.array.separator.padding.left", 10.0);
-        rs.style
-            .add_number("value.array.separator.padding.top", 5.0);
-        rs.style
-            .add_number("value.array.separator.padding.right", 10.0);
-        rs.style
-            .add_number("value.array.separator.padding.bottom", 5.0);
-        rs.style.add_number("value.array.padding.left", 10.0);
-        rs.style.add_number("value.array.padding.top", 2.0);
-        rs.style.add_number("value.array.padding.right", 10.0);
-        rs.style.add_number("value.array.padding.bottom", 2.0);
-        rs.style
-            .add_color("value.array.border.color", color("#7197d5")?);
-        rs.style.add_number("value.array.border.width", 1.5);
-        rs.style.add_number("value.array.border.radius", 5.0);
-        rs.style.add_number("value.tuple.empty.w", 0.0);
-        rs.style.add_number("value.tuple.empty.h", 20.0);
-
-        rs.style
-            .add_color("value.tuple.separator.color", color("#b785c080")?);
-        rs.style.add_number("value.tuple.separator.vmargin", 5.0);
-        rs.style
-            .add_number("value.tuple.separator.padding.left", 10.0);
-        rs.style
-            .add_number("value.tuple.separator.padding.top", 5.0);
-        rs.style
-            .add_number("value.tuple.separator.padding.right", 10.0);
-        rs.style
-            .add_number("value.tuple.separator.padding.bottom", 5.0);
-        rs.style.add_number("value.tuple.padding.left", 10.0);
-        rs.style.add_number("value.tuple.padding.top", 2.0);
-        rs.style.add_number("value.tuple.padding.right", 10.0);
-        rs.style.add_number("value.tuple.padding.bottom", 2.0);
-        rs.style
-            .add_color("value.tuple.border.color", color("#b785c0")?);
-        rs.style.add_number("value.tuple.border.width", 1.5);
-        rs.style.add_number("value.tuple.border.radius", 5.0);
-        rs.style.add_number("value.tuple.border.radius.nw", 0.0);
-        rs.style.add_number("value.tuple.border.radius.se", 0.0);
-
-        rs.style.add_string("def.label.font", "mono");
-        rs.style.add_number("def.label.font_size", 23.0);
-        rs.style.add_color("def.label.color", color("#b2d9fd")?);
-        rs.style.add_string("def.separator.font", "mono");
-        rs.style.add_number("def.separator.font_size", 23.0);
-        rs.style.add_color("def.separator.color", color("#ccc")?);
-        rs.style.add_string("def.separator.text", ":");
-        rs.style.add_number("def.separator.padding.left", 3.0);
-        rs.style.add_number("def.separator.padding.right", 5.0);
-        rs.style.add_number("def.left.padding.bottom", 3.0);
-        rs.style.add_number("def.value.padding", 8.0);
-        rs.style.add_number("def.value.margin", 0.0);
-        rs.style.add_number("def.value.margin.top", 3.0);
-        rs.style.add_number("def.value.margin.bottom", 3.0);
-        rs.style
-            .add_color("def.value.border.color", color("#282828")?);
-        rs.style.add_number("def.value.border.width", 1.5);
-        rs.style.add_number("def.value.border.radius", 5.0);
-
-        rs.style.add_string("value.struct.name.font", "mono");
-        rs.style.add_number("value.struct.name.font_size", 23.0);
-        rs.style
-            .add_color("value.struct.name.color", color("#7fc8b0")?);
-        rs.style.add_string("value.struct.label.font", "mono");
-        rs.style.add_number("value.struct.label.font_size", 23.0);
-        rs.style
-            .add_color("value.struct.label.color", color("#7fc8b0")?);
-        rs.style.add_string("value.struct.separator.font", "mono");
-        rs.style
-            .add_number("value.struct.separator.font_size", 23.0);
-        rs.style
-            .add_color("value.struct.separator.color", color("#ccc")?);
-        rs.style.add_string("value.struct.separator.text", ":");
-        rs.style
-            .add_number("value.struct.separator.padding.left", 3.0);
-        rs.style
-            .add_number("value.struct.separator.padding.right", 3.0);
-        rs.style.add_number("value.struct.padding", 10.0);
-        rs.style.add_number("value.struct.margin.left", 10.0);
-        rs.style
-            .add_color("value.struct.border.color", color("#789a56")?);
-        rs.style.add_number("value.struct.border.width", 1.5);
-        rs.style.add_number("value.struct.border.radius", 5.0);
-        rs.style.add_number("value.struct.left.padding.bottom", 3.0);
-
-        rs.style.add_number("value.struct.divider.vmargin", 0.0);
-        rs.style.add_number("value.struct.divider.padding", 0.0);
-        rs.style
-            .add_number("value.struct.divider.padding.left", 7.0);
-        rs.style
-            .add_number("value.struct.divider.padding.right", 12.0);
-        rs.style
-            .add_color("value.struct.divider.color", color("#789a5680")?);
-
-        rs.style.add_string("value.invalid.font", "mono");
-        rs.style.add_number("value.invalid.font_size", 48.0);
-        rs.style.add_color("value.invalid.color", color("#e44")?);
-        rs.style.add_number("value.invalid.padding", 0.0);
-        rs.style.add_number("value.invalid.padding.bottom", 10.0);
-
-        rs.style.add_string("region.header.font", "serif");
-        rs.style.add_number("region.header.font_size", 23.0);
-        rs.style.add_color("region.header.color", color("#ccc")?);
-        rs.style.add_number("region.header.padding", 0.0);
-        rs.style.add_number("region.header.padding.top", 10.0);
-        rs.style.add_number("region.header.padding.bottom", 10.0);
-        rs.style.add_number("region.padding", 0.0);
-
-        rs.style.add_number("location.region.gap", 25.0);
-        rs.style.add_string("location.header.font", "serif_bold");
-        rs.style.add_number("location.header.font_size", 28.0);
-        rs.style.add_color("location.header.color", color("#ccc")?);
-        rs.style.add_number("location.header.padding", 0.0);
-
-        rs.style.add_string("step.header.font", "serif_bold");
-        rs.style.add_number("step.header.font_size", 28.0);
-        rs.style.add_color("step.header.color", color("#dbdeab")?);
-        rs.style.add_number("step.header.padding", 3.0);
-        rs.style.add_number("step.header.padding.right", 20.0);
-        rs.style.add_color("step.separator.color", color("#404040")?);
-        rs.style.add_number("step.separator.size", 26.0);
-        rs.style.add_number("step.separator.padding", 5.0);
-        rs.style.add_number("step.separator.padding.right", 25.0);
-        rs.style.add_number("step.location.gap", 40.0);
-        rs.style.add_number("step.padding", 20.0);
-        rs.style.add_number("step.padding.left", 40.0);
-        rs.style.add_number("step.padding.right", 40.0);
-        rs.style.add_number("step.margin", 5.0);
-        rs.style.add_color("step.border.color", color("#404040")?);
-        rs.style.add_number("step.border.width", 1.5);
-        rs.style.add_number("step.border.radius", 5.0);
-        rs.style.add_number("program.step.gap", 5.0);
+        rs.style = standard_style()?;
 
         let mut v = render_value(&Value::Number(42.0), "", &mut rs, &canvas)?;
         v.translate(point(200.0, 200.0));
@@ -890,111 +703,112 @@ mod tests {
 
         rs.clear_ids();
         let mut v = render_program(
-            &Program(
-                vec![
-                    Step {
-                        label: "L0".to_string(),
-                        locations: vec![
-                            Location {
-                                name: "Stack".to_string(),
-                                definitions: vec![],
-                                regions: vec![
-                                    Region {
-                                        name: "main".to_string(),
-                                        definitions: vec![
-                                            Def {
-                                                label: "x".to_string(),
-                                                value: Value::Struct(NamedStruct {
-                                                    name: "Rect".to_string(),
-                                                    fields: vec![
-                                                        ("pos".to_string(), Value::Number(42.0)),
-                                                        ("w".to_string(), Value::Number(3.0)),
-                                                    ],
-                                                }),
-                                            },
-                                            Def {
-                                                label: "y2".to_string(),
-                                                value: Value::Array(vec![Value::Number(42.0), Value::Invalid]),
-                                            },
-                                            Def {
-                                                label: "H0".to_string(),
-                                                value: Value::Invalid,
-                                            },
-                                        ],
-                                    },
-                                    Region {
-                                        name: "main::f".to_string(),
-                                        definitions: vec![
-                                            Def {
-                                                label: "x".to_string(),
-                                                value: Value::Number(42.0),
-                                            },
-                                            Def {
-                                                label: "y".to_string(),
-                                                value: Value::Number(2.0),
-                                            },
-                                        ],
-                                    },
-                                ],
-                            },
-                            Location {
-                                name: "Heap".to_string(),
+            &Program(vec![
+                Step {
+                    label: "L0".to_string(),
+                    locations: vec![
+                        Location {
+                            name: "Stack".to_string(),
+                            definitions: vec![],
+                            regions: vec![
+                                Region {
+                                    name: "main".to_string(),
+                                    definitions: vec![
+                                        Def {
+                                            label: "x".to_string(),
+                                            value: Value::Struct(NamedStruct {
+                                                name: "Rect".to_string(),
+                                                fields: vec![
+                                                    ("pos".to_string(), Value::Number(42.0)),
+                                                    ("w".to_string(), Value::Number(3.0)),
+                                                ],
+                                            }),
+                                        },
+                                        Def {
+                                            label: "y2".to_string(),
+                                            value: Value::Array(vec![
+                                                Value::Number(42.0),
+                                                Value::Invalid,
+                                            ]),
+                                        },
+                                        Def {
+                                            label: "H0".to_string(),
+                                            value: Value::Invalid,
+                                        },
+                                    ],
+                                },
+                                Region {
+                                    name: "main::f".to_string(),
+                                    definitions: vec![
+                                        Def {
+                                            label: "x".to_string(),
+                                            value: Value::Number(42.0),
+                                        },
+                                        Def {
+                                            label: "y".to_string(),
+                                            value: Value::Number(2.0),
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                        Location {
+                            name: "Heap".to_string(),
+                            definitions: vec![
+                                Def {
+                                    label: "H0".to_string(),
+                                    value: Value::Number(42.0),
+                                },
+                                Def {
+                                    label: "y".to_string(),
+                                    value: Value::Number(2.0),
+                                },
+                            ],
+                            regions: vec![],
+                        },
+                    ],
+                },
+                Step {
+                    label: "L1".to_string(),
+                    locations: vec![
+                        Location {
+                            name: "Stack".to_string(),
+                            definitions: vec![],
+                            regions: vec![Region {
+                                name: "main".to_string(),
                                 definitions: vec![
+                                    Def {
+                                        label: "x".to_string(),
+                                        value: Value::Struct(NamedStruct {
+                                            name: "Rect".to_string(),
+                                            fields: vec![
+                                                ("pos".to_string(), Value::Number(42.0)),
+                                                ("w".to_string(), Value::Number(3.0)),
+                                            ],
+                                        }),
+                                    },
+                                    Def {
+                                        label: "y2".to_string(),
+                                        value: Value::Array(vec![
+                                            Value::Number(42.0),
+                                            Value::Invalid,
+                                        ]),
+                                    },
                                     Def {
                                         label: "H0".to_string(),
-                                        value: Value::Number(42.0),
-                                    },
-                                    Def {
-                                        label: "y".to_string(),
-                                        value: Value::Number(2.0),
+                                        value: Value::Invalid,
                                     },
                                 ],
-                                regions: vec![]
-                            },                    
-                        ],
-                    },
-                    Step {
-                        label: "L1".to_string(),
-                        locations: vec![
-                            Location {
-                                name: "Stack".to_string(),
-                                definitions: vec![],
-                                regions: vec![
-                                    Region {
-                                        name: "main".to_string(),
-                                        definitions: vec![
-                                            Def {
-                                                label: "x".to_string(),
-                                                value: Value::Struct(NamedStruct {
-                                                    name: "Rect".to_string(),
-                                                    fields: vec![
-                                                        ("pos".to_string(), Value::Number(42.0)),
-                                                        ("w".to_string(), Value::Number(3.0)),
-                                                    ],
-                                                }),
-                                            },
-                                            Def {
-                                                label: "y2".to_string(),
-                                                value: Value::Array(vec![Value::Number(42.0), Value::Invalid]),
-                                            },
-                                            Def {
-                                                label: "H0".to_string(),
-                                                value: Value::Invalid,
-                                            },
-                                        ],
-                                    },
-                                ],
-                            },
-                            Location {
-                                name: "Heap".to_string(),
-                                definitions: vec![
-                                ],
-                                regions: vec![]
-                            },
-                        ],
-                    },
-                ],
-            ),
+                            }],
+                        },
+                        Location {
+                            name: "Heap".to_string(),
+                            definitions: vec![],
+                            regions: vec![],
+                        },
+                    ],
+                },
+            ]),
             &mut rs,
             &canvas,
         )?;

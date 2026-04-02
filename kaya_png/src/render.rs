@@ -370,6 +370,7 @@ pub fn render_region(
     value: &Region,
     render_state: &mut RenderState,
     canvas: &Canvas,
+    skip_heap: bool,
 ) -> Result<Box<dyn Drawable>> {
     // Header
     let style = &render_state.style;
@@ -382,10 +383,6 @@ pub fn render_region(
     let text = format!("{}", value.name);
     let gtxt = GText::new(&text, point(0.0, 0.0), ds);
     let padded_gtxt = GPadding::new(Box::new(gtxt), header_padding);
-    let mut skip_heap = render_state.skip_heap;
-    if value.name.starts_with("Stack") {
-        skip_heap = false;
-    }
     // Body
     let mut body: Vec<Box<dyn Drawable>> = vec![];
     for def in &value.definitions {
@@ -420,6 +417,11 @@ pub fn render_location(
         );
     }
 
+    let mut skip_heap = render_state.skip_heap;
+    if value.name.starts_with("Stack") {
+        skip_heap = false;
+    }
+
     // Header
     let style = &render_state.style;
     let mut ds = DrawState::default();
@@ -436,7 +438,7 @@ pub fn render_location(
     let style = &render_state.style;
     let mut body: Vec<Box<dyn Drawable>> = vec![];
     for region in &value.regions {
-        let g_region = render_region(&region, render_state, canvas)?;
+        let g_region = render_region(&region, render_state, canvas, skip_heap)?;
         body.push(g_region);
     }
     let g_body = vstack_left(body, canvas)?;

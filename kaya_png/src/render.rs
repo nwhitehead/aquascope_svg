@@ -785,6 +785,7 @@ mod tests {
         rs.style.add_color("step.border.color", color("#404040")?);
         rs.style.add_number("step.border.width", 1.5);
         rs.style.add_number("step.border.radius", 5.0);
+        rs.style.add_number("program.step.gap", 5.0);
 
         let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas)?;
         v.translate(point(200.0, 200.0));
@@ -854,42 +855,59 @@ mod tests {
         v.translate(point(200.0, 380.0));
         v.draw(&mut canvas)?;
 
-        let mut v = render_step(
-            &Step {
-                label: "L0".to_string(),
-                locations: vec![
-                    Location {
-                        name: "Stack".to_string(),
-                        definitions: vec![],
-                        regions: vec![
-                            Region {
-                                name: "main".to_string(),
-                                definitions: vec![
-                                    Def {
-                                        label: "x".to_string(),
-                                        value: Value::Struct(NamedStruct {
-                                            name: "Rect".to_string(),
-                                            fields: vec![
-                                                ("pos".to_string(), Value::Number(42.0)),
-                                                ("w".to_string(), Value::Number(3.0)),
-                                            ],
-                                        }),
+        let mut v = render_program(
+            &Program(
+                vec![
+                    Step {
+                        label: "L0".to_string(),
+                        locations: vec![
+                            Location {
+                                name: "Stack".to_string(),
+                                definitions: vec![],
+                                regions: vec![
+                                    Region {
+                                        name: "main".to_string(),
+                                        definitions: vec![
+                                            Def {
+                                                label: "x".to_string(),
+                                                value: Value::Struct(NamedStruct {
+                                                    name: "Rect".to_string(),
+                                                    fields: vec![
+                                                        ("pos".to_string(), Value::Number(42.0)),
+                                                        ("w".to_string(), Value::Number(3.0)),
+                                                    ],
+                                                }),
+                                            },
+                                            Def {
+                                                label: "y2".to_string(),
+                                                value: Value::Array(vec![Value::Number(42.0), Value::Invalid]),
+                                            },
+                                            Def {
+                                                label: "H0".to_string(),
+                                                value: Value::Invalid,
+                                            },
+                                        ],
                                     },
-                                    Def {
-                                        label: "y2".to_string(),
-                                        value: Value::Array(vec![Value::Number(42.0), Value::Invalid]),
-                                    },
-                                    Def {
-                                        label: "H0".to_string(),
-                                        value: Value::Invalid,
+                                    Region {
+                                        name: "main::f".to_string(),
+                                        definitions: vec![
+                                            Def {
+                                                label: "x".to_string(),
+                                                value: Value::Number(42.0),
+                                            },
+                                            Def {
+                                                label: "y".to_string(),
+                                                value: Value::Number(2.0),
+                                            },
+                                        ],
                                     },
                                 ],
                             },
-                            Region {
-                                name: "main::f".to_string(),
+                            Location {
+                                name: "Heap".to_string(),
                                 definitions: vec![
                                     Def {
-                                        label: "x".to_string(),
+                                        label: "H0".to_string(),
                                         value: Value::Number(42.0),
                                     },
                                     Def {
@@ -897,25 +915,52 @@ mod tests {
                                         value: Value::Number(2.0),
                                     },
                                 ],
+                                regions: vec![]
+                            },                    
+                        ],
+                    },
+                    Step {
+                        label: "L1".to_string(),
+                        locations: vec![
+                            Location {
+                                name: "Stack".to_string(),
+                                definitions: vec![],
+                                regions: vec![
+                                    Region {
+                                        name: "main".to_string(),
+                                        definitions: vec![
+                                            Def {
+                                                label: "x".to_string(),
+                                                value: Value::Struct(NamedStruct {
+                                                    name: "Rect".to_string(),
+                                                    fields: vec![
+                                                        ("pos".to_string(), Value::Number(42.0)),
+                                                        ("w".to_string(), Value::Number(3.0)),
+                                                    ],
+                                                }),
+                                            },
+                                            Def {
+                                                label: "y2".to_string(),
+                                                value: Value::Array(vec![Value::Number(42.0), Value::Invalid]),
+                                            },
+                                            Def {
+                                                label: "H0".to_string(),
+                                                value: Value::Invalid,
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                            Location {
+                                name: "Heap".to_string(),
+                                definitions: vec![
+                                ],
+                                regions: vec![]
                             },
                         ],
                     },
-                    Location {
-                        name: "Heap".to_string(),
-                        definitions: vec![
-                            Def {
-                                label: "H0".to_string(),
-                                value: Value::Number(42.0),
-                            },
-                            Def {
-                                label: "y".to_string(),
-                                value: Value::Number(2.0),
-                            },
-                        ],
-                        regions: vec![]
-                    },                    
                 ],
-            },
+            ),
             &mut rs,
             &canvas,
         )?;

@@ -462,19 +462,20 @@ pub fn render_step(
     let g_text = GText::new(&text, point(0.0, 0.0), ds);
     let g_padded_text = GPadding::new(Box::new(g_text), padding);
 
-    // let style = &render_state.style;
-    // let mut body: Vec<Box<dyn Drawable>> = vec![];
-    // let gap = style.get_number_or("location.region.gap", 5.0);
-    // for (idx, region) in value.regions.iter().enumerate() {
-    //     let g_region = render_region(&region, render_state, canvas)?;
-    //     if idx > 0 {
-    //         body.push(Box::new(GSpace::new(gap, 0.0)));
-    //     }
-    //     body.push(g_region);
-    // }
-    // let g_body = hstack_top(body, canvas)?;
+    let style = &render_state.style;
+    let mut body: Vec<Box<dyn Drawable>> = vec![];
+    body.push(Box::new(g_padded_text));
+    let gap = style.get_number_or("step.location.gap", 5.0);
+    for (idx, location) in value.locations.iter().enumerate() {
+        let g_location = render_location(&location, render_state, canvas)?;
+        if idx > 0 {
+            body.push(Box::new(GSpace::new(gap, 0.0)));
+        }
+        body.push(g_location);
+    }
+    let g_body = hstack_top(body, canvas)?;
 
-    Ok(Box::new(g_padded_text))
+    Ok(Box::new(g_body))
 }
 
 fn color(txt: &str) -> Result<ColorU8> {
@@ -729,6 +730,15 @@ mod tests {
         rs.style.add_color("location.header.color", color("#ccc")?);
         rs.style.add_number("location.header.padding", 0.0);
 
+        rs.style.add_string("step.header.font", "serif_bold");
+        rs.style.add_number("step.header.font_size", 28.0);
+        rs.style.add_color("step.header.color", color("#dbdeab")?);
+        rs.style.add_number("step.header.padding", 3.0);
+        rs.style.add_number("step.header.padding.right", 20.0);
+        rs.style.add_number("step.location.gap", 40.0);
+        rs.style.add_number("step.padding", 5.0);
+        rs.style.add_number("step.margin", 5.0);
+
         let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas)?;
         v.translate(point(200.0, 200.0));
         v.draw(&mut canvas)?;
@@ -797,39 +807,57 @@ mod tests {
         v.translate(point(200.0, 380.0));
         v.draw(&mut canvas)?;
 
-        let mut v = render_location(
-            &Location {
-                name: "Stack".to_string(),
-                definitions: vec![],
-                regions: vec![
-                    Region {
-                        name: "main".to_string(),
-                        definitions: vec![
-                            Def {
-                                label: "x".to_string(),
-                                value: Value::Struct(NamedStruct {
-                                    name: "Rect".to_string(),
-                                    fields: vec![
-                                        ("pos".to_string(), Value::Number(42.0)),
-                                        ("w".to_string(), Value::Number(3.0)),
-                                    ],
-                                }),
+        let mut v = render_step(
+            &Step {
+                label: "L0".to_string(),
+                locations: vec![
+                    Location {
+                        name: "Stack".to_string(),
+                        definitions: vec![],
+                        regions: vec![
+                            Region {
+                                name: "main".to_string(),
+                                definitions: vec![
+                                    Def {
+                                        label: "x".to_string(),
+                                        value: Value::Struct(NamedStruct {
+                                            name: "Rect".to_string(),
+                                            fields: vec![
+                                                ("pos".to_string(), Value::Number(42.0)),
+                                                ("w".to_string(), Value::Number(3.0)),
+                                            ],
+                                        }),
+                                    },
+                                    Def {
+                                        label: "y2".to_string(),
+                                        value: Value::Array(vec![Value::Number(42.0), Value::Invalid]),
+                                    },
+                                    Def {
+                                        label: "H0".to_string(),
+                                        value: Value::Invalid,
+                                    },
+                                ],
                             },
-                            Def {
-                                label: "y2".to_string(),
-                                value: Value::Array(vec![Value::Number(42.0), Value::Invalid]),
-                            },
-                            Def {
-                                label: "H0".to_string(),
-                                value: Value::Invalid,
+                            Region {
+                                name: "main::f".to_string(),
+                                definitions: vec![
+                                    Def {
+                                        label: "x".to_string(),
+                                        value: Value::Number(42.0),
+                                    },
+                                    Def {
+                                        label: "y".to_string(),
+                                        value: Value::Number(2.0),
+                                    },
+                                ],
                             },
                         ],
                     },
-                    Region {
-                        name: "main::f".to_string(),
+                    Location {
+                        name: "Heap".to_string(),
                         definitions: vec![
                             Def {
-                                label: "x".to_string(),
+                                label: "H0".to_string(),
                                 value: Value::Number(42.0),
                             },
                             Def {
@@ -837,29 +865,9 @@ mod tests {
                                 value: Value::Number(2.0),
                             },
                         ],
-                    },
+                        regions: vec![]
+                    },                    
                 ],
-            },
-            &mut rs,
-            &canvas,
-        )?;
-        v.translate(point(100.0, 500.0));
-        v.draw(&mut canvas)?;
-
-        let mut v = render_location(
-            &Location {
-                name: "Heap".to_string(),
-                definitions: vec![
-                    Def {
-                        label: "H0".to_string(),
-                        value: Value::Number(42.0),
-                    },
-                    Def {
-                        label: "y".to_string(),
-                        value: Value::Number(2.0),
-                    },
-                ],
-                regions: vec![]
             },
             &mut rs,
             &canvas,

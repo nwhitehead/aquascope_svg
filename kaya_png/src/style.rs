@@ -145,6 +145,7 @@ pub fn standard_style() -> Result<Styling> {
     style.add_string("value.pointer.font", "mono");
     style.add_number("value.pointer.font_size", 23.0);
     style.add_color("value.pointer.color", color("#ccc")?);
+    style.add_number("value.pointer.padding.bottom", 7.0);
     style.add_number("value.array.empty.w", 0.0);
     style.add_number("value.array.empty.h", 20.0);
     style.add_color("value.array.separator.color", color("#7197d580")?);

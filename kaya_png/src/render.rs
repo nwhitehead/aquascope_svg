@@ -366,9 +366,12 @@ fn render_value_pointer(
     ds.font = style.get_string_or("value.pointer.font", "mono");
     ds.text_color = style.get_color_or("value.pointer.color", color("#000")?);
     ds.font_size = style.get_number_or("value.pointer.font_size", 24.0);
+    let padding = style.get_padding("value.pointer.padding", 0.0);
     // ✕✖✗✘×•●○◯42
     let text = "●";
-    Ok(Box::new(GText::new(text, point(0.0, 0.0), ds)))
+    let g_txt = GText::new(text, point(0.0, 0.0), ds);
+    let g_padded = GPadding::new(Box::new(g_txt), padding);
+    Ok(Box::new(g_padded))
 }
 
 pub fn render_value(

@@ -10,6 +10,49 @@ pub trait Drawable {
     fn bounding_box(&self, canvas: &Canvas) -> Result<Rect>;
     fn draw(&self, canvas: &mut Canvas) -> Result<()>;
     fn clone_box(&self) -> Box<dyn Drawable>;
+    fn get_tagged(&self, id: &str) -> Option<Box<dyn Drawable>>;
+}
+
+pub struct GTagged {
+    item: Box<dyn Drawable>,
+    tag: String,
+}
+
+impl GTagged {
+    pub fn new(item: Box<dyn Drawable>, tag: &str) -> Self {
+        Self {
+            item, tag: tag.to_string(),
+        }
+    }
+}
+
+impl Drawable for GTagged {
+    fn translate(&mut self, t: Point) {
+        self.item.translate(t);
+    }
+
+    fn bounding_box(&self, canvas: &Canvas) -> Result<Rect> {
+        self.item.bounding_box(canvas)
+    }
+
+    fn draw(&self, canvas: &mut Canvas) -> Result<()> {
+        self.item.draw(canvas)
+    }
+
+    fn clone_box(&self) -> Box<dyn Drawable> {
+        Box::new(Self {
+            item: self.item.clone_box(),
+            tag: self.tag.clone(),
+        })
+    }
+
+    fn get_tagged(&self, id: &str) -> Option<Box<dyn Drawable>> {
+        if id == self.tag {
+            Some(self.clone_box())
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -44,6 +87,9 @@ impl Drawable for GText {
     }
     fn clone_box(&self) -> Box<dyn Drawable> {
         Box::new(self.clone())
+    }
+    fn get_tagged(&self, id: &str) -> Option<Box<dyn Drawable>> {
+        None
     }
 }
 
@@ -98,6 +144,9 @@ impl Drawable for GLine {
     }
     fn clone_box(&self) -> Box<dyn Drawable> {
         Box::new(self.clone())
+    }
+    fn get_tagged(&self, id: &str) -> Option<Box<dyn Drawable>> {
+        None
     }
 }
 
@@ -228,6 +277,9 @@ impl Drawable for GBox {
     fn clone_box(&self) -> Box<dyn Drawable> {
         Box::new(self.clone())
     }
+    fn get_tagged(&self, id: &str) -> Option<Box<dyn Drawable>> {
+        None
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -259,6 +311,9 @@ impl Drawable for GSpace {
     }
     fn clone_box(&self) -> Box<dyn Drawable> {
         Box::new(self.clone())
+    }
+    fn get_tagged(&self, id: &str) -> Option<Box<dyn Drawable>> {
+        None
     }
 }
 
@@ -294,6 +349,9 @@ impl Drawable for GPadding {
             item: self.item.clone_box(),
             padding: self.padding,
         })
+    }
+    fn get_tagged(&self, id: &str) -> Option<Box<dyn Drawable>> {
+        self.item.get_tagged(id)
     }
 }
 
@@ -346,6 +404,16 @@ impl Drawable for GArray {
         }
         Box::new(GArray { items })
     }
+
+    fn get_tagged(&self, id: &str) -> Option<Box<dyn Drawable>> {
+        for item in &self.items {
+            if let Some(v) = item.get_tagged(id) {
+                return Some(v);
+            }
+        }
+        return None;
+    }
+
 }
 
 #[derive(Clone, Debug)]

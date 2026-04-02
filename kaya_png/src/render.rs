@@ -406,12 +406,12 @@ pub fn render_location(
 ) -> Result<Box<dyn Drawable>> {
     if !value.definitions.is_empty() {
         let region = Region {
-            name: value.name.clone(),
+            name: "".to_string(),
             definitions: value.definitions.clone(),
         };
         return render_location(
             &Location {
-                name: "".to_string(),
+                name: value.name.clone(),
                 definitions: vec![],
                 regions: vec![region],
             },
@@ -420,19 +420,29 @@ pub fn render_location(
         );
     }
 
+    // Header
+    let style = &render_state.style;
+    let mut ds = DrawState::default();
+    ds.font = style.get_string_or("location.header.font", "serif");
+    ds.text_color = style.get_color_or("location.header.color", color("#000")?);
+    ds.font_size = style.get_number_or("location.header.font_size", 24.0);
+    let header_padding = style.get_padding("location.header.padding", 5.0);
+    let region_padding = style.get_padding("location.padding", 5.0);
+    let text = format!("{}", value.name);
+    let gtxt = GText::new(&text, point(0.0, 0.0), ds);
+    let padded_gtxt = GPadding::new(Box::new(gtxt), header_padding);
+
     // Body
     let style = &render_state.style;
     let mut body: Vec<Box<dyn Drawable>> = vec![];
-    let gap = style.get_number_or("location.region.gap", 5.0);
-    for (idx, region) in value.regions.iter().enumerate() {
+    for region in &value.regions {
         let g_region = render_region(&region, render_state, canvas)?;
-        if idx > 0 {
-            body.push(Box::new(GSpace::new(gap, 0.0)));
-        }
         body.push(g_region);
     }
-    let g_body = hstack_top(body, canvas)?;
-    Ok(Box::new(g_body))
+    let g_body = vstack_left(body, canvas)?;
+    let g_final = vstack_left(vec![Box::new(padded_gtxt), Box::new(g_body)], canvas)?;
+
+    Ok(Box::new(g_final))
 }
 
 pub fn render_step(
@@ -451,6 +461,19 @@ pub fn render_step(
     let text = format!("{}", value.label);
     let g_text = GText::new(&text, point(0.0, 0.0), ds);
     let g_padded_text = GPadding::new(Box::new(g_text), padding);
+
+    // let style = &render_state.style;
+    // let mut body: Vec<Box<dyn Drawable>> = vec![];
+    // let gap = style.get_number_or("location.region.gap", 5.0);
+    // for (idx, region) in value.regions.iter().enumerate() {
+    //     let g_region = render_region(&region, render_state, canvas)?;
+    //     if idx > 0 {
+    //         body.push(Box::new(GSpace::new(gap, 0.0)));
+    //     }
+    //     body.push(g_region);
+    // }
+    // let g_body = hstack_top(body, canvas)?;
+
     Ok(Box::new(g_padded_text))
 }
 
@@ -562,7 +585,7 @@ mod tests {
 
     #[test]
     pub fn test_render_value() -> Result<()> {
-        let mut canvas = Canvas::new(800, 800)?;
+        let mut canvas = Canvas::new(2048, 2048)?;
         canvas
             .pixmap
             .fill(Color::from_rgba8(0x19, 0x19, 0x19, 0xff));
@@ -692,16 +715,17 @@ mod tests {
         rs.style.add_number("value.invalid.padding", 0.0);
         rs.style.add_number("value.invalid.padding.bottom", 10.0);
 
-        rs.style.add_string("region.header.font", "serif_bold");
-        rs.style.add_number("region.header.font_size", 26.0);
+        rs.style.add_string("region.header.font", "serif");
+        rs.style.add_number("region.header.font_size", 23.0);
         rs.style.add_color("region.header.color", color("#ccc")?);
         rs.style.add_number("region.header.padding", 0.0);
-        rs.style.add_number("region.header.padding.bottom", 20.0);
-        rs.style.add_number("region.padding", 5.0);
+        rs.style.add_number("region.header.padding.top", 10.0);
+        rs.style.add_number("region.header.padding.bottom", 10.0);
+        rs.style.add_number("region.padding", 0.0);
 
         rs.style.add_number("location.region.gap", 25.0);
         rs.style.add_string("location.header.font", "serif_bold");
-        rs.style.add_number("location.header.font_size", 32.0);
+        rs.style.add_number("location.header.font_size", 28.0);
         rs.style.add_color("location.header.color", color("#ccc")?);
         rs.style.add_number("location.header.padding", 0.0);
 
@@ -802,14 +826,14 @@ mod tests {
                         ],
                     },
                     Region {
-                        name: "Heap".to_string(),
+                        name: "main::f".to_string(),
                         definitions: vec![
                             Def {
-                                label: "H0".to_string(),
+                                label: "x".to_string(),
                                 value: Value::Number(42.0),
                             },
                             Def {
-                                label: "z".to_string(),
+                                label: "y".to_string(),
                                 value: Value::Number(2.0),
                             },
                         ],
@@ -820,6 +844,27 @@ mod tests {
             &canvas,
         )?;
         v.translate(point(100.0, 500.0));
+        v.draw(&mut canvas)?;
+
+        let mut v = render_location(
+            &Location {
+                name: "Heap".to_string(),
+                definitions: vec![
+                    Def {
+                        label: "H0".to_string(),
+                        value: Value::Number(42.0),
+                    },
+                    Def {
+                        label: "y".to_string(),
+                        value: Value::Number(2.0),
+                    },
+                ],
+                regions: vec![]
+            },
+            &mut rs,
+            &canvas,
+        )?;
+        v.translate(point(600.0, 500.0));
         v.draw(&mut canvas)?;
 
         canvas.save("test_render_value.png")?;

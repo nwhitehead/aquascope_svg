@@ -5,17 +5,28 @@ use tiny_skia::{Color, ColorU8};
 
 use crate::canvas::Canvas;
 use crate::draw::{
-    Drawable, FormulaType, GArray, GLine, GPadding, GSpace, GText, border, compute_align, hstack, vstack, vstack_none, vstack_left,
+    Drawable, FormulaType, GArray, GLine, GPadding, GSpace, GText, border, compute_align, hstack, hstack_top, vstack, vstack_none, vstack_left,
 };
 use crate::draw_state::DrawState;
 use crate::style::Styling;
 
-use kaya_lib::states::{Def, Ptr, Region, Value, NamedStruct};
+use kaya_lib::states::{Def, Location, NamedStruct, Ptr, Region, Value};
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct RenderState {
     locations: HashMap<String, Rect>,
     style: Styling,
+    skip_heap: bool,
+}
+
+impl Default for RenderState {
+    fn default() -> Self {
+        Self {
+            locations: Default::default(),
+            style: Default::default(),
+            skip_heap: true,
+        }
+    }
 }
 
 fn max_height(values: &Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<f32> {
@@ -363,10 +374,11 @@ pub fn render_region(
     ds.font = style.get_string_or("region.header.font", "serif");
     ds.text_color = style.get_color_or("region.header.color", color("#000")?);
     ds.font_size = style.get_number_or("region.header.font_size", 24.0);
-    let padding = style.get_padding("region.header.padding", 5.0);
+    let header_padding = style.get_padding("region.header.padding", 5.0);
+    let region_padding = style.get_padding("region.padding", 5.0);
     let text = format!("{}", value.name);
     let gtxt = GText::new(&text, point(0.0, 0.0), ds);
-    let padded_gtxt = GPadding::new(Box::new(gtxt), padding);
+    let padded_gtxt = GPadding::new(Box::new(gtxt), header_padding);
 
     // Body
     let mut body: Vec<Box<dyn Drawable>> = vec![];
@@ -377,7 +389,48 @@ pub fn render_region(
     // stack vertically without moving horizontally (to keep : aligned)
     let g_body = vstack_none(body, canvas)?;
     let g_final = vstack_left(vec![Box::new(padded_gtxt), Box::new(g_body)], canvas)?;
-    Ok(Box::new(g_final))
+    let g_padded_final = GPadding::new(Box::new(g_final), region_padding);
+    Ok(Box::new(g_padded_final))
+}
+
+pub fn render_location(
+    value: &Location,
+    render_state: &mut RenderState,
+    canvas: &Canvas,
+) -> Result<Box<dyn Drawable>> {
+
+    if !value.definitions.is_empty() {
+        let region = Region {
+            name: value.name.clone(),
+            definitions: value.definitions.clone(),
+        };
+        return render_region(&region, render_state, canvas);
+    }
+    // // Label
+    let style = &render_state.style;
+    let mut ds = DrawState::default();
+    // ds.font = style.get_string_or("region.header.font", "serif");
+    // ds.text_color = style.get_color_or("region.header.color", color("#000")?);
+    // ds.font_size = style.get_number_or("region.header.font_size", 24.0);
+    // let padding = style.get_padding("region.header.padding", 5.0);
+    // let text = format!("{}", value.name);
+    // let gtxt = GText::new(&text, point(0.0, 0.0), ds);
+    // let padded_gtxt = GPadding::new(Box::new(gtxt), padding);
+
+    // Body
+    let mut body: Vec<Box<dyn Drawable>> = vec![];
+    let gap = style.get_number_or("location.region.gap", 5.0);
+    for region in &value.regions {
+        let g_region = render_region(&region, render_state, canvas)?;
+        if !body.is_empty() {
+            body.push(Box::new(GSpace::new(gap, 0.0)));
+        }
+        body.push(g_region);
+    }
+    let g_body = hstack_top(body, canvas)?;
+//    let g_final = vstack_left(vec![Box::new(padded_gtxt), Box::new(g_body)], canvas)?;
+    Ok(Box::new(g_body))
+
 }
 
 fn color(txt: &str) -> Result<ColorU8> {
@@ -611,6 +664,9 @@ mod tests {
         rs.style.add_color("region.header.color", color("#ccc")?);
         rs.style.add_number("region.header.padding", 0.0);
         rs.style.add_number("region.header.padding.bottom", 20.0);
+        rs.style.add_number("region.padding", 5.0);
+
+        rs.style.add_number("location.region.gap", 25.0);
 
         let mut v = render_value(&Value::Number(42.0), &mut rs, &canvas)?;
         v.translate(point(200.0, 200.0));
@@ -678,24 +734,39 @@ mod tests {
         v.translate(point(200.0, 380.0));
         v.draw(&mut canvas)?;
 
-        let mut v = render_region( &Region {
-            name: "Stack".to_string(),
-            definitions: vec![
-                Def {
-                    label: "x".to_string(),
-                    value: Value::Struct( NamedStruct { name: "Rect".to_string(), fields: vec![
-                        ("pos".to_string(), Value::Number(42.0)),
-                        ("w".to_string(), Value::Number(3.0)),
-                    ] }),
+        let mut v = render_location( &Location {
+            name: "L0".to_string(),
+            regions: vec![
+                Region {
+                    name: "Stack".to_string(),
+                    definitions: vec![
+                        Def {
+                            label: "x".to_string(),
+                            value: Value::Struct( NamedStruct { name: "Rect".to_string(), fields: vec![
+                                ("pos".to_string(), Value::Number(42.0)),
+                                ("w".to_string(), Value::Number(3.0)),
+                            ] }),
+                        },
+                        Def {
+                            label: "y2".to_string(),
+                            value: Value::Array(vec![
+                                Value::Number(42.0),
+                                Value::Invalid,
+                            ]),
+                        },
+                    ],
                 },
-                Def {
-                    label: "y2".to_string(),
-                    value: Value::Array(vec![
-                        Value::Number(42.0),
-                        Value::Invalid,
-                    ]),
+                Region {
+                    name: "Heap".to_string(),
+                    definitions: vec![
+                        Def {
+                            label: "H0".to_string(),
+                            value: Value::Number(42.0),
+                        },
+                    ],
                 },
             ],
+            definitions: vec![],
         }, &mut rs, &canvas)?;
         v.translate(point(100.0, 500.0));
         v.draw(&mut canvas)?;

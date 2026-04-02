@@ -199,7 +199,11 @@ fn render_def(
     g_border_value.translate(p);
 
     let mut g_array = GArray::new();
-    g_array.push(Box::new(g_left));
+    // if skip_heap is off, always show label
+    // if skip_heap is on, show label if it doesn't start with H
+    if !render_state.skip_heap || !def.label.starts_with("H") {
+        g_array.push(Box::new(g_left));
+    }
     g_array.push(g_border_value);
     Ok(Box::new(g_array))
 }
@@ -619,10 +623,12 @@ mod tests {
         rs.style.add_color("def.separator.color", color("#ccc")?);
         rs.style.add_string("def.separator.text", ":");
         rs.style.add_number("def.separator.padding.left", 3.0);
-        rs.style.add_number("def.separator.padding.right", 3.0);
+        rs.style.add_number("def.separator.padding.right", 5.0);
         rs.style.add_number("def.left.padding.bottom", 3.0);
         rs.style.add_number("def.value.padding", 8.0);
-        rs.style.add_number("def.value.margin", 3.0);
+        rs.style.add_number("def.value.margin", 0.0);
+        rs.style.add_number("def.value.margin.top", 3.0);
+        rs.style.add_number("def.value.margin.bottom", 3.0);
         rs.style.add_color("def.value.border.color", color("#282828")?);
         rs.style.add_number("def.value.border.width", 1.5);
         rs.style.add_number("def.value.border.radius", 5.0);
@@ -762,6 +768,10 @@ mod tests {
                         Def {
                             label: "H0".to_string(),
                             value: Value::Number(42.0),
+                        },
+                        Def {
+                            label: "z".to_string(),
+                            value: Value::Number(2.0),
                         },
                     ],
                 },

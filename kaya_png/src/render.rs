@@ -141,6 +141,7 @@ fn render_def(
     def: &Def,
     render_state: &mut RenderState,
     canvas: &Canvas,
+    skip_heap: bool,
 ) -> Result<Box<dyn Drawable>> {
     let style = &render_state.style;
     let mut ds = DrawState::default();
@@ -201,7 +202,7 @@ fn render_def(
     let mut g_array = GArray::new();
     // if skip_heap is off, always show label
     // if skip_heap is on, show label if it doesn't start with H
-    if !render_state.skip_heap || !def.label.starts_with("H") {
+    if !skip_heap || !def.label.starts_with("H") {
         g_array.push(Box::new(g_left));
     }
     g_array.push(g_border_value);
@@ -383,11 +384,14 @@ pub fn render_region(
     let text = format!("{}", value.name);
     let gtxt = GText::new(&text, point(0.0, 0.0), ds);
     let padded_gtxt = GPadding::new(Box::new(gtxt), header_padding);
-
+    let mut skip_heap = render_state.skip_heap;
+    if value.name.starts_with("Stack") {
+        skip_heap = false;
+    }
     // Body
     let mut body: Vec<Box<dyn Drawable>> = vec![];
     for def in &value.definitions {
-        let g_def = render_def(&def, render_state, canvas)?;
+        let g_def = render_def(&def, render_state, canvas, skip_heap)?;
         body.push(g_def);
     }
     // stack vertically without moving horizontally (to keep : aligned)
@@ -408,7 +412,11 @@ pub fn render_location(
             name: value.name.clone(),
             definitions: value.definitions.clone(),
         };
-        return render_region(&region, render_state, canvas);
+        let old_skip_heap = render_state.skip_heap;
+        render_state.skip_heap = false;
+        let res = render_region(&region, render_state, canvas);
+        render_state.skip_heap = old_skip_heap;
+        return res;
     }
     // // Label
     let style = &render_state.style;
@@ -424,9 +432,9 @@ pub fn render_location(
     // Body
     let mut body: Vec<Box<dyn Drawable>> = vec![];
     let gap = style.get_number_or("location.region.gap", 5.0);
-    for region in &value.regions {
+    for (idx, region) in value.regions.iter().enumerate() {
         let g_region = render_region(&region, render_state, canvas)?;
-        if !body.is_empty() {
+        if idx > 0 {
             body.push(Box::new(GSpace::new(gap, 0.0)));
         }
         body.push(g_region);
@@ -722,6 +730,7 @@ mod tests {
             },
             &mut rs,
             &canvas,
+            true,
         )?;
         v.translate(point(200.0, 300.0));
         v.draw(&mut canvas)?;
@@ -736,6 +745,7 @@ mod tests {
             },
             &mut rs,
             &canvas,
+            true,
         )?;
         v.translate(point(200.0, 380.0));
         v.draw(&mut canvas)?;
@@ -759,6 +769,10 @@ mod tests {
                                 Value::Number(42.0),
                                 Value::Invalid,
                             ]),
+                        },
+                        Def {
+                            label: "H0".to_string(),
+                            value: Value::Invalid,
                         },
                     ],
                 },

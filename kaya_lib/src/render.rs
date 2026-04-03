@@ -5,7 +5,6 @@ use serde_json::json;
 use std::cell::RefCell;
 use std::rc::Rc;
 use serde::{Serialize, Deserialize};
-use tiny_skia::Color;
 
 pub enum Theme {
     Dark,

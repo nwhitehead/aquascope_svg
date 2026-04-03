@@ -4,10 +4,10 @@ default:
 
 # Run this and make sure it works before checking in
 ci:
-    cargo build
-    cargo check
-    cargo test
-    cargo clippy -- --deny=warnings
+    cargo build -j1
+    cargo check -j1
+    cargo test -j1
+    cargo clippy -j1 -- --deny=warnings
 
 # Build WASM files from Rust library
 wasm:

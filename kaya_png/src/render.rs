@@ -1,15 +1,13 @@
-use ab_glyph::{Rect, point};
-use anyhow::{Result, bail};
-use std::collections::HashMap;
-use tiny_skia::{Color, ColorU8};
+use ab_glyph::point;
+use anyhow::Result;
 
 use crate::canvas::Canvas;
 use crate::draw::{
     Drawable, FormulaType, GArray, GLine, GPadding, GSpace, GTagged, GText, border, compute_align,
-    hstack, hstack_top, vstack, vstack_left, vstack_none,
+    hstack, hstack_top, vstack_left, vstack_none,
 };
 use crate::draw_state::DrawState;
-use crate::style::{Styling, color, standard_style};
+use crate::style::{Styling, color};
 
 use kaya_lib::states::{Def, Location, NamedStruct, Program, Ptr, Region, Step, Value};
 
@@ -235,7 +233,6 @@ fn render_value_struct(
     // Draw all the inner values separately first (to measure for sep line height)
     let mut v_draws: Vec<Box<dyn Drawable>> = vec![];
     for (idx, p) in named_struct.fields.clone().into_iter().enumerate() {
-        let label = &p.0;
         let value = &p.1;
         let prefix = &format!("{}.{}", prefix, idx);
         let draw = render_value(value, prefix, render_state, canvas)?;
@@ -263,7 +260,6 @@ fn render_value_struct(
 
     for (i, p) in named_struct.fields.iter().enumerate() {
         let label = &p.0;
-        let value = &p.1;
         ds.font = style.get_string_or("value.struct.label.font", "mono");
         ds.font_size = style.get_number_or("value.struct.label.font_size", 24.0);
         ds.text_color = style.get_color_or("value.struct.label.color", color("#000")?);
@@ -306,9 +302,8 @@ fn render_value_struct(
 }
 
 fn render_value_invalid(
-    prefix: &str,
     render_state: &mut RenderState,
-    canvas: &Canvas,
+    _canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
     let style = &render_state.style;
     let mut ds = DrawState::default();
@@ -324,7 +319,6 @@ fn render_value_invalid(
 
 fn render_value_number(
     v: f64,
-    prefix: &str,
     render_state: &mut RenderState,
     _canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
@@ -342,30 +336,32 @@ fn render_value_number(
 
 fn render_value_char(
     c: char,
-    prefix: &str,
     render_state: &mut RenderState,
     _canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
     let style = &render_state.style;
-    let mut ds = DrawState::default();
-    ds.font = style.get_string_or("value.char.font", "mono");
-    ds.text_color = style.get_color_or("value.char.color", color("#000")?);
-    ds.font_size = style.get_number_or("value.char.font_size", 24.0);
+    let mut ds = DrawState {
+        font: style.get_string_or("value.char.font", "mono"),
+        text_color: style.get_color_or("value.char.color", color("#000")?),
+        font_size: style.get_number_or("value.char.font_size", 24.0),
+        ..DrawState::default()
+    };
     let text = format!("'{}'", c);
     Ok(Box::new(GText::new(&text, point(0.0, 0.0), ds)))
 }
 
 fn render_value_pointer(
     _p: &Ptr,
-    prefix: &str,
     render_state: &mut RenderState,
     _canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
     let style = &render_state.style;
-    let mut ds = DrawState::default();
-    ds.font = style.get_string_or("value.pointer.font", "mono");
-    ds.text_color = style.get_color_or("value.pointer.color", color("#000")?);
-    ds.font_size = style.get_number_or("value.pointer.font_size", 24.0);
+    let ds = DrawState {
+        font: style.get_string_or("value.pointer.font", "mono"),
+        text_color: style.get_color_or("value.pointer.color", color("#000")?),
+        font_size: style.get_number_or("value.pointer.font_size", 24.0),
+        ..DrawState::default()
+    };
     let padding = style.get_padding("value.pointer.padding", 0.0);
     // ✕✖✗✘×•●○◯42
     let text = "●";
@@ -381,14 +377,13 @@ pub fn render_value(
     canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
     let item = match value {
-        Value::Number(v) => render_value_number(*v, prefix, render_state, canvas)?,
-        Value::Char(c) => render_value_char(*c, prefix, render_state, canvas)?,
-        Value::Pointer(p) => render_value_pointer(p, prefix, render_state, canvas)?,
+        Value::Number(v) => render_value_number(*v, render_state, canvas)?,
+        Value::Char(c) => render_value_char(*c, render_state, canvas)?,
+        Value::Pointer(p) => render_value_pointer(p, render_state, canvas)?,
         Value::Array(a) => render_value_array(a, prefix, render_state, canvas)?,
         Value::Tuple(a) => render_value_tuple(a, prefix, render_state, canvas)?,
         Value::Struct(a) => render_value_struct(a, prefix, render_state, canvas)?,
-        Value::Invalid => render_value_invalid(prefix, render_state, canvas)?,
-        _ => panic!("not handled"),
+        Value::Invalid => render_value_invalid(render_state, canvas)?,
     };
     let tagged = GTagged::new(item, prefix);
     render_state.register(prefix);
@@ -404,19 +399,20 @@ pub fn render_region(
 ) -> Result<Box<dyn Drawable>> {
     // Header
     let style = &render_state.style;
-    let mut ds = DrawState::default();
-    ds.font = style.get_string_or("region.header.font", "serif");
-    ds.text_color = style.get_color_or("region.header.color", color("#000")?);
-    ds.font_size = style.get_number_or("region.header.font_size", 24.0);
+    let ds = DrawState {
+        font: style.get_string_or("region.header.font", "serif"),
+        text_color: style.get_color_or("region.header.color", color("#000")?),
+        font_size: style.get_number_or("region.header.font_size", 24.0),
+        ..DrawState::default()
+    };
     let header_padding = style.get_padding("region.header.padding", 5.0);
     let region_padding = style.get_padding("region.padding", 5.0);
-    let text = format!("{}", value.name);
-    let gtxt = GText::new(&text, point(0.0, 0.0), ds);
+    let gtxt = GText::new(&value.name.to_string(), point(0.0, 0.0), ds);
     let padded_gtxt = GPadding::new(Box::new(gtxt), header_padding);
     // Body
     let mut body: Vec<Box<dyn Drawable>> = vec![];
     for def in &value.definitions {
-        let g_def = render_def(&def, prefix, render_state, canvas, skip_heap)?;
+        let g_def = render_def(def, prefix, render_state, canvas, skip_heap)?;
         body.push(g_def);
     }
     // stack vertically without moving horizontally (to keep : aligned)
@@ -456,21 +452,20 @@ pub fn render_location(
 
     // Header
     let style = &render_state.style;
-    let mut ds = DrawState::default();
-    ds.font = style.get_string_or("location.header.font", "serif");
-    ds.text_color = style.get_color_or("location.header.color", color("#000")?);
-    ds.font_size = style.get_number_or("location.header.font_size", 24.0);
+    let mut ds = DrawState {
+        font: style.get_string_or("location.header.font", "serif"),
+        text_color: style.get_color_or("location.header.color", color("#000")?),
+        font_size: style.get_number_or("location.header.font_size", 24.0),
+        ..DrawState::default()
+    };
     let header_padding = style.get_padding("location.header.padding", 5.0);
-    let region_padding = style.get_padding("location.padding", 5.0);
-    let text = format!("{}", value.name);
-    let gtxt = GText::new(&text, point(0.0, 0.0), ds);
+    let gtxt = GText::new(&value.name.to_string(), point(0.0, 0.0), ds);
     let padded_gtxt = GPadding::new(Box::new(gtxt), header_padding);
 
     // Body
-    let style = &render_state.style;
     let mut body: Vec<Box<dyn Drawable>> = vec![];
     for region in &value.regions {
-        let g_region = render_region(&region, prefix, render_state, canvas, skip_heap)?;
+        let g_region = render_region(region, prefix, render_state, canvas, skip_heap)?;
         body.push(g_region);
     }
     let g_body = vstack_left(body, canvas)?;
@@ -486,17 +481,18 @@ pub fn render_step(
 ) -> Result<Box<dyn Drawable>> {
     // Label
     let style = &render_state.style;
-    let mut ds = DrawState::default();
-    ds.font = style.get_string_or("step.header.font", "serif");
-    ds.text_color = style.get_color_or("step.header.color", color("#000")?);
-    ds.font_size = style.get_number_or("step.header.font_size", 24.0);
+    let mut ds = DrawState {
+        font: style.get_string_or("step.header.font", "serif"),
+        text_color: style.get_color_or("step.header.color", color("#000")?),
+        font_size: style.get_number_or("step.header.font_size", 24.0),
+        stroke_color: style.get_color_or("step.separator.color", color("#000")?),
+        ..DrawState::default()
+    };
     let padding = style.get_padding("step.header.padding", 5.0);
-    let text = format!("{}", value.label);
-    let g_text = GText::new(&text, point(0.0, 0.0), ds.clone());
+    let g_text = GText::new(&value.label.to_string(), point(0.0, 0.0), ds.clone());
     let g_padded_text = GPadding::new(Box::new(g_text), padding);
 
     // draw border on right side sized properly
-    ds.stroke_color = style.get_color_or("step.separator.color", color("#000")?);
     let h = style.get_number_or("step.separator.size", 5.0);
     let sep = GLine::new(point(0.0, 0.0), point(0.0, h), ds.clone());
     let sep_padding = style.get_padding("step.separator.padding", 5.0);
@@ -509,7 +505,7 @@ pub fn render_step(
     let gap = style.get_number_or("step.location.gap", 5.0);
     for (idx, location) in value.locations.iter().enumerate() {
         let g_location =
-            render_location(&location, &format!("{}", value.label), render_state, canvas)?;
+            render_location(location, &value.label.to_string(), render_state, canvas)?;
         if idx > 0 {
             body.push(Box::new(GSpace::new(gap, 0.0)));
         }
@@ -537,7 +533,7 @@ pub fn render_program(
     let mut body: Vec<Box<dyn Drawable>> = vec![];
     let gap = style.get_number_or("program.step.gap", 5.0);
     for (idx, step) in value.0.iter().enumerate() {
-        let g_location = render_step(&step, render_state, canvas)?;
+        let g_location = render_step(step, render_state, canvas)?;
         if idx > 0 {
             body.push(Box::new(GSpace::new(0.0, gap)));
         }
@@ -550,6 +546,8 @@ pub fn render_program(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tiny_skia::{Color, ColorU8};
+    use crate::style::standard_style;
 
     #[test]
     pub fn test_color() -> Result<()> {

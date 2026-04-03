@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use ab_glyph::{Point, Rect, point};
 use anyhow::{Result, bail};
 use tiny_skia::{ColorU8, Paint, PathBuilder, Stroke, Transform};
@@ -89,7 +91,7 @@ impl Drawable for GText {
     fn clone_box(&self) -> Box<dyn Drawable> {
         Box::new(self.clone())
     }
-    fn get_tagged(&self, id: &str) -> Option<Box<dyn Drawable>> {
+    fn get_tagged(&self, _id: &str) -> Option<Box<dyn Drawable>> {
         None
     }
 }
@@ -146,7 +148,7 @@ impl Drawable for GLine {
     fn clone_box(&self) -> Box<dyn Drawable> {
         Box::new(self.clone())
     }
-    fn get_tagged(&self, id: &str) -> Option<Box<dyn Drawable>> {
+    fn get_tagged(&self, _id: &str) -> Option<Box<dyn Drawable>> {
         None
     }
 }
@@ -158,15 +160,6 @@ pub struct GBox {
 }
 
 impl GBox {
-    fn new_xywh(x: f32, y: f32, w: f32, h: f32) -> Self {
-        Self {
-            r: Rect {
-                min: point(x, y),
-                max: point(x + w, y + h),
-            },
-            state: Default::default(),
-        }
-    }
     fn new_with_options(r: Rect, width: f32, color: ColorU8) -> Self {
         Self {
             r,
@@ -278,7 +271,7 @@ impl Drawable for GBox {
     fn clone_box(&self) -> Box<dyn Drawable> {
         Box::new(self.clone())
     }
-    fn get_tagged(&self, id: &str) -> Option<Box<dyn Drawable>> {
+    fn get_tagged(&self, _id: &str) -> Option<Box<dyn Drawable>> {
         None
     }
 }
@@ -313,7 +306,7 @@ impl Drawable for GSpace {
     fn clone_box(&self) -> Box<dyn Drawable> {
         Box::new(self.clone())
     }
-    fn get_tagged(&self, id: &str) -> Option<Box<dyn Drawable>> {
+    fn get_tagged(&self, _id: &str) -> Option<Box<dyn Drawable>> {
         None
     }
 }

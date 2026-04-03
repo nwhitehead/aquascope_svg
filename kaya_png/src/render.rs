@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use ab_glyph::point;
 use anyhow::Result;
 
@@ -51,7 +53,7 @@ fn max_height(values: &Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<f32> {
 }
 
 fn render_value_array(
-    a: &Vec<Value>,
+    a: &[Value],
     prefix: &str,
     render_state: &mut RenderState,
     canvas: &Canvas,
@@ -101,14 +103,14 @@ fn render_value_array(
 }
 
 fn render_value_tuple(
-    a: &Vec<Value>,
+    a: &[Value],
     prefix: &str,
     render_state: &mut RenderState,
     canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
     // Draw all the parts separately
     let mut a_draws: Vec<Box<dyn Drawable>> = vec![];
-    for (idx, x) in a.into_iter().enumerate() {
+    for (idx, x) in a.iter().enumerate() {
         let draw = render_value(x, &format!("{}.{}", prefix, idx), render_state, canvas)?;
         a_draws.push(draw);
     }
@@ -158,10 +160,12 @@ fn render_def(
     skip_heap: bool,
 ) -> Result<Box<dyn Drawable>> {
     let style = &render_state.style;
-    let mut ds = DrawState::default();
-    ds.font = style.get_string_or("def.label.font", "mono");
-    ds.font_size = style.get_number_or("def.label.font_size", 24.0);
-    ds.text_color = style.get_color_or("def.label.color", color("#000")?);
+    let mut ds = DrawState {
+        font: style.get_string_or("def.label.font", "mono"),
+        font_size: style.get_number_or("def.label.font_size", 24.0),
+        text_color: style.get_color_or("def.label.color", color("#000")?),
+        ..DrawState::default()
+    };
 
     let mut g_label = GText::new(&def.label, point(0.0, 0.0), ds.clone());
 
@@ -263,7 +267,7 @@ fn render_value_struct(
         ds.font = style.get_string_or("value.struct.label.font", "mono");
         ds.font_size = style.get_number_or("value.struct.label.font_size", 24.0);
         ds.text_color = style.get_color_or("value.struct.label.color", color("#000")?);
-        let g_label = GText::new(&label, point(0.0, 0.0), ds.clone());
+        let g_label = GText::new(label, point(0.0, 0.0), ds.clone());
 
         ds.font = style.get_string_or("value.struct.separator.font", "mono");
         ds.font_size = style.get_number_or("value.struct.separator.font_size", 24.0);
@@ -274,9 +278,7 @@ fn render_value_struct(
         let sep_padding = style.get_padding("value.struct.separator.padding", 0.0);
         let g_padded_sep = GPadding::new(Box::new(g_separator), sep_padding);
 
-        let mut left: Vec<Box<dyn Drawable>> = vec![];
-        left.push(Box::new(g_label));
-        left.push(Box::new(g_padded_sep));
+        let left: Vec<Box<dyn Drawable>> = vec![Box::new(g_label), Box::new(g_padded_sep)];
         let g_left = hstack(left, canvas)?;
         let left_padding = style.get_padding("value.struct.left.padding", 0.0);
         let g_padded_left = GPadding::new(Box::new(g_left), left_padding);
@@ -306,12 +308,14 @@ fn render_value_invalid(
     _canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
     let style = &render_state.style;
-    let mut ds = DrawState::default();
-    ds.font = style.get_string_or("value.invalid.font", "mono");
-    ds.text_color = style.get_color_or("value.invalid.color", color("#000")?);
-    ds.font_size = style.get_number_or("value.invalid.font_size", 24.0);
+    let ds = DrawState {
+        font: style.get_string_or("value.invalid.font", "mono"),
+        text_color: style.get_color_or("value.invalid.color", color("#000")?),
+        font_size: style.get_number_or("value.invalid.font_size", 24.0),
+        ..DrawState::default()
+    };
     let padding = style.get_padding("value.invalid.padding", 5.0);
-    let text = format!("×");
+    let text = "×".to_string();
     let gtxt = GText::new(&text, point(0.0, 0.0), ds);
     let padded_gtxt = GPadding::new(Box::new(gtxt), padding);
     Ok(Box::new(padded_gtxt))
@@ -323,10 +327,12 @@ fn render_value_number(
     _canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
     let style = &render_state.style;
-    let mut ds = DrawState::default();
-    ds.font = style.get_string_or("value.number.font", "mono");
-    ds.text_color = style.get_color_or("value.number.color", color("#000")?);
-    ds.font_size = style.get_number_or("value.number.font_size", 24.0);
+    let ds = DrawState {
+        font: style.get_string_or("value.number.font", "mono"),
+        text_color: style.get_color_or("value.number.color", color("#000")?),
+        font_size: style.get_number_or("value.number.font_size", 24.0),
+        ..DrawState::default()
+    };
     let padding = style.get_padding("value.number.padding", 5.0);
     let text = format!("{}", v);
     let gtxt = GText::new(&text, point(0.0, 0.0), ds);
@@ -340,7 +346,7 @@ fn render_value_char(
     _canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
     let style = &render_state.style;
-    let mut ds = DrawState {
+    let ds = DrawState {
         font: style.get_string_or("value.char.font", "mono"),
         text_color: style.get_color_or("value.char.color", color("#000")?),
         font_size: style.get_number_or("value.char.font_size", 24.0),
@@ -452,7 +458,7 @@ pub fn render_location(
 
     // Header
     let style = &render_state.style;
-    let mut ds = DrawState {
+    let ds = DrawState {
         font: style.get_string_or("location.header.font", "serif"),
         text_color: style.get_color_or("location.header.color", color("#000")?),
         font_size: style.get_number_or("location.header.font_size", 24.0),
@@ -504,8 +510,7 @@ pub fn render_step(
     body.push(Box::new(g_padded_sep));
     let gap = style.get_number_or("step.location.gap", 5.0);
     for (idx, location) in value.locations.iter().enumerate() {
-        let g_location =
-            render_location(location, &value.label.to_string(), render_state, canvas)?;
+        let g_location = render_location(location, &value.label.to_string(), render_state, canvas)?;
         if idx > 0 {
             body.push(Box::new(GSpace::new(gap, 0.0)));
         }
@@ -546,8 +551,8 @@ pub fn render_program(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tiny_skia::{Color, ColorU8};
     use crate::style::standard_style;
+    use tiny_skia::{Color, ColorU8};
 
     #[test]
     pub fn test_color() -> Result<()> {

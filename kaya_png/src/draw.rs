@@ -405,7 +405,7 @@ impl Drawable for GArray {
                 return Some(v);
             }
         }
-        return None;
+        None
     }
 }
 

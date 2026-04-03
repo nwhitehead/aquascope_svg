@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use anyhow::{Result, bail};
 use std::collections::HashMap;
 use tiny_skia::ColorU8;

@@ -127,58 +127,66 @@ impl Drawable for Arrow {
         // p0t and p0b are widened points where line actually ends
         let p0t = p0 + scale(perp, self.options.width * 0.5);
         let p0b = p0 + scale(perp, -self.options.width * 0.5);
-        // pst and psb are widened points where line actually starts
-        let pst = self.start + scale(perp_src, self.options.width * 0.5);
-        let psb = self.start + scale(perp_src, -self.options.width * 0.5);
         let Some(path) = ({
             let mut pb = PathBuilder::new();
-            pb.move_to(pst.x, pst.y);
+            pb.move_to(self.start.x, self.start.y);
             pb.cubic_to(
-                pst.x + start_control.x,
-                pst.y + start_control.y,
-                p0t.x + end_control.x,
-                p0t.y + end_control.y,
-                p0t.x,
-                p0t.y,
+                self.start.x + start_control.x,
+                self.start.y + start_control.y,
+                p0.x + end_control.x,
+                p0.y + end_control.y,
+                p0.x,
+                p0.y,
             );
-            pb.line_to(p1.x, p1.y);
-            pb.line_to(self.end.x, self.end.y);
-            pb.line_to(p2.x, p2.y);
-            pb.line_to(p0b.x, p0b.y);
-            pb.cubic_to(
-                p0b.x + end_control.x,
-                p0b.y + end_control.y,
-                psb.x + start_control.x,
-                psb.y + start_control.y,
-                psb.x,
-                psb.y,
-            );
-            pb.close();
             pb.finish()
         }) else {
             bail!("could not make path");
         };
         let mut paint = Paint::default();
         paint.anti_alias = true;
-        let color = self.options.color;
-        paint.set_color_rgba8(color.red(), color.green(), color.blue(), color.alpha());
-        canvas
-            .pixmap
-            .fill_path(&path, &paint, FillRule::EvenOdd, Transform::identity(), None);
 
-        // Draw outline from path
+        // Draw outline if set
         if let Some(ref arrow_outline) = self.options.outline {
             let color = arrow_outline.color;
             paint.set_color_rgba8(color.red(), color.green(), color.blue(), color.alpha());
             let stroke = Stroke {
-                width: arrow_outline.width,
-                line_join: LineJoin::Round,
+                width: self.options.width + arrow_outline.width,
                 ..Default::default()
             };
             canvas
                 .pixmap
                 .stroke_path(&path, &paint, &stroke, Transform::identity(), None);
         }
+        let color = self.options.color;
+        let stroke = Stroke {
+            width: self.options.width,
+            ..Default::default()
+        };
+        paint.set_color_rgba8(color.red(), color.green(), color.blue(), color.alpha());
+        canvas
+            .pixmap
+            .stroke_path(&path, &paint, &stroke, Transform::identity(), None);
+
+        // Draw arrow head
+        let Some(path) = ({
+            let mut pb = PathBuilder::new();
+            pb.move_to(p1.x, p1.y);
+            pb.line_to(self.end.x, self.end.y);
+            pb.line_to(p2.x, p2.y);
+            pb.line_to(p0b.x, p0b.y);
+            pb.line_to(p0t.x, p0t.y);
+            pb.close();
+            pb.finish()
+        }) else {
+            bail!("could not make path2");
+        };
+        canvas.pixmap.fill_path(
+            &path,
+            &paint,
+            FillRule::EvenOdd,
+            Transform::identity(),
+            None,
+        );
 
         // let Some(path) = ({
         //     let mut pb = PathBuilder::new();
@@ -244,10 +252,10 @@ mod tests {
                 width: 20.0,
                 head_length: 40.0,
                 head_width: 40.0,
-                dent_ratio: 0.5,
+                dent_ratio: 0.2,
                 color: color("#ff0")?,
                 outline: Some(ArrowOutline {
-                    width: 1.0,
+                    width: 10.0,
                     color: color("#000")?,
                 }),
                 ..Default::default()

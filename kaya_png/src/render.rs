@@ -471,7 +471,7 @@ pub fn render_location(
     // Body
     let mut body: Vec<Box<dyn Drawable>> = vec![];
     for region in &value.regions {
-        let g_region = render_region(region, prefix, render_state, canvas, skip_heap)?;
+        let g_region = render_region(region, &format!("{}:{}", prefix, value.name), render_state, canvas, skip_heap)?;
         body.push(g_region);
     }
     let g_body = vstack_left(body, canvas)?;
@@ -552,6 +552,7 @@ pub fn render_program(
 mod tests {
     use super::*;
     use crate::style::standard_style;
+    use crate::draw::GBox;
     use tiny_skia::{Color, ColorU8};
 
     #[test]
@@ -747,7 +748,7 @@ mod tests {
                                     name: "main::f".to_string(),
                                     definitions: vec![
                                         Def {
-                                            label: "x".to_string(),
+                                            label: "xs".to_string(),
                                             value: Value::Number(42.0),
                                         },
                                         Def {
@@ -819,13 +820,15 @@ mod tests {
             &canvas,
         )?;
         v.translate(point(600.0, 500.0));
-        // Show some rects
-        println!("IDS: {:?}", rs.ids());
+        v.draw(&mut canvas)?;
+        // Show some rects, draw them
         for id in rs.ids() {
             let r = v.get_tagged(&id).unwrap().bounding_box(&canvas)?;
             println!("{} => {:?}", id, r);
+            let bx = GBox::new_with_options(r, 1.0, color("#f00")?);
+            bx.draw(&mut canvas)?;
         }
-        v.draw(&mut canvas)?;
+
 
         canvas.save("test_render_value.png")?;
 

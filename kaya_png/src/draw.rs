@@ -160,7 +160,7 @@ pub struct GBox {
 }
 
 impl GBox {
-    fn new_with_options(r: Rect, width: f32, color: ColorU8) -> Self {
+    pub fn new_with_options(r: Rect, width: f32, color: ColorU8) -> Self {
         Self {
             r,
             state: DrawState {

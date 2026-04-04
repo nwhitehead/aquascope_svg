@@ -244,9 +244,10 @@ mod tests {
                 width: 20.0,
                 head_length: 40.0,
                 head_width: 40.0,
+                dent_ratio: 0.5,
                 color: color("#ff0")?,
                 outline: Some(ArrowOutline {
-                    width: 5.0,
+                    width: 1.0,
                     color: color("#000")?,
                 }),
                 ..Default::default()

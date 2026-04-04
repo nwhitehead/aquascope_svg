@@ -374,8 +374,8 @@ impl Drawable for GArray {
 
     fn bounding_box(&self, canvas: &Canvas) -> Result<Rect> {
         let mut rbb: Rect = Rect {
-            min: point(9999.0, 9999.0),
-            max: point(-9999.0, -9999.0),
+            min: point(f32::INFINITY, f32::INFINITY),
+            max: point(-f32::INFINITY, -f32::INFINITY),
         };
         for item in &self.items {
             let bb = item.bounding_box(canvas)?;

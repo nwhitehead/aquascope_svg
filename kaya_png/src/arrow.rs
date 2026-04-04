@@ -18,6 +18,22 @@ pub struct Arrow {
     state: DrawState,
 }
 
+fn norm(p: Point) -> f32 {
+    (p.x * p.x + p.y * p.y).sqrt()
+}
+
+fn scale(p: Point, s: f32) -> Point {
+    point(p.x * s, p.y * s)
+}
+
+/// Decompose a direction vector into two vectors: along and parallel (unit length)
+fn decomp(dir: Point) -> (Point, Point) {
+    let norm = 1.0 / norm(dir);
+    let parallel = point(dir.x * norm, dir.y * norm);
+    let perp = point(parallel.y, -parallel.x);
+    (parallel, perp)
+}
+
 impl Arrow {
     pub fn new(start: Point, start_control: Point, end: Point, end_control: Point, state: DrawState) -> Self {
         Self { start, start_control, end, end_control, state }
@@ -40,10 +56,22 @@ impl Drawable for Arrow {
         let mut paint = Paint::default();
         paint.set_color_rgba8(color.red(), color.green(), color.blue(), color.alpha());
         paint.anti_alias = true;
+        let forward = self.end - self.end_control;
+        let (par, perp) = decomp(forward);
+        let head_length = 20.0;
+        let arrow_width = 40.0;
+        let arrow_dent_ratio = 0.1;
+        let crossp = self.end - scale(par, head_length);
+        // p1 and p2 are tips on sides
+        let p1 = self.end + scale(par, -head_length) + scale(perp, arrow_width);
+        let p2 = self.end + scale(par, -head_length) + scale(perp, -arrow_width);
+        // p3 is middle dent part
+        let p3 = self.end + scale(par, -head_length * ( 1.0 - arrow_dent_ratio));
         let Some(path) = ({
             let mut pb = PathBuilder::new();
             pb.move_to(self.start.x, self.start.y);
-            pb.line_to(self.end.x, self.end.y);
+            pb.cubic_to(self.start_control.x, self.start_control.y, self.end_control.x, self.end_control.y, self.end.x, self.end.y);
+            //pb.line_to(self.end.x, self.end.y);
             pb.finish()
         }) else {
             bail!("could not make path");
@@ -55,6 +83,28 @@ impl Drawable for Arrow {
             Transform::identity(),
             None,
         );
+        let mut stroke2 = self.state.stroke.clone();
+        stroke2.width = 2.0;
+        paint.set_color_rgba8(0, 0, 0, 255);
+        let Some(path) = ({
+            let mut pb = PathBuilder::new();
+            pb.move_to(p1.x, p1.y);
+            pb.line_to(self.end.x, self.end.y);
+            pb.line_to(p2.x, p2.y);
+            pb.line_to(p3.x, p3.y);
+            pb.close();
+            pb.finish()
+        }) else {
+            bail!("could not make path2");
+        };
+        canvas.pixmap.stroke_path(
+            &path,
+            &paint,
+            &stroke2,
+            Transform::identity(),
+            None,
+        );
+
 
         Ok(())
     }
@@ -92,7 +142,7 @@ mod tests {
     
         let arrow = Arrow::new(
             point(100.0, 100.0),
-            point(150.0, 100.0),
+            point(175.0, 100.0),
             point(300.0, 200.0),
             point(250.0, 200.0),
             ds,

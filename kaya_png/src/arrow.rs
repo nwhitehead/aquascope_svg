@@ -2,35 +2,62 @@
 
 use anyhow::{Result, bail};
 use ab_glyph::{Point, Rect, point};
-use tiny_skia::{ColorU8, FillRule, Paint, PathBuilder, Transform};
+use tiny_skia::{ColorU8, FillRule, Paint, PathBuilder, Stroke, Transform};
 
 use crate::canvas::Canvas;
 use crate::draw::Drawable;
 use crate::draw_state::DrawState;
 use crate::style::color;
 
-pub enum ArrowTypes {
+#[derive(Clone, Debug)]
+pub struct FluidOptions {
+    start_gravity: f32,
+    end_gravity: f32,
+}
+
+#[derive(Clone, Debug)]
+pub struct ArrowOutline {
+    width: f32,
+    color: ColorU8,
+}
+
+#[derive(Clone, Debug)]
+pub enum ArrowType {
     Straight,
-    Fluid,
+    Fluid(FluidOptions),
 }
 
 #[derive(Clone, Debug)]
 pub struct ArrowOptions {
     width: f32,
-    src_gravity: f32,
-    dst_gravity: f32,
     color: ColorU8,
-    outline: Option<(f32, ColorU8)>,
+    outline: Option<ArrowOutline>,
+    head_width: f32,
+    head_length: f32,
+    dent_ratio: f32,
+}
+
+impl Default for ArrowOptions {
+    fn default() -> Self {
+        Self {
+            width: 4.0,
+            color: ColorU8::from_rgba(0, 0, 0, 255),
+            outline: None,
+            head_width: 10.0,
+            head_length: 10.0,
+            dent_ratio: 0.0,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
 pub struct Arrow {
     start: Point,
-    start_control: Point,
     end: Point,
-    end_control: Point,
-    state: DrawState,
-    outline: Option<(f32, ColorU8)>,
+    start_dir: Point,
+    end_dir: Point,
+    arrow_type: ArrowType,
+    options: ArrowOptions,
 }
 
 fn norm(p: Point) -> f32 {
@@ -50,11 +77,8 @@ fn decomp(dir: Point) -> (Point, Point) {
 }
 
 impl Arrow {
-    pub fn new(start: Point, start_control: Point, end: Point, end_control: Point, width: f32, color: ColorU8, outline: Option<(f32, ColorU8)>) -> Self {
-        let mut ds = DrawState::default();
-        ds.stroke.width = width;
-        ds.stroke_color = color;
-        Self { start, start_control, end, end_control, state: ds, outline }
+    pub fn new(start: Point, end: Point, start_dir: Point, end_dir: Point, arrow_type: ArrowType, options: ArrowOptions) -> Self {
+        Self { start, end, start_dir, end_dir, arrow_type, options }
     }
 }
 
@@ -70,30 +94,38 @@ impl Drawable for Arrow {
         })
     }
     fn draw(&self, canvas: &mut Canvas) -> Result<()> {
-        let color = self.state.stroke_color;
+        let ArrowType::Fluid(ref fluid_options) = self.arrow_type else {
+            bail!("only fluid supported right now");
+        };
+        let color = self.options.color;
         let mut paint = Paint::default();
         paint.set_color_rgba8(color.red(), color.green(), color.blue(), color.alpha());
         paint.anti_alias = true;
-        let forward = self.end - self.end_control;
-        let (par, perp) = decomp(forward);
-        let head_length = 40.0;
-        let arrow_width = 40.0;
-        let arrow_dent_ratio = 0.2;
-        let end_offset = scale(par, -head_length);
-        let end_control = self.end_control + end_offset;
+        let (par, perp) = decomp(self.end_dir);
+        let (par_src, perp_src) = decomp(self.start_dir);
+        let head_length = self.options.head_length;
+        let head_width = self.options.head_width;
+        let arrow_dent_ratio = self.options.dent_ratio;
+        let end_control = self.end + scale(par, -head_length - fluid_options.end_gravity);
+        let start_control = self.start + scale(par_src, fluid_options.start_gravity);
         // p0 is where thick line ends (before actual tip)
         let p0 = self.end + scale(par, -head_length);
         // p1 and p2 are tips on sides
-        let p1 = self.end + scale(par, -head_length * ( 1.0 + arrow_dent_ratio)) + scale(perp, arrow_width);
-        let p2 = self.end + scale(par, -head_length * ( 1.0 + arrow_dent_ratio)) + scale(perp, -arrow_width);
+        let head_offset = scale(par, -head_length * arrow_dent_ratio);
+        let p1 = p0 + head_offset + scale(perp, head_width);
+        let p2 = p0 + head_offset + scale(perp, -head_width);
         // p0t and p0b are widened points where line actually ends
-        let p0t = self.end + scale(par, -head_length ) + scale(perp, self.state.stroke.width * 0.5);
-        let p0b = self.end + scale(par, -head_length ) + scale(perp, -self.state.stroke.width * 0.5);
+        let p0t = p0 + scale(perp, self.options.width * 0.5);
+        let p0b = p0 + scale(perp, -self.options.width * 0.5);
+        let stroke = Stroke {
+            width: self.options.width,
+            ..Default::default()
+        };
+        println!("start = {:?}  start_dir = {:?}  start_control = {:?}", self.start, self.start_dir, start_control);
         let Some(path) = ({
             let mut pb = PathBuilder::new();
             pb.move_to(self.start.x, self.start.y);
-            pb.cubic_to(self.start_control.x, self.start_control.y, end_control.x, end_control.y, p0.x, p0.y);
-            //pb.line_to(self.end.x, self.end.y);
+            pb.cubic_to(start_control.x, start_control.y, end_control.x, end_control.y, p0.x, p0.y);
             pb.finish()
         }) else {
             bail!("could not make path");
@@ -101,7 +133,7 @@ impl Drawable for Arrow {
         canvas.pixmap.stroke_path(
             &path,
             &paint,
-            &self.state.stroke,
+            &stroke,
             Transform::identity(),
             None,
         );
@@ -158,12 +190,17 @@ mod tests {
     
         let arrow = Arrow::new(
             point(100.0, 100.0),
-            point(175.0, 100.0),
-            point(300.0, 200.0),
-            point(250.0, 200.0),
-            20.0,
-            color("#ff0")?,
-            None,
+            point(375.0, 200.0),
+            point(1.0, 0.0),
+            point(1.0, 0.0),
+            ArrowType::Fluid(FluidOptions { start_gravity: 50.0, end_gravity: 50.0 }),
+            ArrowOptions {
+                width: 20.0,
+                head_length: 40.0,
+                head_width: 40.0,
+                color: color("#ff0")?,
+                ..Default::default()
+            },
         );
         arrow.draw(&mut canvas)?;
 

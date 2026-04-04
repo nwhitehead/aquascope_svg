@@ -6,6 +6,7 @@ use std::fs;
 use tiny_skia::Color;
 
 use kaya_lib::parser::parse;
+mod arrow;
 mod canvas;
 mod draw;
 mod draw_state;

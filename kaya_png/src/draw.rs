@@ -7,7 +7,7 @@ use tiny_skia::{ColorU8, Paint, PathBuilder, Stroke, Transform};
 use crate::canvas::Canvas;
 use crate::draw_state::DrawState;
 
-pub trait Drawable {
+pub trait Drawable : std::fmt::Debug {
     fn translate(&mut self, t: Point);
     fn bounding_box(&self, canvas: &Canvas) -> Result<Rect>;
     fn draw(&self, canvas: &mut Canvas) -> Result<()>;
@@ -15,6 +15,7 @@ pub trait Drawable {
     fn get_tagged(&self, id: &str) -> Option<Box<dyn Drawable>>;
 }
 
+#[derive(Debug)]
 pub struct GTagged {
     item: Box<dyn Drawable>,
     tag: String,
@@ -311,6 +312,7 @@ impl Drawable for GSpace {
     }
 }
 
+#[derive(Debug)]
 pub struct GPadding {
     item: Box<dyn Drawable>,
     // padding is left, top, right, bottom
@@ -349,6 +351,7 @@ impl Drawable for GPadding {
     }
 }
 
+#[derive(Debug)]
 pub struct GArray {
     items: Vec<Box<dyn Drawable>>,
 }
@@ -371,8 +374,8 @@ impl Drawable for GArray {
 
     fn bounding_box(&self, canvas: &Canvas) -> Result<Rect> {
         let mut rbb: Rect = Rect {
-            min: point(1000.0, 1000.0),
-            max: point(-1000.0, -1000.0),
+            min: point(9999.0, 9999.0),
+            max: point(-9999.0, -9999.0),
         };
         for item in &self.items {
             let bb = item.bounding_box(canvas)?;

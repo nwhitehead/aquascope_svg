@@ -828,7 +828,9 @@ mod tests {
             let bx = GBox::new_with_options(r, 1.0, color("#f00")?);
             bx.draw(&mut canvas)?;
         }
-
+        let vv = v.get_tagged("L1:Stack:y2").unwrap();
+        println!("vv = {:?}", &vv);
+        println!("vv.bb = {:?}", vv.bounding_box(&canvas)?);
 
         canvas.save("test_render_value.png")?;
 

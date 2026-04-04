@@ -120,8 +120,8 @@ impl Drawable for Arrow {
         let head_length = self.options.head_length;
         let head_width = self.options.head_width;
         let arrow_dent_ratio = self.options.dent_ratio;
-        let end_control = self.end + scale(par, -head_length - fluid_options.end_gravity);
-        let start_control = self.start + scale(par_src, fluid_options.start_gravity);
+        let end_control = scale(par, -head_length - fluid_options.end_gravity);
+        let start_control = scale(par_src, fluid_options.start_gravity);
         // p0 is where thick line ends (before actual tip)
         let p0 = self.end + scale(par, -head_length);
         // p1 and p2 are tips on sides
@@ -131,51 +131,68 @@ impl Drawable for Arrow {
         // p0t and p0b are widened points where line actually ends
         let p0t = p0 + scale(perp, self.options.width * 0.5);
         let p0b = p0 + scale(perp, -self.options.width * 0.5);
-        let stroke = Stroke {
-            width: self.options.width,
-            ..Default::default()
-        };
-        println!(
-            "start = {:?}  start_dir = {:?}  start_control = {:?}",
-            self.start, self.start_dir, start_control
-        );
+        // pst and psb are widened points where line actually starts
+        let pst = self.start + scale(perp_src, self.options.width * 0.5);
+        let psb = self.start + scale(perp_src, -self.options.width * 0.5);
         let Some(path) = ({
             let mut pb = PathBuilder::new();
-            pb.move_to(self.start.x, self.start.y);
+            pb.move_to(pst.x, pst.y);
             pb.cubic_to(
-                start_control.x,
-                start_control.y,
-                end_control.x,
-                end_control.y,
-                p0.x,
-                p0.y,
+                pst.x + start_control.x,
+                pst.y + start_control.y,
+                p0t.x + end_control.x,
+                p0t.y + end_control.y,
+                p0t.x,
+                p0t.y,
             );
+            pb.line_to(p1.x, p1.y);
+            pb.line_to(self.end.x, self.end.y);
+            pb.line_to(p2.x, p2.y);
+            pb.line_to(p0b.x, p0b.y);
+            pb.cubic_to(
+                p0b.x + end_control.x,
+                p0b.y + end_control.y,
+                psb.x + start_control.x,
+                psb.y + start_control.y,
+                psb.x,
+                psb.y,
+            );
+            pb.close();
             pb.finish()
         }) else {
             bail!("could not make path");
         };
+        // Draw shadow from path
+        if let Some(ref arrow_outline) = self.options.outline {
+            let stroke = Stroke {
+                width: self.options.width,
+                ..Default::default()
+            };
+        }
+
         canvas
             .pixmap
-            .stroke_path(&path, &paint, &stroke, Transform::identity(), None);
-        let Some(path) = ({
-            let mut pb = PathBuilder::new();
-            pb.move_to(p1.x, p1.y);
-            pb.line_to(self.end.x, self.end.y);
-            pb.line_to(p2.x, p2.y);
-            pb.line_to(p0b.x, p0b.y);
-            pb.line_to(p0t.x, p0t.y);
-            pb.close();
-            pb.finish()
-        }) else {
-            bail!("could not make path2");
-        };
-        canvas.pixmap.fill_path(
-            &path,
-            &paint,
-            FillRule::EvenOdd,
-            Transform::identity(),
-            None,
-        );
+            .fill_path(&path, &paint, FillRule::EvenOdd, Transform::identity(), None);
+        // let Some(path) = ({
+        //     let mut pb = PathBuilder::new();
+        //     pb.move_to(p1.x, p1.y);
+        //     pb.line_to(self.end.x, self.end.y);
+        //     pb.line_to(p2.x, p2.y);
+        //     pb.line_to(p0b.x, p0b.y);
+        //     pb.line_to(p0t.x, p0t.y);
+        //     pb.close();
+        //     pb.finish()
+        // }) else {
+        //     bail!("could not make path2");
+        // };
+        // canvas.pixmap.fill_path(
+        //     &path,
+        //     &paint,
+        //     FillRule::EvenOdd,
+        //     Transform::identity(),
+        //     None,
+        // );
+
 
         Ok(())
     }
@@ -221,6 +238,10 @@ mod tests {
                 head_length: 40.0,
                 head_width: 40.0,
                 color: color("#ff0")?,
+                outline: Some(ArrowOutline {
+                    width: 5.0,
+                    color: color("#000")?,
+                }),
                 ..Default::default()
             },
         );

@@ -2,7 +2,7 @@
 
 use ab_glyph::{Point, Rect, point};
 use anyhow::{Result, bail};
-use tiny_skia::{ColorU8, FillRule, Paint, PathBuilder, Stroke, Transform};
+use tiny_skia::{ColorU8, FillRule, LineJoin, Paint, PathBuilder, Stroke, Transform};
 
 use crate::canvas::Canvas;
 use crate::draw::Drawable;
@@ -111,10 +111,6 @@ impl Drawable for Arrow {
         let ArrowType::Fluid(ref fluid_options) = self.arrow_type else {
             bail!("only fluid supported right now");
         };
-        let color = self.options.color;
-        let mut paint = Paint::default();
-        paint.set_color_rgba8(color.red(), color.green(), color.blue(), color.alpha());
-        paint.anti_alias = true;
         let (par, perp) = decomp(self.end_dir);
         let (par_src, perp_src) = decomp(self.start_dir);
         let head_length = self.options.head_length;
@@ -162,17 +158,28 @@ impl Drawable for Arrow {
         }) else {
             bail!("could not make path");
         };
-        // Draw shadow from path
-        if let Some(ref arrow_outline) = self.options.outline {
-            let stroke = Stroke {
-                width: self.options.width,
-                ..Default::default()
-            };
-        }
-
+        let mut paint = Paint::default();
+        paint.anti_alias = true;
+        let color = self.options.color;
+        paint.set_color_rgba8(color.red(), color.green(), color.blue(), color.alpha());
         canvas
             .pixmap
             .fill_path(&path, &paint, FillRule::EvenOdd, Transform::identity(), None);
+
+        // Draw outline from path
+        if let Some(ref arrow_outline) = self.options.outline {
+            let color = arrow_outline.color;
+            paint.set_color_rgba8(color.red(), color.green(), color.blue(), color.alpha());
+            let stroke = Stroke {
+                width: arrow_outline.width,
+                line_join: LineJoin::Round,
+                ..Default::default()
+            };
+            canvas
+                .pixmap
+                .stroke_path(&path, &paint, &stroke, Transform::identity(), None);
+        }
+
         // let Some(path) = ({
         //     let mut pb = PathBuilder::new();
         //     pb.move_to(p1.x, p1.y);

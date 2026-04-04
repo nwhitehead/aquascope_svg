@@ -2,12 +2,26 @@
 
 use anyhow::{Result, bail};
 use ab_glyph::{Point, Rect, point};
-use tiny_skia::{Paint, PathBuilder, Transform};
+use tiny_skia::{ColorU8, FillRule, Paint, PathBuilder, Transform};
 
 use crate::canvas::Canvas;
 use crate::draw::Drawable;
 use crate::draw_state::DrawState;
 use crate::style::color;
+
+pub enum ArrowTypes {
+    Straight,
+    Fluid,
+}
+
+#[derive(Clone, Debug)]
+pub struct ArrowOptions {
+    width: f32,
+    src_gravity: f32,
+    dst_gravity: f32,
+    color: ColorU8,
+    outline: Option<(f32, ColorU8)>,
+}
 
 #[derive(Clone, Debug)]
 pub struct Arrow {
@@ -16,6 +30,7 @@ pub struct Arrow {
     end: Point,
     end_control: Point,
     state: DrawState,
+    outline: Option<(f32, ColorU8)>,
 }
 
 fn norm(p: Point) -> f32 {
@@ -35,8 +50,11 @@ fn decomp(dir: Point) -> (Point, Point) {
 }
 
 impl Arrow {
-    pub fn new(start: Point, start_control: Point, end: Point, end_control: Point, state: DrawState) -> Self {
-        Self { start, start_control, end, end_control, state }
+    pub fn new(start: Point, start_control: Point, end: Point, end_control: Point, width: f32, color: ColorU8, outline: Option<(f32, ColorU8)>) -> Self {
+        let mut ds = DrawState::default();
+        ds.stroke.width = width;
+        ds.stroke_color = color;
+        Self { start, start_control, end, end_control, state: ds, outline }
     }
 }
 
@@ -58,19 +76,23 @@ impl Drawable for Arrow {
         paint.anti_alias = true;
         let forward = self.end - self.end_control;
         let (par, perp) = decomp(forward);
-        let head_length = 20.0;
+        let head_length = 40.0;
         let arrow_width = 40.0;
-        let arrow_dent_ratio = 0.1;
-        let crossp = self.end - scale(par, head_length);
+        let arrow_dent_ratio = 0.2;
+        let end_offset = scale(par, -head_length);
+        let end_control = self.end_control + end_offset;
+        // p0 is where thick line ends (before actual tip)
+        let p0 = self.end + scale(par, -head_length);
         // p1 and p2 are tips on sides
-        let p1 = self.end + scale(par, -head_length) + scale(perp, arrow_width);
-        let p2 = self.end + scale(par, -head_length) + scale(perp, -arrow_width);
-        // p3 is middle dent part
-        let p3 = self.end + scale(par, -head_length * ( 1.0 - arrow_dent_ratio));
+        let p1 = self.end + scale(par, -head_length * ( 1.0 + arrow_dent_ratio)) + scale(perp, arrow_width);
+        let p2 = self.end + scale(par, -head_length * ( 1.0 + arrow_dent_ratio)) + scale(perp, -arrow_width);
+        // p0t and p0b are widened points where line actually ends
+        let p0t = self.end + scale(par, -head_length ) + scale(perp, self.state.stroke.width * 0.5);
+        let p0b = self.end + scale(par, -head_length ) + scale(perp, -self.state.stroke.width * 0.5);
         let Some(path) = ({
             let mut pb = PathBuilder::new();
             pb.move_to(self.start.x, self.start.y);
-            pb.cubic_to(self.start_control.x, self.start_control.y, self.end_control.x, self.end_control.y, self.end.x, self.end.y);
+            pb.cubic_to(self.start_control.x, self.start_control.y, end_control.x, end_control.y, p0.x, p0.y);
             //pb.line_to(self.end.x, self.end.y);
             pb.finish()
         }) else {
@@ -83,24 +105,22 @@ impl Drawable for Arrow {
             Transform::identity(),
             None,
         );
-        let mut stroke2 = self.state.stroke.clone();
-        stroke2.width = 2.0;
-        paint.set_color_rgba8(0, 0, 0, 255);
         let Some(path) = ({
             let mut pb = PathBuilder::new();
             pb.move_to(p1.x, p1.y);
             pb.line_to(self.end.x, self.end.y);
             pb.line_to(p2.x, p2.y);
-            pb.line_to(p3.x, p3.y);
+            pb.line_to(p0b.x, p0b.y);
+            pb.line_to(p0t.x, p0t.y);
             pb.close();
             pb.finish()
         }) else {
             bail!("could not make path2");
         };
-        canvas.pixmap.stroke_path(
+        canvas.pixmap.fill_path(
             &path,
             &paint,
-            &stroke2,
+            FillRule::EvenOdd,
             Transform::identity(),
             None,
         );
@@ -135,17 +155,15 @@ mod tests {
             include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf"),
         )?;
         canvas.load_font("serif", include_bytes!("../fonts/Lato/Lato-Regular.ttf"))?;
-
-        let mut ds = DrawState::default();
-        ds.stroke.width = 20.0;
-        ds.stroke_color = color("#ff0")?;
     
         let arrow = Arrow::new(
             point(100.0, 100.0),
             point(175.0, 100.0),
             point(300.0, 200.0),
             point(250.0, 200.0),
-            ds,
+            20.0,
+            color("#ff0")?,
+            None,
         );
         arrow.draw(&mut canvas)?;
 

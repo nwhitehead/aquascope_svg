@@ -7,7 +7,7 @@ use tiny_skia::{ColorU8, Paint, PathBuilder, Stroke, Transform};
 use crate::canvas::Canvas;
 use crate::draw_state::DrawState;
 
-pub trait Drawable : std::fmt::Debug {
+pub trait Drawable: std::fmt::Debug {
     fn translate(&mut self, t: Point);
     fn bounding_box(&self, canvas: &Canvas) -> Result<Rect>;
     fn draw(&self, canvas: &mut Canvas) -> Result<()>;

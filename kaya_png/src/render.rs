@@ -471,7 +471,13 @@ pub fn render_location(
     // Body
     let mut body: Vec<Box<dyn Drawable>> = vec![];
     for region in &value.regions {
-        let g_region = render_region(region, &format!("{}:{}", prefix, value.name), render_state, canvas, skip_heap)?;
+        let g_region = render_region(
+            region,
+            &format!("{}:{}", prefix, value.name),
+            render_state,
+            canvas,
+            skip_heap,
+        )?;
         body.push(g_region);
     }
     let g_body = vstack_left(body, canvas)?;
@@ -551,8 +557,8 @@ pub fn render_program(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::style::standard_style;
     use crate::draw::GBox;
+    use crate::style::standard_style;
     use tiny_skia::{Color, ColorU8};
 
     #[test]

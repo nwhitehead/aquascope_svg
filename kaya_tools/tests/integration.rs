@@ -57,8 +57,9 @@ fn test_parse_all_states() {
 fn test_parse_failure() {
     let mut cmd = Command::cargo_bin("render_kaya").unwrap();
     cmd.arg("--show-parse");
-    cmd.arg("../testdata/kaya/parse_error.kaya").assert().failure();
-
+    cmd.arg("../testdata/kaya/parse_error.kaya")
+        .assert()
+        .failure();
 }
 
 #[test]

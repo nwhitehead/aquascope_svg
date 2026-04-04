@@ -2,10 +2,9 @@
 
 #![allow(dead_code)]
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Value {
     Number(f64),
     Array(Vec<Value>),
@@ -16,15 +15,13 @@ pub enum Value {
     Invalid,
 }
 
-#[derive(Serialize, Deserialize)]
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct NamedStruct {
     pub name: String,
     pub fields: Vec<(String, Value)>,
 }
 
-#[derive(Serialize, Deserialize)]
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Ptr {
     pub name: String,
     pub selectors: Vec<u32>,
@@ -32,35 +29,30 @@ pub struct Ptr {
     pub help: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize)]
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Def {
     pub label: String,
     pub value: Value,
 }
 
-#[derive(Serialize, Deserialize)]
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Region {
     pub name: String,
     pub definitions: Vec<Def>,
 }
 
-#[derive(Serialize, Deserialize)]
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Location {
     pub name: String,
     pub regions: Vec<Region>,
     pub definitions: Vec<Def>,
 }
 
-#[derive(Serialize, Deserialize)]
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Step {
     pub label: String,
     pub locations: Vec<Location>,
 }
 
-#[derive(Serialize, Deserialize)]
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Program(pub Vec<Step>);

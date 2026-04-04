@@ -1,10 +1,10 @@
 use crate::states::{Def, Location, Program, Region, Step, Value};
 use anyhow::Result;
 use handlebars::Handlebars;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::cell::RefCell;
 use std::rc::Rc;
-use serde::{Serialize, Deserialize};
 
 pub enum Theme {
     Dark,
@@ -21,8 +21,7 @@ pub const INDEX_HBS: &[u8] = include_bytes!("./index.hbs");
 pub const NUM_ARROW_COLORS: usize = 6;
 const DEBUG_ARROWS: bool = false;
 
-#[derive(Serialize, Deserialize)]
-#[derive(Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ArrowInfo {
     src: String,
     dst: String,
@@ -92,43 +91,43 @@ impl RenderState {
                 ".g0" => {
                     src_gravity = 0.0;
                     dst_gravity = 0.0;
-                },
+                }
                 ".g1" => {
                     src_gravity = 1.0;
                     dst_gravity = 1.0;
-                },
+                }
                 ".g2" => {
                     src_gravity = 2.0;
                     dst_gravity = 2.0;
-                },
+                }
                 ".g3" => {
                     src_gravity = 3.0;
                     dst_gravity = 3.0;
-                },
+                }
                 ".g4" => {
                     src_gravity = 4.0;
                     dst_gravity = 4.0;
-                },
+                }
                 ".g5" => {
                     src_gravity = 5.0;
                     dst_gravity = 5.0;
-                },
+                }
                 ".g6" => {
                     src_gravity = 6.0;
                     dst_gravity = 6.0;
-                },
+                }
                 ".g7" => {
                     src_gravity = 7.0;
                     dst_gravity = 7.0;
-                },
+                }
                 ".g8" => {
                     src_gravity = 8.0;
                     dst_gravity = 8.0;
-                },
+                }
                 ".g9" => {
                     src_gravity = 9.0;
                     dst_gravity = 9.0;
-                },
+                }
                 ".sg0" => src_gravity = 0.0,
                 ".sg1" => src_gravity = 1.0,
                 ".sg2" => src_gravity = 2.0,
@@ -306,8 +305,7 @@ pub fn render_arrow(info: &ArrowInfo, idx: usize) -> String {
 
 pub fn render_arrows(arrows: Vec<ArrowInfo>) -> Result<String> {
     let mut arrow_txt = String::new();
-    for (idx, arrow_info) in arrows.iter().enumerate()
-    {
+    for (idx, arrow_info) in arrows.iter().enumerate() {
         arrow_txt.push_str(&render_arrow(arrow_info, idx));
     }
     Ok(arrow_txt)

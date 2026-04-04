@@ -1,7 +1,7 @@
 #![allow(unused)]
 
-use anyhow::{Result, bail};
 use ab_glyph::{Point, Rect, point};
+use anyhow::{Result, bail};
 use tiny_skia::{ColorU8, FillRule, Paint, PathBuilder, Stroke, Transform};
 
 use crate::canvas::Canvas;
@@ -77,8 +77,22 @@ fn decomp(dir: Point) -> (Point, Point) {
 }
 
 impl Arrow {
-    pub fn new(start: Point, end: Point, start_dir: Point, end_dir: Point, arrow_type: ArrowType, options: ArrowOptions) -> Self {
-        Self { start, end, start_dir, end_dir, arrow_type, options }
+    pub fn new(
+        start: Point,
+        end: Point,
+        start_dir: Point,
+        end_dir: Point,
+        arrow_type: ArrowType,
+        options: ArrowOptions,
+    ) -> Self {
+        Self {
+            start,
+            end,
+            start_dir,
+            end_dir,
+            arrow_type,
+            options,
+        }
     }
 }
 
@@ -121,22 +135,28 @@ impl Drawable for Arrow {
             width: self.options.width,
             ..Default::default()
         };
-        println!("start = {:?}  start_dir = {:?}  start_control = {:?}", self.start, self.start_dir, start_control);
+        println!(
+            "start = {:?}  start_dir = {:?}  start_control = {:?}",
+            self.start, self.start_dir, start_control
+        );
         let Some(path) = ({
             let mut pb = PathBuilder::new();
             pb.move_to(self.start.x, self.start.y);
-            pb.cubic_to(start_control.x, start_control.y, end_control.x, end_control.y, p0.x, p0.y);
+            pb.cubic_to(
+                start_control.x,
+                start_control.y,
+                end_control.x,
+                end_control.y,
+                p0.x,
+                p0.y,
+            );
             pb.finish()
         }) else {
             bail!("could not make path");
         };
-        canvas.pixmap.stroke_path(
-            &path,
-            &paint,
-            &stroke,
-            Transform::identity(),
-            None,
-        );
+        canvas
+            .pixmap
+            .stroke_path(&path, &paint, &stroke, Transform::identity(), None);
         let Some(path) = ({
             let mut pb = PathBuilder::new();
             pb.move_to(p1.x, p1.y);
@@ -157,7 +177,6 @@ impl Drawable for Arrow {
             None,
         );
 
-
         Ok(())
     }
     fn clone_box(&self) -> Box<dyn Drawable> {
@@ -171,8 +190,8 @@ impl Drawable for Arrow {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::style::standard_style;
     use crate::draw::GBox;
+    use crate::style::standard_style;
     use tiny_skia::{Color, ColorU8};
 
     #[test]
@@ -187,13 +206,16 @@ mod tests {
             include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf"),
         )?;
         canvas.load_font("serif", include_bytes!("../fonts/Lato/Lato-Regular.ttf"))?;
-    
+
         let arrow = Arrow::new(
             point(100.0, 100.0),
             point(375.0, 200.0),
             point(1.0, 0.0),
             point(1.0, 0.0),
-            ArrowType::Fluid(FluidOptions { start_gravity: 50.0, end_gravity: 50.0 }),
+            ArrowType::Fluid(FluidOptions {
+                start_gravity: 50.0,
+                end_gravity: 50.0,
+            }),
             ArrowOptions {
                 width: 20.0,
                 head_length: 40.0,

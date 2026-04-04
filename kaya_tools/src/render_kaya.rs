@@ -1,4 +1,3 @@
-
 use anyhow::Result;
 use anyhow::anyhow;
 use base64::{Engine as _, engine::general_purpose::STANDARD};
@@ -66,7 +65,10 @@ impl Headless {
             b: 0,
             a: Some(0.0),
         })?;
-        Ok(Self { _browser: browser, tab })
+        Ok(Self {
+            _browser: browser,
+            tab,
+        })
     }
     fn save_png_from(&mut self, content: String, filename: String, scale: f64) -> Result<()> {
         // Create data uri that base64 encodes full page

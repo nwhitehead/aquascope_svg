@@ -2,7 +2,7 @@
 
 use ab_glyph::{Point, Rect, point};
 use anyhow::{Result, bail};
-use tiny_skia::{ColorU8, FillRule, LineJoin, Paint, PathBuilder, Stroke, Transform};
+use tiny_skia::{ColorU8, FillRule, LineCap, LineJoin, Paint, PathBuilder, Stroke, Transform};
 
 use crate::canvas::Canvas;
 use crate::draw::Drawable;
@@ -125,9 +125,11 @@ impl Drawable for Arrow {
         let p1 = p0 + head_offset + scale(perp, head_width);
         let p2 = p0 + head_offset + scale(perp, -head_width);
         // p0t and p0b are widened points where line actually ends
-        let p0t = p0 + scale(perp, self.options.width * 0.5);
-        let p0b = p0 + scale(perp, -self.options.width * 0.5);
-        let Some(path) = ({
+        // includes "- par" to close gap between line and arrowhead
+        let p0t = p0 + scale(perp, self.options.width * 0.5) - par;
+        let p0b = p0 + scale(perp, -self.options.width * 0.5) - par;
+        // body_path is line from start to end
+        let Some(body_path) = ({
             let mut pb = PathBuilder::new();
             pb.move_to(self.start.x, self.start.y);
             pb.cubic_to(
@@ -142,33 +144,8 @@ impl Drawable for Arrow {
         }) else {
             bail!("could not make path");
         };
-        let mut paint = Paint::default();
-        paint.anti_alias = true;
-
-        // Draw outline if set
-        if let Some(ref arrow_outline) = self.options.outline {
-            let color = arrow_outline.color;
-            paint.set_color_rgba8(color.red(), color.green(), color.blue(), color.alpha());
-            let stroke = Stroke {
-                width: self.options.width + arrow_outline.width,
-                ..Default::default()
-            };
-            canvas
-                .pixmap
-                .stroke_path(&path, &paint, &stroke, Transform::identity(), None);
-        }
-        let color = self.options.color;
-        let stroke = Stroke {
-            width: self.options.width,
-            ..Default::default()
-        };
-        paint.set_color_rgba8(color.red(), color.green(), color.blue(), color.alpha());
-        canvas
-            .pixmap
-            .stroke_path(&path, &paint, &stroke, Transform::identity(), None);
-
-        // Draw arrow head
-        let Some(path) = ({
+        // head path is around arrowhead
+        let Some(head_path) = ({
             let mut pb = PathBuilder::new();
             pb.move_to(p1.x, p1.y);
             pb.line_to(self.end.x, self.end.y);
@@ -180,34 +157,53 @@ impl Drawable for Arrow {
         }) else {
             bail!("could not make path2");
         };
+
+        let mut paint = Paint::default();
+        paint.anti_alias = true;
+
+        // Draw outline if set
+        if let Some(ref arrow_outline) = self.options.outline {
+            let color = arrow_outline.color;
+            paint.set_color_rgba8(color.red(), color.green(), color.blue(), color.alpha());
+            // body
+            let stroke = Stroke {
+                width: self.options.width + arrow_outline.width,
+                line_cap: LineCap::Square,
+                ..Default::default()
+            };
+            canvas
+                .pixmap
+                .stroke_path(&body_path, &paint, &stroke, Transform::identity(), None);
+            // head
+            let stroke = Stroke {
+                width: arrow_outline.width,
+                line_join: LineJoin::Round,
+                ..Default::default()
+            };
+            canvas
+                .pixmap
+                .stroke_path(&head_path, &paint, &stroke, Transform::identity(), None);
+        }
+        // Draw main body of arrow
+        let color = self.options.color;
+        let stroke = Stroke {
+            width: self.options.width,
+            line_cap: LineCap::Square,
+            ..Default::default()
+        };
+        paint.set_color_rgba8(color.red(), color.green(), color.blue(), color.alpha());
+        canvas
+            .pixmap
+            .stroke_path(&body_path, &paint, &stroke, Transform::identity(), None);
+
+        // Draw arrow head
         canvas.pixmap.fill_path(
-            &path,
+            &head_path,
             &paint,
             FillRule::EvenOdd,
             Transform::identity(),
             None,
         );
-
-        // let Some(path) = ({
-        //     let mut pb = PathBuilder::new();
-        //     pb.move_to(p1.x, p1.y);
-        //     pb.line_to(self.end.x, self.end.y);
-        //     pb.line_to(p2.x, p2.y);
-        //     pb.line_to(p0b.x, p0b.y);
-        //     pb.line_to(p0t.x, p0t.y);
-        //     pb.close();
-        //     pb.finish()
-        // }) else {
-        //     bail!("could not make path2");
-        // };
-        // canvas.pixmap.fill_path(
-        //     &path,
-        //     &paint,
-        //     FillRule::EvenOdd,
-        //     Transform::identity(),
-        //     None,
-        // );
-
 
         Ok(())
     }

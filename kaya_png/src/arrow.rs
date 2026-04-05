@@ -225,6 +225,7 @@ mod tests {
     use crate::draw::GBox;
     use crate::style::standard_style;
     use tiny_skia::{Color, ColorU8};
+    use rand::{rngs::ChaCha8Rng, RngExt, SeedableRng};
 
     #[test]
     pub fn test_draw_arrow() -> Result<()> {
@@ -239,29 +240,40 @@ mod tests {
         )?;
         canvas.load_font("serif", include_bytes!("../fonts/Lato/Lato-Regular.ttf"))?;
 
-        let arrow = Arrow::new(
-            point(100.0, 100.0),
-            point(375.0, 200.0),
-            point(1.0, 0.0),
-            point(1.0, 0.0),
-            ArrowType::Fluid(FluidOptions {
-                start_gravity: 50.0,
-                end_gravity: 50.0,
-            }),
-            ArrowOptions {
-                width: 20.0,
-                head_length: 40.0,
-                head_width: 40.0,
-                dent_ratio: 0.2,
-                color: color("#ff0")?,
-                outline: Some(ArrowOutline {
-                    width: 10.0,
-                    color: color("#000")?,
+        let mut rng = ChaCha8Rng::seed_from_u64(1234);
+
+        for i in 0..10 {
+            let dst = point(400.0, 400.0);
+            let src = point(rng.random::<f32>() * 800.0, rng.random::<f32>() * 800.0);
+            let (par, perp) = decomp(dst - src);
+            let dist = rng.random::<f32>() * 0.0 + 60.0;
+            let dst = dst - scale(par, dist);
+            let src = dst - scale(par, 300.0);
+            let arrow = Arrow::new(
+                src,
+                dst,
+                point(rng.random::<f32>() - 0.5, rng.random::<f32>() - 0.5),
+                dst - src,
+                ArrowType::Fluid(FluidOptions {
+                    start_gravity: 100.0 + rng.random::<f32>() * 200.0,
+                    end_gravity: 100.0,
                 }),
-                ..Default::default()
-            },
-        );
-        arrow.draw(&mut canvas)?;
+                ArrowOptions {
+                    width: 20.0,
+                    head_length: 40.0,
+                    head_width: 40.0,
+                    dent_ratio: 0.2,
+                    color: color("#ff0")?,
+                    outline: Some(ArrowOutline {
+                        width: 10.0,
+                        color: color("#000")?,
+                    }),
+                    ..Default::default()
+                },
+            );
+            arrow.draw(&mut canvas)?;
+
+        }
 
         canvas.save("test_render_arrow.png")?;
         Ok(())

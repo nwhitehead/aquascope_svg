@@ -158,8 +158,10 @@ impl Drawable for Arrow {
             bail!("could not make path2");
         };
 
-        let mut paint = Paint::default();
-        paint.anti_alias = true;
+        let mut paint = Paint {
+            anti_alias: true,
+            ..Paint::default()
+        };
 
         // Draw outline if set
         if let Some(ref arrow_outline) = self.options.outline {
@@ -220,8 +222,8 @@ mod tests {
     use super::*;
     use crate::draw::GBox;
     use crate::style::standard_style;
+    use rand::{RngExt, SeedableRng, rngs::ChaCha8Rng};
     use tiny_skia::{Color, ColorU8};
-    use rand::{rngs::ChaCha8Rng, RngExt, SeedableRng};
 
     #[test]
     pub fn test_draw_arrow() -> Result<()> {
@@ -268,7 +270,6 @@ mod tests {
                 },
             );
             arrow.draw(&mut canvas)?;
-
         }
 
         canvas.save("test_render_arrow.png")?;

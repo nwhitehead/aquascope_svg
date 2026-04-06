@@ -13,6 +13,8 @@ use crate::style::color;
 pub struct FluidOptions {
     start_gravity: f32,
     end_gravity: f32,
+    start_dir: Point,
+    end_dir: Point,
 }
 
 #[derive(Clone, Debug)]
@@ -54,8 +56,6 @@ impl Default for ArrowOptions {
 pub struct Arrow {
     start: Point,
     end: Point,
-    start_dir: Point,
-    end_dir: Point,
     arrow_type: ArrowType,
     options: ArrowOptions,
 }
@@ -80,20 +80,116 @@ impl Arrow {
     pub fn new(
         start: Point,
         end: Point,
-        start_dir: Point,
-        end_dir: Point,
         arrow_type: ArrowType,
         options: ArrowOptions,
     ) -> Self {
         Self {
             start,
             end,
-            start_dir,
-            end_dir,
             arrow_type,
             options,
         }
     }
+}
+
+fn draw_fluid_arrow(start: Point, end: Point, options: &ArrowOptions, fluid_options: &FluidOptions, canvas: &mut Canvas) -> Result<()> {
+    let (par, perp) = decomp(fluid_options.end_dir);
+    let (par_src, perp_src) = decomp(fluid_options.start_dir);
+    let head_length = options.head_length;
+    let head_width = options.head_width;
+    let arrow_dent_ratio = options.dent_ratio;
+    let end_control = scale(par, -head_length - fluid_options.end_gravity);
+    let start_control = scale(par_src, fluid_options.start_gravity);
+    // p0 is where thick line ends (before actual tip)
+    let p0 = end + scale(par, -head_length);
+    // p1 and p2 are tips on sides
+    let head_offset = scale(par, -head_length * arrow_dent_ratio);
+    let p1 = p0 + head_offset + scale(perp, head_width);
+    let p2 = p0 + head_offset + scale(perp, -head_width);
+    // p0t and p0b are widened points where line actually ends
+    // includes "- par" to close gap between line and arrowhead
+    let p0t = p0 + scale(perp, options.width * 0.5) - par;
+    let p0b = p0 + scale(perp, -options.width * 0.5) - par;
+    // body_path is line from start to end
+    let Some(body_path) = ({
+        let mut pb = PathBuilder::new();
+        pb.move_to(start.x, start.y);
+        pb.cubic_to(
+            start.x + start_control.x,
+            start.y + start_control.y,
+            p0.x + end_control.x,
+            p0.y + end_control.y,
+            p0.x,
+            p0.y,
+        );
+        pb.finish()
+    }) else {
+        bail!("could not make path");
+    };
+    // head path is around arrowhead
+    let Some(head_path) = ({
+        let mut pb = PathBuilder::new();
+        pb.move_to(p1.x, p1.y);
+        pb.line_to(end.x, end.y);
+        pb.line_to(p2.x, p2.y);
+        pb.line_to(p0b.x, p0b.y);
+        pb.line_to(p0t.x, p0t.y);
+        pb.close();
+        pb.finish()
+    }) else {
+        bail!("could not make path2");
+    };
+
+    let mut paint = Paint {
+        anti_alias: true,
+        ..Paint::default()
+    };
+
+    // Draw outline if set
+    if let Some(ref arrow_outline) = options.outline {
+        let color = arrow_outline.color;
+        paint.set_color_rgba8(color.red(), color.green(), color.blue(), color.alpha());
+        // body
+        let stroke = Stroke {
+            width: options.width + arrow_outline.width,
+            line_cap: LineCap::Square,
+            ..Default::default()
+        };
+        canvas
+            .pixmap
+            .stroke_path(&body_path, &paint, &stroke, Transform::identity(), None);
+        // head
+        let stroke = Stroke {
+            width: arrow_outline.width,
+            line_join: LineJoin::Round,
+            ..Default::default()
+        };
+        canvas
+            .pixmap
+            .stroke_path(&head_path, &paint, &stroke, Transform::identity(), None);
+    }
+    // Draw main body of arrow
+    let color = options.color;
+    let stroke = Stroke {
+        width: options.width,
+        line_cap: LineCap::Square,
+        ..Default::default()
+    };
+    paint.set_color_rgba8(color.red(), color.green(), color.blue(), color.alpha());
+    canvas
+        .pixmap
+        .stroke_path(&body_path, &paint, &stroke, Transform::identity(), None);
+
+    // Draw arrow head
+    canvas.pixmap.fill_path(
+        &head_path,
+        &paint,
+        FillRule::EvenOdd,
+        Transform::identity(),
+        None,
+    );
+
+    Ok(())
 }
 
 impl Drawable for Arrow {
@@ -108,106 +204,10 @@ impl Drawable for Arrow {
         })
     }
     fn draw(&self, canvas: &mut Canvas) -> Result<()> {
-        let ArrowType::Fluid(ref fluid_options) = self.arrow_type else {
-            bail!("only fluid supported right now");
-        };
-        let (par, perp) = decomp(self.end_dir);
-        let (par_src, perp_src) = decomp(self.start_dir);
-        let head_length = self.options.head_length;
-        let head_width = self.options.head_width;
-        let arrow_dent_ratio = self.options.dent_ratio;
-        let end_control = scale(par, -head_length - fluid_options.end_gravity);
-        let start_control = scale(par_src, fluid_options.start_gravity);
-        // p0 is where thick line ends (before actual tip)
-        let p0 = self.end + scale(par, -head_length);
-        // p1 and p2 are tips on sides
-        let head_offset = scale(par, -head_length * arrow_dent_ratio);
-        let p1 = p0 + head_offset + scale(perp, head_width);
-        let p2 = p0 + head_offset + scale(perp, -head_width);
-        // p0t and p0b are widened points where line actually ends
-        // includes "- par" to close gap between line and arrowhead
-        let p0t = p0 + scale(perp, self.options.width * 0.5) - par;
-        let p0b = p0 + scale(perp, -self.options.width * 0.5) - par;
-        // body_path is line from start to end
-        let Some(body_path) = ({
-            let mut pb = PathBuilder::new();
-            pb.move_to(self.start.x, self.start.y);
-            pb.cubic_to(
-                self.start.x + start_control.x,
-                self.start.y + start_control.y,
-                p0.x + end_control.x,
-                p0.y + end_control.y,
-                p0.x,
-                p0.y,
-            );
-            pb.finish()
-        }) else {
-            bail!("could not make path");
-        };
-        // head path is around arrowhead
-        let Some(head_path) = ({
-            let mut pb = PathBuilder::new();
-            pb.move_to(p1.x, p1.y);
-            pb.line_to(self.end.x, self.end.y);
-            pb.line_to(p2.x, p2.y);
-            pb.line_to(p0b.x, p0b.y);
-            pb.line_to(p0t.x, p0t.y);
-            pb.close();
-            pb.finish()
-        }) else {
-            bail!("could not make path2");
-        };
-
-        let mut paint = Paint {
-            anti_alias: true,
-            ..Paint::default()
-        };
-
-        // Draw outline if set
-        if let Some(ref arrow_outline) = self.options.outline {
-            let color = arrow_outline.color;
-            paint.set_color_rgba8(color.red(), color.green(), color.blue(), color.alpha());
-            // body
-            let stroke = Stroke {
-                width: self.options.width + arrow_outline.width,
-                line_cap: LineCap::Square,
-                ..Default::default()
-            };
-            canvas
-                .pixmap
-                .stroke_path(&body_path, &paint, &stroke, Transform::identity(), None);
-            // head
-            let stroke = Stroke {
-                width: arrow_outline.width,
-                line_join: LineJoin::Round,
-                ..Default::default()
-            };
-            canvas
-                .pixmap
-                .stroke_path(&head_path, &paint, &stroke, Transform::identity(), None);
+        match self.arrow_type {
+            ArrowType::Fluid(ref fluid_options) => draw_fluid_arrow(self.start, self.end, &self.options, fluid_options, canvas),
+            _ => bail!("only fluid supported right now"),
         }
-        // Draw main body of arrow
-        let color = self.options.color;
-        let stroke = Stroke {
-            width: self.options.width,
-            line_cap: LineCap::Square,
-            ..Default::default()
-        };
-        paint.set_color_rgba8(color.red(), color.green(), color.blue(), color.alpha());
-        canvas
-            .pixmap
-            .stroke_path(&body_path, &paint, &stroke, Transform::identity(), None);
-
-        // Draw arrow head
-        canvas.pixmap.fill_path(
-            &head_path,
-            &paint,
-            FillRule::EvenOdd,
-            Transform::identity(),
-            None,
-        );
-
-        Ok(())
     }
     fn clone_box(&self) -> Box<dyn Drawable> {
         Box::new(self.clone())
@@ -238,39 +238,28 @@ mod tests {
         )?;
         canvas.load_font("serif", include_bytes!("../fonts/Lato/Lato-Regular.ttf"))?;
 
-        let mut rng = ChaCha8Rng::seed_from_u64(1234);
-
-        for i in 0..10 {
-            let dst = point(400.0, 400.0);
-            let src = point(rng.random::<f32>() * 800.0, rng.random::<f32>() * 800.0);
-            let (par, perp) = decomp(dst - src);
-            let dist = rng.random::<f32>() * 0.0 + 60.0;
-            let dst = dst - scale(par, dist);
-            let src = dst - scale(par, 300.0);
-            let arrow = Arrow::new(
-                src,
-                dst,
-                point(rng.random::<f32>() - 0.5, rng.random::<f32>() - 0.5),
-                dst - src,
-                ArrowType::Fluid(FluidOptions {
-                    start_gravity: 100.0 + rng.random::<f32>() * 200.0,
-                    end_gravity: 100.0,
+        Arrow::new(
+            point(600.0, 700.0),
+            point(400.0, 400.0),
+            ArrowType::Fluid(FluidOptions {
+                start_gravity: 100.0,
+                end_gravity: 100.0,
+                start_dir: point(0.2, -0.3),
+                end_dir: point(-0.2, 0.0),
+            }),
+            ArrowOptions {
+                width: 20.0,
+                head_length: 40.0,
+                head_width: 40.0,
+                dent_ratio: 0.2,
+                color: color("#ff0")?,
+                outline: Some(ArrowOutline {
+                    width: 10.0,
+                    color: color("#000")?,
                 }),
-                ArrowOptions {
-                    width: 20.0,
-                    head_length: 40.0,
-                    head_width: 40.0,
-                    dent_ratio: 0.2,
-                    color: color("#ff0")?,
-                    outline: Some(ArrowOutline {
-                        width: 10.0,
-                        color: color("#000")?,
-                    }),
-                    ..Default::default()
-                },
-            );
-            arrow.draw(&mut canvas)?;
-        }
+                ..Default::default()
+            },
+        ).draw(&mut canvas)?;
 
         canvas.save("test_render_arrow.png")?;
         Ok(())

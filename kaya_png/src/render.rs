@@ -1,7 +1,7 @@
 #![allow(unused)]
 
 use ab_glyph::point;
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 use crate::canvas::Canvas;
 use crate::draw::{
@@ -18,7 +18,7 @@ pub struct RenderState {
     pub style: Styling,
     skip_heap: bool,
     ids: Vec<String>,
-    ptrs: Vec<(String, Ptr)>,
+    ptrs: Vec<(String, String, Ptr)>,
 }
 
 impl Default for RenderState {
@@ -367,13 +367,14 @@ fn render_value_char(
 
 fn render_value_pointer(
     p: &Ptr,
+    prefix: &str,
     ptr_dst_prefix: &str,
     render_state: &mut RenderState,
     _canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
     // Record the pointer information into render_state for drawing arrows after layout
     // Clone the ptr, but also extend the destination label to have the ptr_dst_prefix
-    render_state.ptrs.push((ptr_dst_prefix.to_string(), p.clone()));
+    render_state.ptrs.push((ptr_dst_prefix.to_string(), prefix.to_string(), p.clone()));
     let style = &render_state.style;
     let ds = DrawState {
         font: style.get_string_or("value.pointer.font", "mono"),
@@ -399,7 +400,7 @@ pub fn render_value(
     let item = match value {
         Value::Number(v) => render_value_number(*v, render_state, canvas)?,
         Value::Char(c) => render_value_char(*c, render_state, canvas)?,
-        Value::Pointer(p) => render_value_pointer(p, ptr_dst_prefix, render_state, canvas)?,
+        Value::Pointer(p) => render_value_pointer(p, prefix, ptr_dst_prefix, render_state, canvas)?,
         Value::Array(a) => render_value_array(a, prefix, ptr_dst_prefix, render_state, canvas)?,
         Value::Tuple(a) => render_value_tuple(a, prefix, ptr_dst_prefix, render_state, canvas)?,
         Value::Struct(a) => render_value_struct(a, prefix, ptr_dst_prefix, render_state, canvas)?,
@@ -572,9 +573,16 @@ pub fn render_program(
     let g_body = vstack_left(body, canvas)?;
     // Layout should be finished entirely
     // Now draw arrows
-    for ptr in &rs.ptrs {
-        println!("{:?}", ptr);
-        //let r = g_body.get_tagged(&ptr.name).unwrap().bounding_box(&canvas)?;
+    for (dst_prefix, src_tag, ptr) in &rs.ptrs {
+        let mut dst_tag = String::new();
+        dst_tag.push_str(&format!("{}:{}", dst_prefix, ptr.name));
+        for idx in &ptr.selectors {
+            dst_tag.push_str(&format!(".{}", idx));
+        }
+        println!("ptr dst={} src={}", dst_tag, src_tag);
+        let dst_r = g_body.get_tagged(&dst_tag).expect(&format!("could not find tag '{}'", dst_tag)).bounding_box(&canvas)?;
+        let src_r = g_body.get_tagged(&src_tag).expect(&format!("could not find tag '{}'", src_tag)).bounding_box(&canvas)?;
+        println!("ptr dest rect: {:?}\nptr src rect: {:?}", &dst_r, &src_r);
     }
     for id in rs.ids() {
         let r = g_body.get_tagged(&id).unwrap().bounding_box(&canvas)?;

@@ -10,6 +10,7 @@ use crate::draw::{
 };
 use crate::draw_state::DrawState;
 use crate::style::{Styling, color, standard_style};
+use crate::arrow::{Arrow, ArrowType, ArrowOptions, ArcOptions, FluidOptions, ArrowOutline};
 
 use kaya_lib::states::{Def, Location, NamedStruct, Program, Ptr, Region, Step, Value};
 
@@ -554,10 +555,15 @@ pub fn render_step(
     Ok(res)
 }
 
+enum Direction {
+    Top, Right, Bottom, Left
+}
+
 pub fn render_program(
     value: &Program,
     canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
+    let mut result = GArray::new();
     let mut rs = RenderState::default();
     rs.style = standard_style()?;
     let style = &rs.style;
@@ -571,28 +577,45 @@ pub fn render_program(
         body.push(g_location);
     }
     let g_body = vstack_left(body, canvas)?;
+    result.push(g_body.clone_box());
+
     // Layout should be finished entirely
     // Now draw arrows
+    let mut arrows: Vec<Arrow> = vec![];
     for (dst_prefix, src_tag, ptr) in &rs.ptrs {
         let mut dst_tag = String::new();
         dst_tag.push_str(&format!("{}:{}", dst_prefix, ptr.name));
         for idx in &ptr.selectors {
             dst_tag.push_str(&format!(".{}", idx));
         }
-        println!("ptr dst={} src={}", dst_tag, src_tag);
         let dst_r = g_body.get_tagged(&dst_tag).expect(&format!("could not find tag '{}'", dst_tag)).bounding_box(&canvas)?;
         let src_r = g_body.get_tagged(&src_tag).expect(&format!("could not find tag '{}'", src_tag)).bounding_box(&canvas)?;
-        println!("ptr dest rect: {:?}\nptr src rect: {:?}", &dst_r, &src_r);
+        // Right now pick right side middle for src and dst
+        let src_p = point(src_r.max.x, (src_r.min.y + src_r.max.y) * 0.5);
+        let dst_p = point(dst_r.max.x, (dst_r.min.y + dst_r.max.y) * 0.5);
+        let arrow = Arrow::new(
+            src_p,
+            dst_p,
+            ArrowType::Arc( ArcOptions {
+                start_dir: point(1.0, 0.0),
+                end_dir: point(-1.0, 0.0),
+            }),
+            ArrowOptions {
+                width: 6.0,
+                head_length: 10.0,
+                head_width: 10.0,
+                dent_ratio: 0.2,
+                color: color("#ff0")?,
+                outline: Some(ArrowOutline {
+                    width: 3.0,
+                    color: color("#000")?,
+                }),
+                ..Default::default()
+            },
+        );
+        result.push(Box::new(arrow));
     }
-    for id in rs.ids() {
-        let r = g_body.get_tagged(&id).unwrap().bounding_box(&canvas)?;
-        println!("{} => {:?}", id, r);
-        // let bx = GBox::new_with_options(r, 1.0, color("#f00")?);
-        // bx.draw(&mut canvas)?;
-    }
-    // let vv = v.get_tagged("L1:Stack:y2").unwrap();
-
-    Ok(Box::new(g_body))
+    Ok(Box::new(result))
 }
 
 #[cfg(test)]

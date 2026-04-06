@@ -11,22 +11,22 @@ use crate::style::color;
 
 #[derive(Clone, Debug)]
 pub struct FluidOptions {
-    start_gravity: f32,
-    end_gravity: f32,
-    start_dir: Point,
-    end_dir: Point,
+    pub start_gravity: f32,
+    pub end_gravity: f32,
+    pub start_dir: Point,
+    pub end_dir: Point,
 }
 
 #[derive(Clone, Debug)]
 pub struct ArcOptions {
-    start_dir: Point,
-    end_dir: Point,
+    pub start_dir: Point,
+    pub end_dir: Point,
 }
 
 #[derive(Clone, Debug)]
 pub struct ArrowOutline {
-    width: f32,
-    color: ColorU8,
+    pub width: f32,
+    pub color: ColorU8,
 }
 
 #[derive(Clone, Debug)]
@@ -38,12 +38,12 @@ pub enum ArrowType {
 
 #[derive(Clone, Debug)]
 pub struct ArrowOptions {
-    width: f32,
-    color: ColorU8,
-    outline: Option<ArrowOutline>,
-    head_width: f32,
-    head_length: f32,
-    dent_ratio: f32,
+    pub width: f32,
+    pub color: ColorU8,
+    pub outline: Option<ArrowOutline>,
+    pub head_width: f32,
+    pub head_length: f32,
+    pub dent_ratio: f32,
 }
 
 impl Default for ArrowOptions {

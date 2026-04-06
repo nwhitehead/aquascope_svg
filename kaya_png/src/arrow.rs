@@ -18,6 +18,12 @@ pub struct FluidOptions {
 }
 
 #[derive(Clone, Debug)]
+pub struct ArcOptions {
+    start_dir: Point,
+    end_dir: Point,
+}
+
+#[derive(Clone, Debug)]
 pub struct ArrowOutline {
     width: f32,
     color: ColorU8,
@@ -27,6 +33,7 @@ pub struct ArrowOutline {
 pub enum ArrowType {
     Straight,
     Fluid(FluidOptions),
+    Arc(ArcOptions),
 }
 
 #[derive(Clone, Debug)]
@@ -90,6 +97,18 @@ impl Arrow {
             options,
         }
     }
+}
+
+// this was an idea for doing Arc but i don't like it
+fn intersect_lines(start: Point, end: Point, start_dir: Point, end_dir: Point) -> Option<Point> {
+    let dx = end.x - start.x;
+    let dy = end.y - start.y;
+    let denominator = start_dir.x * end_dir.y - start_dir.y * end_dir.x;
+    if denominator.abs() < 1e-10 {
+        return None;
+    }
+    let t = (dx * end_dir.y - dy * end_dir.x) / denominator;
+    Some(start + scale(start_dir, t))
 }
 
 fn draw_fluid_arrow(start: Point, end: Point, options: &ArrowOptions, fluid_options: &FluidOptions, canvas: &mut Canvas) -> Result<()> {
@@ -192,6 +211,30 @@ fn draw_fluid_arrow(start: Point, end: Point, options: &ArrowOptions, fluid_opti
     Ok(())
 }
 
+fn draw_straight_arrow(start: Point, end: Point, options: &ArrowOptions, canvas: &mut Canvas) -> Result<()> {
+    let fluid_options = FluidOptions {
+        start_gravity: 0.0,
+        end_gravity: 0.0,
+        start_dir: end - start,
+        end_dir: end - start,
+    };
+    draw_fluid_arrow(start, end, &options, &fluid_options, canvas)
+}
+
+fn draw_arc_arrow(start: Point, end: Point, options: &ArrowOptions, arc_options: &ArcOptions, canvas: &mut Canvas) -> Result<()> {
+    let Some(center) = intersect_lines(start, end, arc_options.start_dir, arc_options.end_dir) else {
+        bail!("no center of circle for arc");
+    };
+    let kappa = 0.45;
+    let fluid_options = FluidOptions {
+        start_gravity: norm(center - start) * kappa,
+        end_gravity: norm(center - end) * kappa,
+        start_dir: arc_options.start_dir,
+        end_dir: arc_options.end_dir,
+    };
+    draw_fluid_arrow(start, end, &options, &fluid_options, canvas)
+}
+
 impl Drawable for Arrow {
     fn translate(&mut self, t: Point) {
         self.start += t;
@@ -206,6 +249,8 @@ impl Drawable for Arrow {
     fn draw(&self, canvas: &mut Canvas) -> Result<()> {
         match self.arrow_type {
             ArrowType::Fluid(ref fluid_options) => draw_fluid_arrow(self.start, self.end, &self.options, fluid_options, canvas),
+            ArrowType::Straight => draw_straight_arrow(self.start, self.end, &self.options, canvas),
+            ArrowType::Arc(ref arc_options) => draw_arc_arrow(self.start, self.end, &self.options, arc_options, canvas),
             _ => bail!("only fluid supported right now"),
         }
     }
@@ -246,6 +291,45 @@ mod tests {
                 end_gravity: 100.0,
                 start_dir: point(0.2, -0.3),
                 end_dir: point(-0.2, 0.0),
+            }),
+            ArrowOptions {
+                width: 20.0,
+                head_length: 40.0,
+                head_width: 40.0,
+                dent_ratio: 0.2,
+                color: color("#ff0")?,
+                outline: Some(ArrowOutline {
+                    width: 10.0,
+                    color: color("#000")?,
+                }),
+                ..Default::default()
+            },
+        ).draw(&mut canvas)?;
+
+        Arrow::new(
+            point(200.0, 200.0),
+            point(400.0, 300.0),
+            ArrowType::Straight,
+            ArrowOptions {
+                width: 20.0,
+                head_length: 40.0,
+                head_width: 40.0,
+                dent_ratio: 0.2,
+                color: color("#ff0")?,
+                outline: Some(ArrowOutline {
+                    width: 10.0,
+                    color: color("#000")?,
+                }),
+                ..Default::default()
+            },
+        ).draw(&mut canvas)?;
+
+        Arrow::new(
+            point(600.0, 200.0),
+            point(400.0, 600.0),
+            ArrowType::Arc( ArcOptions {
+                start_dir: point(5.0, 1.0),
+                end_dir: point(-1.0, 0.0),
             }),
             ArrowOptions {
                 width: 20.0,

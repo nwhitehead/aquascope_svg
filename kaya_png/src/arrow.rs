@@ -99,18 +99,6 @@ impl Arrow {
     }
 }
 
-// this was an idea for doing Arc but i don't like it
-fn intersect_lines(start: Point, end: Point, start_dir: Point, end_dir: Point) -> Option<Point> {
-    let dx = end.x - start.x;
-    let dy = end.y - start.y;
-    let denominator = start_dir.x * end_dir.y - start_dir.y * end_dir.x;
-    if denominator.abs() < 1e-10 {
-        return None;
-    }
-    let t = (dx * end_dir.y - dy * end_dir.x) / denominator;
-    Some(start + scale(start_dir, t))
-}
-
 fn draw_fluid_arrow(start: Point, end: Point, options: &ArrowOptions, fluid_options: &FluidOptions, canvas: &mut Canvas) -> Result<()> {
     let (par, perp) = decomp(fluid_options.end_dir);
     let (par_src, perp_src) = decomp(fluid_options.start_dir);
@@ -222,13 +210,10 @@ fn draw_straight_arrow(start: Point, end: Point, options: &ArrowOptions, canvas:
 }
 
 fn draw_arc_arrow(start: Point, end: Point, options: &ArrowOptions, arc_options: &ArcOptions, canvas: &mut Canvas) -> Result<()> {
-    let Some(center) = intersect_lines(start, end, arc_options.start_dir, arc_options.end_dir) else {
-        bail!("no center of circle for arc");
-    };
-    let kappa = 0.45;
+    let gravity = norm(end - start) * 0.5;
     let fluid_options = FluidOptions {
-        start_gravity: norm(center - start) * kappa,
-        end_gravity: norm(center - end) * kappa,
+        start_gravity: gravity,
+        end_gravity: gravity,
         start_dir: arc_options.start_dir,
         end_dir: arc_options.end_dir,
     };
@@ -328,7 +313,7 @@ mod tests {
             point(600.0, 200.0),
             point(400.0, 600.0),
             ArrowType::Arc( ArcOptions {
-                start_dir: point(5.0, 1.0),
+                start_dir: point(0.0, 1.0),
                 end_dir: point(-1.0, 0.0),
             }),
             ArrowOptions {

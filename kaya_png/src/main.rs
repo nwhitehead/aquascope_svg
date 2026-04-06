@@ -95,9 +95,7 @@ fn main() -> Result<()> {
         )?;
         canvas.load_font("serif", include_bytes!("../fonts/Lato/Lato-Regular.ttf"))?;
         canvas.load_font("serif_bold", include_bytes!("../fonts/Lato/Lato-Bold.ttf"))?;
-        let mut rs = RenderState::default();
-        rs.style = standard_style()?;
-        let mut v = render_program(&program, &mut rs, &canvas)?;
+        let mut v = render_program(&program, &canvas)?;
         let bb = v.bounding_box(&canvas)?;
         // Translate to 0, 0
         v.translate(point(-bb.min.x, -bb.min.y));

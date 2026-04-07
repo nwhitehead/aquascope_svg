@@ -581,11 +581,11 @@ fn get_direction_vector(d: &Direction) -> Point {
     }
 }
 
-fn choose_arrow(src_rect: Rect, dst_rect: Rect, help: Vec<String>, style: &Styling) -> Arrow {
+fn choose_arrow(src_rect: &Rect, dst_rect: &Rect, help: &[String], style: &Styling) -> Arrow {
     let mut src_direction = Direction::Auto;
     let mut dst_direction = Direction::Auto;
     let mut color = 0; // index
-    for h in &help {
+    for h in help {
         match h.as_str() {
             ".sn" => src_direction = Direction::Top,
             ".se" => src_direction = Direction::Right,
@@ -624,13 +624,15 @@ fn choose_arrow(src_rect: Rect, dst_rect: Rect, help: Vec<String>, style: &Styli
             if dst_direction == Direction::Auto { dst_direction = Direction::Right; }
         }
     } else {
-        if dy > 0.0 {
-            if src_direction == Direction::Auto { src_direction = Direction::Bottom; }
-            if dst_direction == Direction::Auto { dst_direction = Direction::Top; }
-        } else {
-            if src_direction == Direction::Auto { src_direction = Direction::Top; }
-            if dst_direction == Direction::Auto { dst_direction = Direction::Bottom; }
-        }
+        if src_direction == Direction::Auto { src_direction = Direction::Right; }
+        if dst_direction == Direction::Auto { dst_direction = Direction::Right; }
+        // if dy > 0.0 {
+        //     if src_direction == Direction::Auto { src_direction = Direction::Bottom; }
+        //     if dst_direction == Direction::Auto { dst_direction = Direction::Top; }
+        // } else {
+        //     if src_direction == Direction::Auto { src_direction = Direction::Top; }
+        //     if dst_direction == Direction::Auto { dst_direction = Direction::Bottom; }
+        // }
     }
     let src_p = pick_side(&src_rect, &src_direction);
     let dst_p = pick_side(&dst_rect, &dst_direction);
@@ -689,29 +691,7 @@ pub fn render_program(
         }
         let dst_r = g_body.get_tagged(&dst_tag).expect(&format!("could not find tag '{}'", dst_tag)).bounding_box(&canvas)?;
         let src_r = g_body.get_tagged(&src_tag).expect(&format!("could not find tag '{}'", src_tag)).bounding_box(&canvas)?;
-        // Right now pick right side middle for src and dst
-        let src_p = point(src_r.max.x, (src_r.min.y + src_r.max.y) * 0.5);
-        let dst_p = point(dst_r.max.x, (dst_r.min.y + dst_r.max.y) * 0.5);
-        let arrow = Arrow::new(
-            src_p,
-            dst_p,
-            ArrowType::Arc( ArcOptions {
-                start_dir: point(1.0, 0.0),
-                end_dir: point(-1.0, 0.0),
-            }),
-            ArrowOptions {
-                width: 6.0,
-                head_length: 10.0,
-                head_width: 10.0,
-                dent_ratio: 0.2,
-                color: color("#ff0")?,
-                outline: Some(ArrowOutline {
-                    width: 3.0,
-                    color: color("#000")?,
-                }),
-                ..Default::default()
-            },
-        );
+        let arrow = choose_arrow(&src_r, &dst_r, &ptr.help, &rs.style);
         result.push(Box::new(arrow));
     }
     Ok(Box::new(result))

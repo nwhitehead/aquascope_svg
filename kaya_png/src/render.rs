@@ -726,6 +726,11 @@ pub fn draw_program(
     Ok(canvas)
 }
 
+pub fn draw_program_png(program: &Program) -> Result<Vec<u8>> {
+    let canvas = draw_program(program)?;
+    canvas.png_data()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1025,6 +1030,14 @@ mod tests {
     pub fn test_draw_program() -> Result<()> {
         let canvas = draw_program(&demo_prg())?;
         canvas.save("test_draw_program.png")?;
+        Ok(())
+    }
+
+    #[test]
+    pub fn test_draw_program_png_data() -> Result<()> {
+        let data = draw_program_png(&demo_prg())?;
+        // just check for PNG magic at start
+        assert_eq!(data[0..4], [0x89, 0x50, 0x4e, 0x47]);
         Ok(())
     }
 

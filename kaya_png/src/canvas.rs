@@ -151,4 +151,8 @@ impl Canvas {
     pub fn save(&self, filename: &str) -> Result<()> {
         Ok(self.pixmap.save_png(filename)?)
     }
+    pub fn png_data(&self) -> Result<Vec<u8>> {
+        let data = self.pixmap.encode_png()?;
+        Ok(data)
+    }
 }

@@ -1,7 +1,8 @@
 #![allow(unused)]
 
-use ab_glyph::{point, Rect};
+use ab_glyph::{point, Point, Rect};
 use anyhow::{Context, Result};
+use tiny_skia::ColorU8;
 
 use crate::canvas::Canvas;
 use crate::draw::{
@@ -10,7 +11,7 @@ use crate::draw::{
 };
 use crate::draw_state::DrawState;
 use crate::style::{Styling, color, standard_style};
-use crate::arrow::{Arrow, ArrowType, ArrowOptions, ArcOptions, FluidOptions, ArrowOutline};
+use crate::arrow::{Arrow, ArrowType, ArrowOptions, ArcOptions, FluidOptions, ArrowOutline, scale};
 
 use kaya_lib::states::{Def, Location, NamedStruct, Program, Ptr, Region, Step, Value};
 
@@ -555,11 +556,32 @@ pub fn render_step(
     Ok(res)
 }
 
+#[derive(PartialEq)]
 enum Direction {
     Auto, Top, Right, Bottom, Left
 }
 
-fn choose_arrow(src_rect: Rect, dst_rect: Rect, help: Vec<String>) {
+fn pick_side(r: &Rect, d: &Direction) -> Point {
+    match d {
+        Direction::Top => point((r.min.x + r.max.x) * 0.5, r.min.y),
+        Direction::Right => point(r.max.x, (r.min.y + r.max.y) * 0.5),
+        Direction::Bottom => point((r.min.x + r.max.x) * 0.5, r.max.y),
+        Direction::Left => point(r.min.x, (r.min.y + r.max.y) * 0.5),
+        _ => panic!("unimplemented"),
+    }
+}
+
+fn get_direction_vector(d: &Direction) -> Point {
+    match d {
+        Direction::Top => point(0.0, -1.0),
+        Direction::Right => point(1.0, 0.0),
+        Direction::Bottom => point(0.0, 1.0),
+        Direction::Left => point(-1.0, 0.0),
+        _ => panic!("unimplemented"),
+    }
+}
+
+fn choose_arrow(src_rect: Rect, dst_rect: Rect, help: Vec<String>, style: &Styling) -> Arrow {
     let mut src_direction = Direction::Auto;
     let mut dst_direction = Direction::Auto;
     let mut color = 0; // index
@@ -586,6 +608,54 @@ fn choose_arrow(src_rect: Rect, dst_rect: Rect, help: Vec<String>) {
             _ => println!("WARNING: unknown pointer help found, {}", &h),
         }
     }
+    // Compute auto directions
+    // FIXME: Assumes src and dst rectangles don't overlap (annoying edge cases there)
+    let src_mid = point((src_rect.min.x + src_rect.max.x) * 0.5, (src_rect.min.y + src_rect.max.y) * 0.5);
+    let dst_mid = point((dst_rect.min.x + dst_rect.max.x) * 0.5, (dst_rect.min.y + dst_rect.max.y) * 0.5);
+    let dx = dst_mid.x - src_mid.x;
+    let dy = dst_mid.y - src_mid.y;
+    // Do horizontal connection if dx is bigger, vertical connection if dy is bigger
+    if dx.abs() > dy.abs() {
+        if dx > 0.0 {
+            if src_direction == Direction::Auto { src_direction = Direction::Right; }
+            if dst_direction == Direction::Auto { dst_direction = Direction::Left; }
+        } else {
+            if src_direction == Direction::Auto { src_direction = Direction::Left; }
+            if dst_direction == Direction::Auto { dst_direction = Direction::Right; }
+        }
+    } else {
+        if dy > 0.0 {
+            if src_direction == Direction::Auto { src_direction = Direction::Bottom; }
+            if dst_direction == Direction::Auto { dst_direction = Direction::Top; }
+        } else {
+            if src_direction == Direction::Auto { src_direction = Direction::Top; }
+            if dst_direction == Direction::Auto { dst_direction = Direction::Bottom; }
+        }
+    }
+    let src_p = pick_side(&src_rect, &src_direction);
+    let dst_p = pick_side(&dst_rect, &dst_direction);
+    let arrow = Arrow::new(
+        src_p,
+        dst_p,
+        ArrowType::Arc( ArcOptions {
+            start_dir: get_direction_vector(&src_direction),
+            // end_dir is reversed because arrow is going into that side
+            end_dir: scale(get_direction_vector(&dst_direction), -1.0),
+        }),
+        ArrowOptions {
+            width: 6.0,
+            head_length: 10.0,
+            head_width: 10.0,
+            dent_ratio: 0.2,
+            color: style.get_color_or("arrow.color", ColorU8::from_rgba(255, 255, 0, 255)),
+            outline: Some(ArrowOutline {
+                width: 3.0,
+                color: style.get_color_or("arrow.outline.color", ColorU8::from_rgba(0, 0, 0, 255)),
+            }),
+            ..Default::default()
+        },
+    );
+    arrow
 }
 
 pub fn render_program(

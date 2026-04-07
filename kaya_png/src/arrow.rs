@@ -67,16 +67,16 @@ pub struct Arrow {
     options: ArrowOptions,
 }
 
-fn norm(p: Point) -> f32 {
+pub fn norm(p: Point) -> f32 {
     (p.x * p.x + p.y * p.y).sqrt()
 }
 
-fn scale(p: Point, s: f32) -> Point {
+pub fn scale(p: Point, s: f32) -> Point {
     point(p.x * s, p.y * s)
 }
 
 /// Decompose a direction vector into two vectors: along and parallel (unit length)
-fn decomp(dir: Point) -> (Point, Point) {
+pub fn decomp(dir: Point) -> (Point, Point) {
     let norm = 1.0 / norm(dir);
     let parallel = point(dir.x * norm, dir.y * norm);
     let perp = point(parallel.y, -parallel.x);

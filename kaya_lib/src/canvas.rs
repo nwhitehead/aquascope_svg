@@ -5,11 +5,13 @@ use ab_glyph::{FontVec, PxScale};
 use anyhow::{Context, Result, bail};
 use tiny_skia::{Pixmap, PremultipliedColorU8};
 
+use crate::draw::scale;
 use crate::draw_state::DrawState;
 use crate::style::Styling;
 
 pub struct Canvas {
     pub pixmap: Pixmap,
+    pub scale: f32,
     fonts: HashMap<String, FontVec>,
 }
 
@@ -26,11 +28,13 @@ fn pixmap_pixel_mut(pixmap: &mut Pixmap, x: i32, y: i32) -> Option<&mut Premulti
 
 impl Canvas {
     pub fn new(width: u32, height: u32) -> Result<Self> {
-        let Some(pixmap) = Pixmap::new(width, height) else {
+        let scale = 2.0;
+        let Some(pixmap) = Pixmap::new(((width as f32) * scale) as u32, ((height as f32) * scale) as u32) else {
             bail!("pixmap failed");
         };
         Ok(Self {
             pixmap,
+            scale,
             fonts: HashMap::new(),
         })
     }
@@ -45,14 +49,15 @@ impl Canvas {
         text: &str,
         position: Point,
         state: &DrawState,
+        scalef: f32,
         target: &mut Vec<Glyph>,
     ) -> Result<Point> {
         let Some(font) = self.fonts.get(&state.font) else {
             bail!("no font");
         };
-        let font = font.as_scaled(PxScale::from(state.font_size));
-        let v_advance = font.height() + font.line_gap();
-        let mut caret = position;
+        let font = font.as_scaled(PxScale::from(state.font_size * scalef));
+        let v_advance = (font.height() + font.line_gap()) * scalef;
+        let mut caret = scale(position, scalef);
         // to make position be at upper left, add in this: + point(0.0, font.ascent())
         // to initial caret position
         let mut last_glyph: Option<Glyph> = None;
@@ -88,7 +93,7 @@ impl Canvas {
         };
         let font = font.as_scaled(PxScale::from(state.font_size));
         let mut glyphs = vec![];
-        let caret = self.layout_text(text, point(0.0, 0.0), state, &mut glyphs)?;
+        let caret = self.layout_text(text, point(0.0, 0.0), state, 1.0, &mut glyphs)?;
         Ok(Rect {
             min: point(0.0, -font.ascent()),
             max: caret,
@@ -98,9 +103,9 @@ impl Canvas {
         let Some(font) = self.fonts.get(&state.font) else {
             bail!("no font");
         };
-        let font = font.as_scaled(PxScale::from(state.font_size));
+        let font = font.as_scaled(PxScale::from(state.font_size * self.scale));
         let mut glyphs = vec![];
-        let _ = self.layout_text(text, position, state, &mut glyphs)?;
+        let _ = self.layout_text(text, position, state, self.scale, &mut glyphs)?;
         let outlined: Vec<_> = glyphs
             .into_iter()
             .filter_map(|g| font.outline_glyph(g))

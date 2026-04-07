@@ -4,11 +4,11 @@ use ab_glyph::{point, Point, Rect};
 use anyhow::{bail, Context, Result};
 use tiny_skia::{Color, ColorU8};
 
-use crate::arrow::{Arrow, ArrowType, ArrowOptions, ArcOptions, FluidOptions, ArrowOutline, scale};
+use crate::arrow::{Arrow, ArrowType, ArrowOptions, ArcOptions, FluidOptions, ArrowOutline};
 use crate::canvas::Canvas;
 use crate::draw::{
     Drawable, FormulaType, GArray, GBox, GLine, GPadding, GSpace, GTagged, GText, border, compute_align,
-    hstack, hstack_top, vstack_left, vstack_none,
+    hstack, hstack_top, scale, vstack_left, vstack_none,
 };
 use crate::draw_state::DrawState;
 use crate::states::{Def, Location, NamedStruct, Program, Ptr, Region, Step, Value};

@@ -15,6 +15,14 @@ pub trait Drawable: std::fmt::Debug {
     fn get_tagged(&self, id: &str) -> Option<Box<dyn Drawable>>;
 }
 
+pub fn norm(p: Point) -> f32 {
+    (p.x * p.x + p.y * p.y).sqrt()
+}
+
+pub fn scale(p: Point, s: f32) -> Point {
+    point(p.x * s, p.y * s)
+}
+
 #[derive(Debug)]
 pub struct GTagged {
     item: Box<dyn Drawable>,
@@ -140,7 +148,7 @@ impl Drawable for GLine {
             &path,
             &paint,
             &self.state.stroke,
-            Transform::identity(),
+            Transform::from_scale(canvas.scale, canvas.scale),
             None,
         );
 
@@ -264,7 +272,7 @@ impl Drawable for GBox {
             &path,
             &paint,
             &self.state.stroke,
-            Transform::identity(),
+            Transform::from_scale(canvas.scale, canvas.scale),
             None,
         );
         Ok(())

@@ -5,7 +5,7 @@ use anyhow::{Result, bail};
 use tiny_skia::{ColorU8, FillRule, LineCap, LineJoin, Paint, PathBuilder, Stroke, Transform};
 
 use crate::canvas::Canvas;
-use crate::draw::Drawable;
+use crate::draw::{Drawable, norm, scale};
 use crate::draw_state::DrawState;
 use crate::style::color;
 
@@ -67,14 +67,6 @@ pub struct Arrow {
     options: ArrowOptions,
 }
 
-pub fn norm(p: Point) -> f32 {
-    (p.x * p.x + p.y * p.y).sqrt()
-}
-
-pub fn scale(p: Point, s: f32) -> Point {
-    point(p.x * s, p.y * s)
-}
-
 /// Decompose a direction vector into two vectors: along and parallel (unit length)
 pub fn decomp(dir: Point) -> (Point, Point) {
     let norm = 1.0 / norm(dir);
@@ -100,6 +92,7 @@ impl Arrow {
 }
 
 fn draw_fluid_arrow(start: Point, end: Point, options: &ArrowOptions, fluid_options: &FluidOptions, canvas: &mut Canvas) -> Result<()> {
+    let transform = Transform::from_scale(canvas.scale, canvas.scale);
     let (par, perp) = decomp(fluid_options.end_dir);
     let (par_src, perp_src) = decomp(fluid_options.start_dir);
     let head_length = options.head_length;
@@ -164,7 +157,7 @@ fn draw_fluid_arrow(start: Point, end: Point, options: &ArrowOptions, fluid_opti
         };
         canvas
             .pixmap
-            .stroke_path(&body_path, &paint, &stroke, Transform::identity(), None);
+            .stroke_path(&body_path, &paint, &stroke, transform, None);
         // head
         let stroke = Stroke {
             width: arrow_outline.width,
@@ -173,7 +166,7 @@ fn draw_fluid_arrow(start: Point, end: Point, options: &ArrowOptions, fluid_opti
         };
         canvas
             .pixmap
-            .stroke_path(&head_path, &paint, &stroke, Transform::identity(), None);
+            .stroke_path(&head_path, &paint, &stroke, transform, None);
     }
     // Draw main body of arrow
     let color = options.color;
@@ -185,14 +178,14 @@ fn draw_fluid_arrow(start: Point, end: Point, options: &ArrowOptions, fluid_opti
     paint.set_color_rgba8(color.red(), color.green(), color.blue(), color.alpha());
     canvas
         .pixmap
-        .stroke_path(&body_path, &paint, &stroke, Transform::identity(), None);
+        .stroke_path(&body_path, &paint, &stroke, transform, None);
 
     // Draw arrow head
     canvas.pixmap.fill_path(
         &head_path,
         &paint,
         FillRule::EvenOdd,
-        Transform::identity(),
+        transform,
         None,
     );
 

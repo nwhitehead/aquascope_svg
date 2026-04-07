@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use ab_glyph::point;
+use ab_glyph::{point, Rect};
 use anyhow::{Context, Result};
 
 use crate::canvas::Canvas;
@@ -556,7 +556,36 @@ pub fn render_step(
 }
 
 enum Direction {
-    Top, Right, Bottom, Left
+    Auto, Top, Right, Bottom, Left
+}
+
+fn choose_arrow(src_rect: Rect, dst_rect: Rect, help: Vec<String>) {
+    let mut src_direction = Direction::Auto;
+    let mut dst_direction = Direction::Auto;
+    let mut color = 0; // index
+    for h in &help {
+        match h.as_str() {
+            ".sn" => src_direction = Direction::Top,
+            ".se" => src_direction = Direction::Right,
+            ".ss" => src_direction = Direction::Bottom,
+            ".sw" => src_direction = Direction::Left,
+            ".dn" => dst_direction = Direction::Top,
+            ".de" => dst_direction = Direction::Right,
+            ".ds" => dst_direction = Direction::Bottom,
+            ".dw" => dst_direction = Direction::Left,
+            ".c0" => color = 0,
+            ".c1" => color = 1,
+            ".c2" => color = 2,
+            ".c3" => color = 3,
+            ".c4" => color = 4,
+            ".c5" => color = 5,
+            ".c6" => color = 6,
+            ".c7" => color = 7,
+            ".c8" => color = 8,
+            ".c9" => color = 9,
+            _ => println!("WARNING: unknown pointer help found, {}", &h),
+        }
+    }
 }
 
 pub fn render_program(

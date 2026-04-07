@@ -23,7 +23,7 @@ build:
 
 # Deploy to website (assumes webserver already configured)
 deploy:
-    rsync --archive dist/ root@shimmermathlabs.com:/var/www/kaya/
+    rsync --archive kaya_web/dist/ root@shimmermathlabs.com:/var/www/kaya/
 
 # Generate some PNG files to test rendering
 rendertest:

@@ -9,7 +9,6 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     BaseHeader: typeof import('./components/layouts/BaseHeader.vue')['default']
-    Diagram: typeof import('./components/Diagram.vue')['default']
     Editor: typeof import('./components/Editor.vue')['default']
     Kaya: typeof import('./components/Kaya.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

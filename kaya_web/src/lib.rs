@@ -46,11 +46,11 @@ pub fn parse_partial(txt: String) -> Result<JsValue, JsError> {
     }
 }
 
-// #[wasm_bindgen]
-// pub fn render(prg: JsValue, show_heap: bool) -> Result<String, JsError> {
-//     let program: Program = serde_wasm_bindgen::from_value(prg)?;
-//     kaya_lib::render::render(&program, show_heap).map_err(|e| JsError::from(&*e))
-// }
+#[wasm_bindgen]
+pub fn draw_program_png(prg: JsValue) -> Result<Vec<u8>, JsError> {
+    let program: Program = serde_wasm_bindgen::from_value(prg)?;
+    kaya_lib::render::draw_program_png(&program).map_err(|e| JsError::from(&*e))
+}
 
 // #[wasm_bindgen]
 // pub fn render_parts(prg: JsValue, show_heap: bool) -> Result<Vec<String>, JsError> {

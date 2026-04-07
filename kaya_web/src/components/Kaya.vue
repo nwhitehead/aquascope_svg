@@ -1,8 +1,7 @@
 <script setup lang="ts">
 
-import { reactive, ref, watch, onMounted } from 'vue';
-import init, { parse, parse_partial, render_program, arrow_options } from '../../pkg/kaya_web.js';
-import Diagram from './Diagram.vue';
+import { ref, watch, onMounted } from 'vue';
+import init, { parse, parse_partial, draw_program_png } from '../../pkg/kaya_web.js';
 
 const props = defineProps<{
     source: string,
@@ -14,11 +13,12 @@ const emit = defineEmits<{
 
 let ready = false;
 const error = ref(null);
-const contents = reactive(["", []]);
+const contents = ref('');
+let imgURI = ref('');
 
-function getCssVar(name: string) {
-    let bodyStyles = window.getComputedStyle(document.body);
-    return bodyStyles.getPropertyValue(`--${name}`);
+/// Given Uint8Array with PNG data, construct a Data URI for IMG tags to use for it
+function createDataURI(data) {
+    return URL.createObjectURL(new Blob([data], { type: 'image/png' }));
 }
 
 async function render() {
@@ -33,8 +33,7 @@ async function render() {
     }
     // If source is empty, render nothing
     if (props.source === '') {
-        contents[0] = '';
-        contents[1].splice(0);
+        imgURI.value = '';
         return;
     }
     // Try to parse, if it fails then try with partial parse
@@ -50,46 +49,21 @@ async function render() {
         //emit(evt: "error", )
         if (!show_partial) {
             // empty contents
-            contents[0] = "";
-            contents[1] = [];
+            imgURI.value = '';
         }
         let res2 = parse_partial(src);
         if (res2.Success === undefined) {
             // if we get here something went wrong in partial parse
             // just show nothing for rendered output
-            contents[0] = "";
-            contents[1] = [];
+            imgURI.value = '';
         }
         // Use partial parse for rendering
         prg = res2.Success;
     }
-    let res_render = render_program(prg, true);
-    const html = res_render[0];
-    const arrows = res_render[1];
-    // Apply options to arrows
-    // clear arrows output
-    contents[1].splice(0);
-    for (const arrow of arrows) {
-        const opt = arrow_options(arrow, 0);
-        let objopt = {};
-        for (const [key, val] of opt) {
-            objopt[key] = val;
-        }
-        // Fill in options using data from render, also just stylesheet
-        objopt.color = getCssVar(`arrow${objopt.color}`);
-        objopt.size = parseFloat(getCssVar('arrow_width'));
-        objopt.endPlugSize = parseFloat(getCssVar('arrow_size'));
-        objopt.outline = getCssVar('arrow_outline') !== "";
-        objopt.outlineColor = getCssVar('arrow_outline');
-        objopt.outlineSize = parseFloat(getCssVar('arrow_outline_size'));
-        objopt.endPlugOutline = getCssVar('arrow_plug_outline') !== "";
-        objopt.endPlugOutlineColor = getCssVar('arrow_plug_outline');
-        objopt.endPlugOutlineSize = parseFloat(getCssVar('arrow_plug_outline_size'));
-
-        contents[1].push({ src: arrow.src, dst: arrow.dst, options: objopt });
+    if (prg && prg.length) {
+        let png_data = draw_program_png(prg);
+        imgURI.value = createDataURI(png_data);
     }
-
-    contents[0] = html;
 }
 
 watch(
@@ -117,5 +91,6 @@ pre.error {
 
 <template>
     <pre v-if="error" class="error">{{ error_text() }}</pre>
-    <Diagram :contents="contents" />
+    <img :src="imgURI" />
+    <p>{{ contents }}</p>
 </template>

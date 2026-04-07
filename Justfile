@@ -15,7 +15,7 @@ wasm:
 
 # Serve web app locally for testing
 dev:
-    cd kaya_web && miniserve .
+    cd kaya_web && npm run dev
 
 # Build rust part
 build:

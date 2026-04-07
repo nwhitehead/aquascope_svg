@@ -6,7 +6,7 @@ use tiny_skia::ColorU8;
 
 use crate::canvas::Canvas;
 use crate::draw::{
-    Drawable, FormulaType, GArray, GLine, GPadding, GSpace, GTagged, GText, border, compute_align,
+    Drawable, FormulaType, GArray, GBox, GLine, GPadding, GSpace, GTagged, GText, border, compute_align,
     hstack, hstack_top, vstack_left, vstack_none,
 };
 use crate::draw_state::DrawState;
@@ -634,8 +634,12 @@ fn choose_arrow(src_rect: &Rect, dst_rect: &Rect, help: &[String], style: &Styli
         //     if dst_direction == Direction::Auto { dst_direction = Direction::Bottom; }
         // }
     }
-    let src_p = pick_side(&src_rect, &src_direction);
-    let dst_p = pick_side(&dst_rect, &dst_direction);
+    // src of arrow is drawn with square edge, so need to adjust point by 1/2 width of arrow
+    let width = style.get_number_or("arrow.width", 1.0);
+    let src_gap = width * 0.5 + style.get_number_or("arrow.src.gap", 1.0);
+    let dst_gap = style.get_number_or("arrow.dst.gap", 1.0);
+    let src_p = pick_side(&src_rect, &src_direction) + scale(get_direction_vector(&src_direction), src_gap);
+    let dst_p = pick_side(&dst_rect, &dst_direction) + scale(get_direction_vector(&dst_direction), dst_gap);
     let arrow = Arrow::new(
         src_p,
         dst_p,
@@ -645,13 +649,13 @@ fn choose_arrow(src_rect: &Rect, dst_rect: &Rect, help: &[String], style: &Styli
             end_dir: scale(get_direction_vector(&dst_direction), -1.0),
         }),
         ArrowOptions {
-            width: 6.0,
-            head_length: 10.0,
-            head_width: 10.0,
-            dent_ratio: 0.2,
+            width,
+            head_length: style.get_number_or("arrow.head.length", 1.0),
+            head_width: style.get_number_or("arrow.head.width", 1.0),
+            dent_ratio: style.get_number_or("arrow.dent.ratio", 0.0),
             color: style.get_color_or("arrow.color", ColorU8::from_rgba(255, 255, 0, 255)),
             outline: Some(ArrowOutline {
-                width: 3.0,
+                width: style.get_number_or("arrow.outline.width", 1.0),
                 color: style.get_color_or("arrow.outline.color", ColorU8::from_rgba(0, 0, 0, 255)),
             }),
             ..Default::default()
@@ -692,6 +696,7 @@ pub fn render_program(
         let dst_r = g_body.get_tagged(&dst_tag).expect(&format!("could not find tag '{}'", dst_tag)).bounding_box(&canvas)?;
         let src_r = g_body.get_tagged(&src_tag).expect(&format!("could not find tag '{}'", src_tag)).bounding_box(&canvas)?;
         let arrow = choose_arrow(&src_r, &dst_r, &ptr.help, &rs.style);
+        //result.push(Box::new(GBox::new_with_options(src_r, 2.0, ColorU8::from_rgba(255, 0, 0, 255))));
         result.push(Box::new(arrow));
     }
     Ok(Box::new(result))

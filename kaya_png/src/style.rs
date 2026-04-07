@@ -255,6 +255,15 @@ pub fn standard_style() -> Result<Styling> {
     style.add_number("step.border.width", 1.5);
     style.add_number("step.border.radius", 5.0);
     style.add_number("program.step.gap", 5.0);
+    style.add_color("arrow.color", color("#ff0")?);
+    style.add_number("arrow.width", 6.0);
+    style.add_number("arrow.head.length", 10.0);
+    style.add_number("arrow.head.width", 10.0);
+    style.add_number("arrow.dent.ratio", 0.2);
+    style.add_color("arrow.outline.color", color("#000")?);
+    style.add_number("arrow.outline.width", 3.0);
+    style.add_number("arrow.src.gap", 3.0);
+    style.add_number("arrow.dst.gap", 3.0);
     Ok(style)
 }
 

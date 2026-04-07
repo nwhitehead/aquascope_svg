@@ -365,6 +365,12 @@ impl GArray {
     }
 }
 
+impl Default for GArray {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Drawable for GArray {
     fn translate(&mut self, t: Point) {
         for item in &mut self.items {

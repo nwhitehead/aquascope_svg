@@ -1,523 +1,1043 @@
-use crate::states::{Def, Location, Program, Region, Step, Value};
-use anyhow::Result;
-use handlebars::Handlebars;
-use serde::{Deserialize, Serialize};
-use serde_json::json;
-use std::cell::RefCell;
-use std::rc::Rc;
+#![allow(unused)]
 
-pub enum Theme {
-    Dark,
-    Light,
-    TransparentDark,
-    TransparentLight,
-    TransparentNoColor,
-}
+use ab_glyph::{point, Point, Rect};
+use anyhow::{bail, Context, Result};
+use tiny_skia::{Color, ColorU8};
 
-pub const DEFAULT_GRAVITY: f32 = 80.0;
-pub const CSS_STYLE: &[u8] = include_bytes!("./style.css");
-pub const LEADER_LINE_JS: &[u8] = include_bytes!("./leader-line-v1.0.7.min.js");
-pub const INDEX_HBS: &[u8] = include_bytes!("./index.hbs");
-pub const NUM_ARROW_COLORS: usize = 6;
-const DEBUG_ARROWS: bool = false;
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct ArrowInfo {
-    src: String,
-    dst: String,
-    src_help: String,
-    dst_help: String,
-    src_gravity: f32,
-    dst_gravity: f32,
-    path: String,
-    color: Option<i32>,
-}
+use crate::arrow::{Arrow, ArrowType, ArrowOptions, ArcOptions, FluidOptions, ArrowOutline, scale};
+use crate::canvas::Canvas;
+use crate::draw::{
+    Drawable, FormulaType, GArray, GBox, GLine, GPadding, GSpace, GTagged, GText, border, compute_align,
+    hstack, hstack_top, vstack_left, vstack_none,
+};
+use crate::draw_state::DrawState;
+use crate::states::{Def, Location, NamedStruct, Program, Ptr, Region, Step, Value};
+use crate::style::{Styling, color, standard_style};
 
 #[derive(Clone, Debug)]
-struct RenderState {
-    id_prefix: String,
-    step_index: usize,
-    arrows: Rc<RefCell<Vec<ArrowInfo>>>,
+pub struct RenderState {
+    pub style: Styling,
+    skip_heap: bool,
+    ids: Vec<String>,
+    ptrs: Vec<(String, String, Ptr)>,
 }
 
-fn chop_first(txt: &str) -> &str {
-    let mut chars = txt.chars();
-    chars.next();
-    chars.as_str()
+impl Default for RenderState {
+    fn default() -> Self {
+        Self {
+            style: Default::default(),
+            skip_heap: true,
+            ids: vec![],
+            ptrs: vec![],
+        }
+    }
 }
 
 impl RenderState {
-    fn new(step_index: usize) -> Self {
-        Self {
-            id_prefix: format!("L{}", step_index),
-            step_index,
-            arrows: Rc::new(RefCell::new(vec![])),
-        }
+    pub fn register(&mut self, id: &str) {
+        self.ids.push(id.to_string());
     }
-    fn extend_id(&self, txt: &str) -> Self {
-        Self {
-            id_prefix: format!("{}.{}", &self.id_prefix, txt),
-            step_index: self.step_index,
-            arrows: self.arrows.clone(),
-        }
+    pub fn ids(&self) -> Vec<String> {
+        self.ids.clone()
     }
-    fn with_step_index(&self, step_index: usize) -> Self {
-        Self {
-            id_prefix: format!("L{}", step_index),
-            step_index,
-            arrows: self.arrows.clone(),
-        }
-    }
-    fn add_arrow(&mut self, src: &str, dst: &str, help: &Vec<String>) {
-        let mut src_help = String::new();
-        let mut dst_help = String::new();
-        let mut src_gravity = 0.0;
-        let mut dst_gravity = 0.0;
-        let mut path = String::new();
-        let mut color = None;
-        for h in help {
-            match h.as_str() {
-                ".sn" => src_help.push('n'),
-                ".se" => src_help.push('e'),
-                ".sw" => src_help.push('w'),
-                ".ss" => src_help.push('s'),
-                ".dn" => dst_help.push('n'),
-                ".de" => dst_help.push('e'),
-                ".dw" => dst_help.push('w'),
-                ".ds" => dst_help.push('s'),
-                ".straight" | ".arc" | ".fluid" | ".magnet" | ".grid" => {
-                    path = chop_first(h.as_str()).to_string();
-                }
-                ".g0" => {
-                    src_gravity = 0.0;
-                    dst_gravity = 0.0;
-                }
-                ".g1" => {
-                    src_gravity = 1.0;
-                    dst_gravity = 1.0;
-                }
-                ".g2" => {
-                    src_gravity = 2.0;
-                    dst_gravity = 2.0;
-                }
-                ".g3" => {
-                    src_gravity = 3.0;
-                    dst_gravity = 3.0;
-                }
-                ".g4" => {
-                    src_gravity = 4.0;
-                    dst_gravity = 4.0;
-                }
-                ".g5" => {
-                    src_gravity = 5.0;
-                    dst_gravity = 5.0;
-                }
-                ".g6" => {
-                    src_gravity = 6.0;
-                    dst_gravity = 6.0;
-                }
-                ".g7" => {
-                    src_gravity = 7.0;
-                    dst_gravity = 7.0;
-                }
-                ".g8" => {
-                    src_gravity = 8.0;
-                    dst_gravity = 8.0;
-                }
-                ".g9" => {
-                    src_gravity = 9.0;
-                    dst_gravity = 9.0;
-                }
-                ".sg0" => src_gravity = 0.0,
-                ".sg1" => src_gravity = 1.0,
-                ".sg2" => src_gravity = 2.0,
-                ".sg3" => src_gravity = 3.0,
-                ".sg4" => src_gravity = 4.0,
-                ".sg5" => src_gravity = 5.0,
-                ".sg6" => src_gravity = 6.0,
-                ".sg7" => src_gravity = 7.0,
-                ".sg8" => src_gravity = 8.0,
-                ".sg9" => src_gravity = 9.0,
-                ".dg0" => dst_gravity = 0.0,
-                ".dg1" => dst_gravity = 1.0,
-                ".dg2" => dst_gravity = 2.0,
-                ".dg3" => dst_gravity = 3.0,
-                ".dg4" => dst_gravity = 4.0,
-                ".dg5" => dst_gravity = 5.0,
-                ".dg6" => dst_gravity = 6.0,
-                ".dg7" => dst_gravity = 7.0,
-                ".dg8" => dst_gravity = 8.0,
-                ".dg9" => dst_gravity = 9.0,
-                ".c0" => color = Some(0),
-                ".c1" => color = Some(1),
-                ".c2" => color = Some(2),
-                ".c3" => color = Some(3),
-                ".c4" => color = Some(4),
-                ".c5" => color = Some(5),
-                _ => println!("WARNING: unknown ptr help found, {}", &h),
-            }
-        }
-        self.arrows.borrow_mut().push(ArrowInfo {
-            src: src.to_string(),
-            dst: dst.to_string(),
-            src_help,
-            dst_help,
-            src_gravity,
-            dst_gravity,
-            path,
-            color,
-        });
+    pub fn clear_ids(&mut self) {
+        self.ids = vec![];
     }
 }
 
-fn socket_dir_to_option(x: &str) -> String {
-    match x {
-        "a" => "auto".to_string(),
-        "n" => "top".to_string(),
-        "s" => "bottom".to_string(),
-        "w" => "left".to_string(),
-        "e" => "right".to_string(),
-        _ => "auto".to_string(),
+fn max_height(values: &Vec<Box<dyn Drawable>>, canvas: &Canvas) -> Result<f32> {
+    let mut res: f32 = 0.0;
+    for value in values {
+        let bb = value.bounding_box(canvas)?;
+        let h = bb.max.y - bb.min.y;
+        res = res.max(h);
     }
+    Ok(res)
 }
 
-fn socket_gravity_to_option(x: f32) -> Option<f32> {
-    if x == 0.0 {
-        return None;
+fn render_value_array(
+    a: &[Value],
+    prefix: &str,
+    ptr_dst_prefix: &str,
+    render_state: &mut RenderState,
+    canvas: &Canvas,
+) -> Result<Box<dyn Drawable>> {
+    // Draw all the parts separately
+    let mut a_draws: Vec<Box<dyn Drawable>> = vec![];
+    for (idx, x) in a.iter().enumerate() {
+        let draw = render_value(x, &format!("{}.{}", prefix, idx), ptr_dst_prefix, render_state, canvas)?;
+        a_draws.push(draw);
     }
-    Some(20.0 * x - 10.0)
+    let style = &render_state.style;
+    if a_draws.is_empty() {
+        a_draws.push(
+            GSpace::new(
+                style.get_number_or("value.array.empty.w", 5.0),
+                style.get_number_or("value.array.empty.h", 5.0),
+            )
+            .clone_box(),
+        );
+    }
+    let mut ds = DrawState::default();
+    // Now measure the height for divider lines
+    let h = max_height(&a_draws, canvas)?;
+    let sep_margin = style.get_number_or("value.array.separator.vmargin", 5.0);
+    // intersperse vertical lines
+    ds.stroke_color = style.get_color_or("value.array.separator.color", color("#000")?);
+    let sep = GLine::new(point(0.0, 0.0), point(0.0, h - sep_margin), ds.clone());
+    let sep_padding = style.get_padding("value.array.separator.padding", 5.0);
+    let padded_sep = GPadding::new(Box::new(sep), sep_padding);
+    let mut a_draws_sep: Vec<Box<dyn Drawable>> = vec![];
+    let mut any_elems_yet = false;
+    for x in a_draws {
+        if any_elems_yet {
+            a_draws_sep.push(padded_sep.clone_box());
+        } else {
+            any_elems_yet = true;
+        }
+        a_draws_sep.push(x);
+    }
+    let stk = hstack(a_draws_sep, canvas)?;
+    ds.padding = style.get_padding("value.array.padding", 5.0);
+    ds.stroke_color = style.get_color_or("value.array.border.color", color("#000")?);
+    ds.stroke.width = style.get_number_or("value.array.border.width", 4.0);
+    ds.border_radius = style.get_radius("value.array.border.radius", 5.0);
+    let res = border(Box::new(stk), canvas, ds)?;
+    Ok(res)
 }
 
-pub fn arrow_options(info: &ArrowInfo, idx: usize) -> serde_json::Value {
-    let ArrowInfo {
-        src: _,
-        dst: _,
-        src_help,
-        dst_help,
-        src_gravity,
-        dst_gravity,
-        path,
-        color,
-    } = info;
-    let start_socket = socket_dir_to_option(src_help);
-    let end_socket = match dst_help.as_str() {
-        "a" => "auto",
-        "n" => "top",
-        "s" => "bottom",
-        "w" => "left",
-        "e" => "right",
-        _ => "auto",
+fn render_value_tuple(
+    a: &[Value],
+    prefix: &str,
+    ptr_dst_prefix: &str,
+    render_state: &mut RenderState,
+    canvas: &Canvas,
+) -> Result<Box<dyn Drawable>> {
+    // Draw all the parts separately
+    let mut a_draws: Vec<Box<dyn Drawable>> = vec![];
+    for (idx, x) in a.iter().enumerate() {
+        let draw = render_value(x, &format!("{}.{}", prefix, idx), ptr_dst_prefix, render_state, canvas)?;
+        a_draws.push(draw);
     }
-    .to_string();
-    let path = match path.as_str() {
-        "" => "fluid",
-        s => s,
+    let style = &render_state.style;
+    if a_draws.is_empty() {
+        a_draws.push(
+            GSpace::new(
+                style.get_number_or("value.tuple.empty.w", 5.0),
+                style.get_number_or("value.tuple.empty.h", 5.0),
+            )
+            .clone_box(),
+        );
     }
-    .to_string();
-    let start_socket_gravity = socket_gravity_to_option(*src_gravity);
-    let end_socket_gravity = socket_gravity_to_option(*dst_gravity);
-    let color_txt = match color {
-        None => format!("{}", idx % NUM_ARROW_COLORS),
-        Some(c) => format!("{}", (*c as usize) % NUM_ARROW_COLORS),
+    let mut ds = DrawState::default();
+    // Now measure the height for divider lines
+    let h = max_height(&a_draws, canvas)?;
+    let sep_margin = style.get_number_or("value.tuple.separator.vmargin", 5.0);
+    // intersperse vertical lines
+    ds.stroke_color = style.get_color_or("value.tuple.separator.color", color("#000")?);
+    let sep = GLine::new(point(0.0, 0.0), point(0.0, h - sep_margin), ds.clone());
+    let sep_padding = style.get_padding("value.tuple.separator.padding", 5.0);
+    let padded_sep = GPadding::new(Box::new(sep), sep_padding);
+    let mut a_draws_sep: Vec<Box<dyn Drawable>> = vec![];
+    let mut any_elems_yet = false;
+    for x in a_draws {
+        if any_elems_yet {
+            a_draws_sep.push(padded_sep.clone_box());
+        } else {
+            any_elems_yet = true;
+        }
+        a_draws_sep.push(x);
+    }
+    let stk = hstack(a_draws_sep, canvas)?;
+    ds.padding = style.get_padding("value.tuple.padding", 5.0);
+    ds.stroke_color = style.get_color_or("value.tuple.border.color", color("#000")?);
+    ds.stroke.width = style.get_number_or("value.tuple.border.width", 4.0);
+    ds.border_radius = style.get_radius("value.tuple.border.radius", 5.0);
+    let res = border(Box::new(stk), canvas, ds)?;
+    Ok(res)
+}
+
+fn render_def(
+    def: &Def,
+    prefix: &str,
+    ptr_dst_prefix: &str,
+    render_state: &mut RenderState,
+    canvas: &Canvas,
+    skip_heap: bool,
+) -> Result<Box<dyn Drawable>> {
+    let style = &render_state.style;
+    let mut ds = DrawState {
+        font: style.get_string_or("def.label.font", "mono"),
+        font_size: style.get_number_or("def.label.font_size", 24.0),
+        text_color: style.get_color_or("def.label.color", color("#000")?),
+        ..DrawState::default()
     };
-    json!({
-        "startSocket": start_socket,
-        "endSocket": end_socket,
-        "startSocketGravity": start_socket_gravity,
-        "endSocketGravity": end_socket_gravity,
-        "color": color_txt,
-        "path": path,
-    })
-}
 
-pub fn render_arrow(info: &ArrowInfo, idx: usize) -> String {
-    let ArrowInfo {
-        src,
-        dst,
-        src_help,
-        dst_help,
-        src_gravity,
-        dst_gravity,
-        path,
-        color,
-    } = info;
-    let start_socket = socket_dir_to_option(src_help);
-    let end_socket = match dst_help.as_str() {
-        "a" => "auto",
-        "n" => "top",
-        "s" => "bottom",
-        "w" => "left",
-        "e" => "right",
-        _ => "auto",
-    }
-    .to_string();
-    let path = match path.as_str() {
-        "" => "fluid",
-        s => s,
-    }
-    .to_string();
-    let start_socket_gravity = socket_gravity_to_option(*src_gravity).unwrap_or(DEFAULT_GRAVITY);
-    let end_socket_gravity = socket_gravity_to_option(*dst_gravity).unwrap_or(DEFAULT_GRAVITY);
-    // check for loops on one element, must be handled specially
-    let color_txt = match color {
-        None => format!("'var(--arrow{})'", idx % NUM_ARROW_COLORS),
-        Some(c) => format!("'var(--arrow{})'", (*c as usize) % NUM_ARROW_COLORS),
-    };
-    let inner = &format!(
-        r#"{{
-            startSocket: '{}',
-            endSocket: '{}',
-            startSocketGravity: {},
-            endSocketGravity: {},
-            color: {},
-            size: parseFloat(getCssVar('arrow_width')),
-            endPlugSize: parseFloat(getCssVar('arrow_size')),
-            outline: getCssVar('arrow_outline') !== "",
-            outlineColor: 'var(--arrow_outline)',
-            outlineSize: parseFloat(getCssVar('arrow_outline_size')),
-            endPlugOutline: getCssVar('arrow_plug_outline') !== "",
-            endPlugOutlineColor: 'var(--arrow_plug_outline)',
-            endPlugOutlineSize: parseFloat(getCssVar('arrow_plug_outline_size')),
-            path: '{}',
-        }}"#,
-        start_socket, end_socket, start_socket_gravity, end_socket_gravity, color_txt, path
+    let mut g_label = GText::new(&def.label, point(0.0, 0.0), ds.clone());
+
+    ds.font = style.get_string_or("def.separator.font", "mono");
+    ds.font_size = style.get_number_or("def.separator.font_size", 24.0);
+    ds.text_color = style.get_color_or("def.separator.color", color("#000")?);
+    let sep_text = style.get_string_or("def.separator.text", ":");
+    let g_separator = GText::new(&sep_text, point(0.0, 0.0), ds.clone());
+
+    let sep_padding = style.get_padding("def.separator.padding", 0.0);
+    let g_padded_sep = GPadding::new(Box::new(g_separator), sep_padding);
+
+    // Make sure final drawable has x=0 as the dividing line for separator
+    // (so we can align them later)
+    // Instead of just doing hstack_... we compute the translation and use parts of it
+    // Move label left to align right side to separator
+    let label_bb = g_label.bounding_box(canvas)?;
+    let sep_bb = g_padded_sep.bounding_box(canvas)?;
+    let p = compute_align(
+        &label_bb,
+        &sep_bb,
+        FormulaType::Sequenced,
+        FormulaType::Centered,
     );
-    if src != dst {
-        format!(
-            "new LeaderLine(
-                document.getElementById('{}'),
-                document.getElementById('{}'),
-                {}
-            );",
-            src, dst, inner
-        )
+    g_label.translate(point(-p.x, -p.y));
+    let mut left = GArray::new();
+    left.push(Box::new(g_label));
+    left.push(Box::new(g_padded_sep));
+
+    let left_padding = style.get_padding("def.left.padding", 0.0);
+    let g_left = GPadding::new(Box::new(left), left_padding);
+    let left_bb = g_left.bounding_box(canvas)?;
+
+    ds.padding = style.get_padding("def.value.padding", 0.0);
+    ds.margin = style.get_padding("def.value.margin", 0.0);
+    ds.stroke_color = style.get_color_or("def.value.border.color", color("#000")?);
+    ds.stroke.width = style.get_number_or("def.value.border.width", 4.0);
+    ds.border_radius = style.get_radius("def.value.border.radius", 5.0);
+    let prefix = &format!("{}:{}", prefix, def.label);
+    // Note that ptr_dst_prefix just passes through here, it is for getting common step name prefix only.
+    // Values can be L0:x.0.1 or something, even inside we still want ptr_dst_prefix to be just L0
+    // Point is to convert a pointer to "x.0" into the label "L0:x.0".
+    let g_value = render_value(&def.value, prefix, ptr_dst_prefix, render_state, canvas)?;
+    let mut g_border_value = border(g_value, canvas, ds.clone())?;
+
+    // Now align the value to right of separator, centered vertically
+    let value_bb = g_border_value.bounding_box(canvas)?;
+    let p = compute_align(
+        &left_bb,
+        &value_bb,
+        FormulaType::Sequenced,
+        FormulaType::Centered,
+    );
+    g_border_value.translate(p);
+
+    let mut g_array = GArray::new();
+    // if skip_heap is off, always show label
+    // if skip_heap is on, show label if it doesn't start with H
+    if !skip_heap || !def.label.starts_with("H") {
+        g_array.push(Box::new(g_left));
+    }
+    g_array.push(g_border_value);
+    Ok(Box::new(g_array))
+}
+
+fn render_value_struct(
+    named_struct: &NamedStruct,
+    prefix: &str,
+    ptr_dst_prefix: &str,
+    render_state: &mut RenderState,
+    canvas: &Canvas,
+) -> Result<Box<dyn Drawable>> {
+    // Draw all the inner values separately first (to measure for sep line height)
+    let mut v_draws: Vec<Box<dyn Drawable>> = vec![];
+    for (idx, p) in named_struct.fields.clone().into_iter().enumerate() {
+        let value = &p.1;
+        let prefix = &format!("{}.{}", prefix, idx);
+        let draw = render_value(value, prefix, ptr_dst_prefix, render_state, canvas)?;
+        v_draws.push(draw);
+    }
+    // Now measure the height for divider lines
+    let h = max_height(&v_draws, canvas)?;
+
+    let mut ds = DrawState::default();
+    let style = &render_state.style;
+    ds.font = style.get_string_or("value.struct.name.font", "mono");
+    ds.font_size = style.get_number_or("value.struct.name.font_size", 24.0);
+    ds.text_color = style.get_color_or("value.struct.name.color", color("#000")?);
+
+    // intersperse vertical lines
+    let div_margin = style.get_number_or("value.struct.divider.vmargin", 5.0);
+    ds.stroke_color = style.get_color_or("value.struct.divider.color", color("#000")?);
+    let div = GLine::new(point(0.0, 0.0), point(0.0, h - div_margin), ds.clone());
+    let div_padding = style.get_padding("value.struct.divider.padding", 5.0);
+    let padded_div = GPadding::new(Box::new(div), div_padding);
+
+    let g_name = GText::new(&named_struct.name, point(0.0, 0.0), ds.clone());
+
+    let mut body: Vec<Box<dyn Drawable>> = vec![];
+
+    for (i, p) in named_struct.fields.iter().enumerate() {
+        let label = &p.0;
+        ds.font = style.get_string_or("value.struct.label.font", "mono");
+        ds.font_size = style.get_number_or("value.struct.label.font_size", 24.0);
+        ds.text_color = style.get_color_or("value.struct.label.color", color("#000")?);
+        let g_label = GText::new(label, point(0.0, 0.0), ds.clone());
+
+        ds.font = style.get_string_or("value.struct.separator.font", "mono");
+        ds.font_size = style.get_number_or("value.struct.separator.font_size", 24.0);
+        ds.text_color = style.get_color_or("value.struct.separator.color", color("#000")?);
+        let sep_text = style.get_string_or("value.struct.separator.text", ":");
+        let g_separator = GText::new(&sep_text, point(0.0, 0.0), ds.clone());
+
+        let sep_padding = style.get_padding("value.struct.separator.padding", 0.0);
+        let g_padded_sep = GPadding::new(Box::new(g_separator), sep_padding);
+
+        let left: Vec<Box<dyn Drawable>> = vec![Box::new(g_label), Box::new(g_padded_sep)];
+        let g_left = hstack(left, canvas)?;
+        let left_padding = style.get_padding("value.struct.left.padding", 0.0);
+        let g_padded_left = GPadding::new(Box::new(g_left), left_padding);
+
+        if i > 0 {
+            // Add dividing line after 1st element before each field
+            body.push(padded_div.clone_box());
+        }
+        body.push(Box::new(g_padded_left));
+        body.push(v_draws[i].clone_box());
+    }
+    let g_body = hstack(body, canvas)?;
+
+    ds.padding = style.get_padding("value.struct.padding", 0.0);
+    ds.margin = style.get_padding("value.struct.margin", 0.0);
+    ds.stroke_color = style.get_color_or("value.struct.border.color", color("#000")?);
+    ds.stroke.width = style.get_number_or("value.struct.border.width", 4.0);
+    ds.border_radius = style.get_radius("value.struct.border.radius", 5.0);
+    let g_border_body = border(Box::new(g_body), canvas, ds.clone())?;
+
+    let g_array = hstack(vec![Box::new(g_name), g_border_body], canvas)?;
+    Ok(Box::new(g_array))
+}
+
+fn render_value_invalid(
+    render_state: &mut RenderState,
+    _canvas: &Canvas,
+) -> Result<Box<dyn Drawable>> {
+    let style = &render_state.style;
+    let ds = DrawState {
+        font: style.get_string_or("value.invalid.font", "mono"),
+        text_color: style.get_color_or("value.invalid.color", color("#000")?),
+        font_size: style.get_number_or("value.invalid.font_size", 24.0),
+        ..DrawState::default()
+    };
+    let padding = style.get_padding("value.invalid.padding", 5.0);
+    let text = "×".to_string();
+    let gtxt = GText::new(&text, point(0.0, 0.0), ds);
+    let padded_gtxt = GPadding::new(Box::new(gtxt), padding);
+    Ok(Box::new(padded_gtxt))
+}
+
+fn render_value_number(
+    v: f64,
+    render_state: &mut RenderState,
+    _canvas: &Canvas,
+) -> Result<Box<dyn Drawable>> {
+    let style = &render_state.style;
+    let ds = DrawState {
+        font: style.get_string_or("value.number.font", "mono"),
+        text_color: style.get_color_or("value.number.color", color("#000")?),
+        font_size: style.get_number_or("value.number.font_size", 24.0),
+        ..DrawState::default()
+    };
+    let padding = style.get_padding("value.number.padding", 5.0);
+    let text = format!("{}", v);
+    let gtxt = GText::new(&text, point(0.0, 0.0), ds);
+    let padded_gtxt = GPadding::new(Box::new(gtxt), padding);
+    Ok(Box::new(padded_gtxt))
+}
+
+fn render_value_char(
+    c: char,
+    render_state: &mut RenderState,
+    _canvas: &Canvas,
+) -> Result<Box<dyn Drawable>> {
+    let style = &render_state.style;
+    let ds = DrawState {
+        font: style.get_string_or("value.char.font", "mono"),
+        text_color: style.get_color_or("value.char.color", color("#000")?),
+        font_size: style.get_number_or("value.char.font_size", 24.0),
+        ..DrawState::default()
+    };
+    let text = format!("'{}'", c);
+    Ok(Box::new(GText::new(&text, point(0.0, 0.0), ds)))
+}
+
+fn render_value_pointer(
+    p: &Ptr,
+    prefix: &str,
+    ptr_dst_prefix: &str,
+    render_state: &mut RenderState,
+    _canvas: &Canvas,
+) -> Result<Box<dyn Drawable>> {
+    // Record the pointer information into render_state for drawing arrows after layout
+    // Clone the ptr, but also extend the destination label to have the ptr_dst_prefix
+    render_state.ptrs.push((ptr_dst_prefix.to_string(), prefix.to_string(), p.clone()));
+    let style = &render_state.style;
+    let ds = DrawState {
+        font: style.get_string_or("value.pointer.font", "mono"),
+        text_color: style.get_color_or("value.pointer.color", color("#000")?),
+        font_size: style.get_number_or("value.pointer.font_size", 24.0),
+        ..DrawState::default()
+    };
+    let padding = style.get_padding("value.pointer.padding", 0.0);
+    // Some unicode choices related to pointers ✕✖✗✘×•●○◯
+    let text = "●";
+    let g_txt = GText::new(text, point(0.0, 0.0), ds);
+    let g_padded = GPadding::new(Box::new(g_txt), padding);
+    Ok(Box::new(g_padded))
+}
+
+pub fn render_value(
+    value: &Value,
+    prefix: &str,
+    ptr_dst_prefix: &str,
+    render_state: &mut RenderState,
+    canvas: &Canvas,
+) -> Result<Box<dyn Drawable>> {
+    let item = match value {
+        Value::Number(v) => render_value_number(*v, render_state, canvas)?,
+        Value::Char(c) => render_value_char(*c, render_state, canvas)?,
+        Value::Pointer(p) => render_value_pointer(p, prefix, ptr_dst_prefix, render_state, canvas)?,
+        Value::Array(a) => render_value_array(a, prefix, ptr_dst_prefix, render_state, canvas)?,
+        Value::Tuple(a) => render_value_tuple(a, prefix, ptr_dst_prefix, render_state, canvas)?,
+        Value::Struct(a) => render_value_struct(a, prefix, ptr_dst_prefix, render_state, canvas)?,
+        Value::Invalid => render_value_invalid(render_state, canvas)?,
+    };
+    let tagged = GTagged::new(item, prefix);
+    render_state.register(prefix);
+    Ok(Box::new(tagged))
+}
+
+pub fn render_region(
+    value: &Region,
+    prefix: &str,
+    ptr_dst_prefix: &str,
+    render_state: &mut RenderState,
+    canvas: &Canvas,
+    skip_heap: bool,
+) -> Result<Box<dyn Drawable>> {
+    // Header
+    let style = &render_state.style;
+    let ds = DrawState {
+        font: style.get_string_or("region.header.font", "serif"),
+        text_color: style.get_color_or("region.header.color", color("#000")?),
+        font_size: style.get_number_or("region.header.font_size", 24.0),
+        ..DrawState::default()
+    };
+    let header_padding = style.get_padding("region.header.padding", 5.0);
+    let region_padding = style.get_padding("region.padding", 5.0);
+    let gtxt = GText::new(&value.name.to_string(), point(0.0, 0.0), ds);
+    let padded_gtxt = GPadding::new(Box::new(gtxt), header_padding);
+    // Body
+    let mut body: Vec<Box<dyn Drawable>> = vec![];
+    for def in &value.definitions {
+        let g_def = render_def(def, prefix, ptr_dst_prefix, render_state, canvas, skip_heap)?;
+        body.push(g_def);
+    }
+    // stack vertically without moving horizontally (to keep : aligned)
+    let g_body = vstack_none(body, canvas)?;
+    let g_final = vstack_left(vec![Box::new(padded_gtxt), Box::new(g_body)], canvas)?;
+    let g_padded_final = GPadding::new(Box::new(g_final), region_padding);
+    Ok(Box::new(g_padded_final))
+}
+
+pub fn render_location(
+    value: &Location,
+    prefix: &str,
+    ptr_dst_prefix: &str,
+    render_state: &mut RenderState,
+    canvas: &Canvas,
+) -> Result<Box<dyn Drawable>> {
+    if !value.definitions.is_empty() {
+        let region = Region {
+            name: "".to_string(),
+            definitions: value.definitions.clone(),
+        };
+        return render_location(
+            &Location {
+                name: value.name.clone(),
+                definitions: vec![],
+                regions: vec![region],
+            },
+            prefix,
+            ptr_dst_prefix,
+            render_state,
+            canvas,
+        );
+    }
+
+    let mut skip_heap = render_state.skip_heap;
+    if value.name.starts_with("Stack") {
+        skip_heap = false;
+    }
+
+    // Header
+    let style = &render_state.style;
+    let ds = DrawState {
+        font: style.get_string_or("location.header.font", "serif"),
+        text_color: style.get_color_or("location.header.color", color("#000")?),
+        font_size: style.get_number_or("location.header.font_size", 24.0),
+        ..DrawState::default()
+    };
+    let header_padding = style.get_padding("location.header.padding", 5.0);
+    let gtxt = GText::new(&value.name.to_string(), point(0.0, 0.0), ds);
+    let padded_gtxt = GPadding::new(Box::new(gtxt), header_padding);
+
+    // Body
+    let mut body: Vec<Box<dyn Drawable>> = vec![];
+    for region in &value.regions {
+        let g_region = render_region(
+            region,
+            prefix,
+            ptr_dst_prefix,
+            render_state,
+            canvas,
+            skip_heap,
+        )?;
+        body.push(g_region);
+    }
+    let g_body = vstack_left(body, canvas)?;
+    let g_final = vstack_left(vec![Box::new(padded_gtxt), Box::new(g_body)], canvas)?;
+
+    Ok(Box::new(g_final))
+}
+
+pub fn render_step(
+    value: &Step,
+    render_state: &mut RenderState,
+    canvas: &Canvas,
+) -> Result<Box<dyn Drawable>> {
+    // Label
+    let style = &render_state.style;
+    let mut ds = DrawState {
+        font: style.get_string_or("step.header.font", "serif"),
+        text_color: style.get_color_or("step.header.color", color("#000")?),
+        font_size: style.get_number_or("step.header.font_size", 24.0),
+        stroke_color: style.get_color_or("step.separator.color", color("#000")?),
+        ..DrawState::default()
+    };
+    let padding = style.get_padding("step.header.padding", 5.0);
+    let g_text = GText::new(&value.label.to_string(), point(0.0, 0.0), ds.clone());
+    let g_padded_text = GPadding::new(Box::new(g_text), padding);
+
+    // draw border on right side sized properly
+    let h = style.get_number_or("step.separator.size", 5.0);
+    let sep = GLine::new(point(0.0, 0.0), point(0.0, h), ds.clone());
+    let sep_padding = style.get_padding("step.separator.padding", 5.0);
+    let g_padded_sep = GPadding::new(Box::new(sep), sep_padding);
+
+    let style = &render_state.style;
+    let mut body: Vec<Box<dyn Drawable>> = vec![];
+    body.push(Box::new(g_padded_text));
+    body.push(Box::new(g_padded_sep));
+    let gap = style.get_number_or("step.location.gap", 5.0);
+    for (idx, location) in value.locations.iter().enumerate() {
+        let g_location = render_location(location, &value.label.to_string(), &value.label.to_string(), render_state, canvas)?;
+        if idx > 0 {
+            body.push(Box::new(GSpace::new(gap, 0.0)));
+        }
+        body.push(g_location);
+    }
+    let g_body = hstack_top(body, canvas)?;
+
+    let style = &render_state.style;
+    ds.padding = style.get_padding("step.padding", 5.0);
+    ds.margin = style.get_padding("step.margin", 5.0);
+    ds.stroke_color = style.get_color_or("step.border.color", color("#000")?);
+    ds.stroke.width = style.get_number_or("step.border.width", 4.0);
+    ds.border_radius = style.get_radius("step.border.radius", 5.0);
+    let res = border(Box::new(g_body), canvas, ds)?;
+
+    Ok(res)
+}
+
+#[derive(PartialEq)]
+enum Direction {
+    Auto, Top, Right, Bottom, Left
+}
+
+fn pick_side(r: &Rect, d: &Direction) -> Point {
+    match d {
+        Direction::Top => point((r.min.x + r.max.x) * 0.5, r.min.y),
+        Direction::Right => point(r.max.x, (r.min.y + r.max.y) * 0.5),
+        Direction::Bottom => point((r.min.x + r.max.x) * 0.5, r.max.y),
+        Direction::Left => point(r.min.x, (r.min.y + r.max.y) * 0.5),
+        _ => panic!("unimplemented"),
+    }
+}
+
+fn get_direction_vector(d: &Direction) -> Point {
+    match d {
+        Direction::Top => point(0.0, -1.0),
+        Direction::Right => point(1.0, 0.0),
+        Direction::Bottom => point(0.0, 1.0),
+        Direction::Left => point(-1.0, 0.0),
+        _ => panic!("unimplemented"),
+    }
+}
+
+fn choose_arrow(src_rect: &Rect, dst_rect: &Rect, help: &[String], style: &Styling) -> Arrow {
+    let mut src_direction = Direction::Auto;
+    let mut dst_direction = Direction::Auto;
+    let mut color = 0; // index
+    for h in help {
+        match h.as_str() {
+            ".sn" => src_direction = Direction::Top,
+            ".se" => src_direction = Direction::Right,
+            ".ss" => src_direction = Direction::Bottom,
+            ".sw" => src_direction = Direction::Left,
+            ".dn" => dst_direction = Direction::Top,
+            ".de" => dst_direction = Direction::Right,
+            ".ds" => dst_direction = Direction::Bottom,
+            ".dw" => dst_direction = Direction::Left,
+            ".c0" => color = 0,
+            ".c1" => color = 1,
+            ".c2" => color = 2,
+            ".c3" => color = 3,
+            ".c4" => color = 4,
+            ".c5" => color = 5,
+            ".c6" => color = 6,
+            ".c7" => color = 7,
+            ".c8" => color = 8,
+            ".c9" => color = 9,
+            _ => println!("WARNING: unknown pointer help found, {}", &h),
+        }
+    }
+    // Compute auto directions
+    // FIXME: Assumes src and dst rectangles don't overlap (annoying edge cases there)
+    let src_mid = point((src_rect.min.x + src_rect.max.x) * 0.5, (src_rect.min.y + src_rect.max.y) * 0.5);
+    let dst_mid = point((dst_rect.min.x + dst_rect.max.x) * 0.5, (dst_rect.min.y + dst_rect.max.y) * 0.5);
+    let dx = dst_mid.x - src_mid.x;
+    let dy = dst_mid.y - src_mid.y;
+    // Do horizontal connection if dx is bigger, vertical connection if dy is bigger
+    if dx.abs() > dy.abs() {
+        if dx > 0.0 {
+            if src_direction == Direction::Auto { src_direction = Direction::Right; }
+            if dst_direction == Direction::Auto { dst_direction = Direction::Left; }
+        } else {
+            if src_direction == Direction::Auto { src_direction = Direction::Left; }
+            if dst_direction == Direction::Auto { dst_direction = Direction::Right; }
+        }
     } else {
-        format!(
-            "new LeaderLine(
-                document.getElementById('{}').getElementsByClassName('dummy')[0],
-                document.getElementById('{}'),
-                {}
-            );",
-            src, dst, inner
-        )
+        if src_direction == Direction::Auto { src_direction = Direction::Right; }
+        if dst_direction == Direction::Auto { dst_direction = Direction::Right; }
+        // // This is how we would do it if we wanted short lines
+        // if dy > 0.0 {
+        //     if src_direction == Direction::Auto { src_direction = Direction::Bottom; }
+        //     if dst_direction == Direction::Auto { dst_direction = Direction::Top; }
+        // } else {
+        //     if src_direction == Direction::Auto { src_direction = Direction::Top; }
+        //     if dst_direction == Direction::Auto { dst_direction = Direction::Bottom; }
+        // }
     }
-}
-
-pub fn render_arrows(arrows: Vec<ArrowInfo>) -> Result<String> {
-    let mut arrow_txt = String::new();
-    for (idx, arrow_info) in arrows.iter().enumerate() {
-        arrow_txt.push_str(&render_arrow(arrow_info, idx));
-    }
-    Ok(arrow_txt)
-}
-
-pub fn render_parts(prg: &Program, show_heap: bool) -> Result<(String, String)> {
-    let (prg, arrows) = render_program(prg, !show_heap)?;
-    if DEBUG_ARROWS {
-        println!("arrows = {:?}", &arrows);
-    }
-    let arrow_txt = render_arrows(arrows)?;
-    Ok((prg, arrow_txt))
-}
-
-pub fn render(prg: &Program, show_heap: bool) -> Result<String> {
-    let leader = String::from_utf8(LEADER_LINE_JS.to_vec())?;
-    let css_style = String::from_utf8(CSS_STYLE.to_vec())?;
-    let index_hbs = String::from_utf8(INDEX_HBS.to_vec())?;
-    let reg = Handlebars::new();
-
-    let (prg_txt, arrow_txt) = render_parts(prg, show_heap)?;
-
-    let output = reg.render_template(
-        &index_hbs,
-        &json!({
-            "style": css_style,
-            "content": prg_txt,
-            "script": leader,
-            "arrows": arrow_txt,
+    // src of arrow is drawn with square edge, so need to adjust point by 1/2 width of arrow
+    let width = style.get_number_or("arrow.width", 1.0);
+    let src_gap = width * 0.5 + style.get_number_or("arrow.src.gap", 1.0);
+    let dst_gap = style.get_number_or("arrow.dst.gap", 1.0);
+    let src_p = pick_side(src_rect, &src_direction) + scale(get_direction_vector(&src_direction), src_gap);
+    let dst_p = pick_side(dst_rect, &dst_direction) + scale(get_direction_vector(&dst_direction), dst_gap);
+    Arrow::new(
+        src_p,
+        dst_p,
+        ArrowType::Arc( ArcOptions {
+            start_dir: get_direction_vector(&src_direction),
+            // end_dir is reversed because arrow is going into that side
+            end_dir: scale(get_direction_vector(&dst_direction), -1.0),
         }),
-    )?;
-    Ok(output)
+        ArrowOptions {
+            width,
+            head_length: style.get_number_or("arrow.head.length", 1.0),
+            head_width: style.get_number_or("arrow.head.width", 1.0),
+            dent_ratio: style.get_number_or("arrow.dent.ratio", 0.0),
+            color: style.get_color_or("arrow.color", ColorU8::from_rgba(255, 255, 0, 255)),
+            outline: Some(ArrowOutline {
+                width: style.get_number_or("arrow.outline.width", 1.0),
+                color: style.get_color_or("arrow.outline.color", ColorU8::from_rgba(0, 0, 0, 255)),
+            }),
+        },
+    )
 }
 
-pub fn render_program(prg: &Program, hide_heap: bool) -> Result<(String, Vec<ArrowInfo>)> {
-    let mut res = String::new();
-    res.push_str("<div class=\"program\">");
-    let state = RenderState::new(0);
-    for (idx, step) in prg.0.iter().enumerate() {
-        let mut st = state.with_step_index(idx);
-        let piece = render_step(step, &mut st, hide_heap)?;
-        res.push_str(&piece);
-    }
-    res.push_str("</div>");
-    let arrows = state.arrows.borrow().clone();
-    Ok((res, arrows))
-}
-
-fn render_step(step: &Step, state: &mut RenderState, hide_heap: bool) -> Result<String> {
-    let mut res = String::new();
-    res.push_str("<div class=\"step\">");
-    res.push_str(&format!("<span class=\"header\">{}</span>", &step.label));
-    for location in &step.locations {
-        let piece = render_location(location, state, hide_heap)?;
-        res.push_str(&piece);
-    }
-    res.push_str("</div>");
-    Ok(res)
-}
-
-fn render_location(loc: &Location, state: &mut RenderState, hide_labels: bool) -> Result<String> {
-    let mut res = String::new();
-    res.push_str("<div class=\"location\">");
-    res.push_str(&format!("<span class=\"header\">{}</span>", &loc.name));
-    // A location either has definitions itself (and no regions) OR it has regions and no definitions
-    assert!(loc.definitions.is_empty() || loc.regions.is_empty());
-    if !loc.definitions.is_empty() {
-        let piece = render_definitions(&loc.definitions, state, hide_labels)?;
-        res.push_str(&piece);
-    } else {
-        for region in &loc.regions {
-            let piece = render_region(region, state, hide_labels)?;
-            res.push_str(&piece);
+pub fn render_program(
+    value: &Program,
+    canvas: &Canvas,
+    style: &Styling,
+) -> Result<Box<dyn Drawable>> {
+    let mut result = GArray::new();
+    let mut rs = RenderState { style: style.clone(), ..RenderState::default() };
+    let mut body: Vec<Box<dyn Drawable>> = vec![];
+    let gap = style.get_number_or("program.step.gap", 5.0);
+    for (idx, step) in value.0.iter().enumerate() {
+        let g_location = render_step(step, &mut rs, canvas)?;
+        if idx > 0 {
+            body.push(Box::new(GSpace::new(0.0, gap)));
         }
+        body.push(g_location);
     }
-    res.push_str("</div>");
-    Ok(res)
-}
+    let g_body = vstack_left(body, canvas)?;
+    result.push(g_body.clone_box());
 
-fn render_region(region: &Region, state: &mut RenderState, hide_labels: bool) -> Result<String> {
-    let mut res = String::new();
-    res.push_str("<div class=\"region\">");
-    res.push_str(&format!("<span class=\"header\">{}</span>", &region.name));
-    let pieces = render_definitions(&region.definitions, state, hide_labels)?;
-    res.push_str(&pieces);
-    res.push_str("</div>");
-    Ok(res)
-}
-
-fn render_definitions(
-    definitions: &[Def],
-    state: &mut RenderState,
-    hide_labels: bool,
-) -> Result<String> {
-    let mut res = String::new();
-    for definition in definitions {
-        let piece = render_definition(definition, state, hide_labels)?;
-        res.push_str(&piece);
-    }
-    Ok(res)
-}
-
-fn render_definition(
-    definition: &Def,
-    state: &mut RenderState,
-    hide_label: bool,
-) -> Result<String> {
-    let mut res = String::new();
-    res.push_str("<div class=\"definition\">");
-    if !hide_label || !definition.label.starts_with(['H']) {
-        res.push_str(&format!(
-            "<span class=\"label\">{}</span>",
-            &definition.label
-        ));
-        res.push_str("<span class=\"separator\">:</span>");
-    }
-    let mut st = state.extend_id(&definition.label);
-    let v = render_value(&definition.value, &mut st)?;
-    res.push_str(&format!("<div class=\"defvalue\">{}</div>", &v));
-    res.push_str("</div>");
-    Ok(res)
-}
-
-fn render_value(value: &Value, state: &mut RenderState) -> Result<String> {
-    match value {
-        Value::Number(v) => Ok(format!(
-            "<span id=\"{}\" class=\"value number\">{}</span>",
-            &state.id_prefix, v
-        )),
-        Value::Array(v) => {
-            let mut res = String::new();
-            res.push_str(&format!(
-                "<div id=\"{}\" class=\"value array\">",
-                &state.id_prefix
-            ));
-            res.push_str(&render_values("array_child", v, state)?);
-            res.push_str("</div>");
-            Ok(res)
+    // Layout should be finished entirely
+    // Now draw arrows
+    let mut arrows: Vec<Arrow> = vec![];
+    for (dst_prefix, src_tag, ptr) in &rs.ptrs {
+        let mut dst_tag = String::new();
+        dst_tag.push_str(&format!("{}:{}", dst_prefix, ptr.name));
+        for idx in &ptr.selectors {
+            dst_tag.push_str(&format!(".{}", idx));
         }
-        Value::Tuple(v) => {
-            let mut res = String::new();
-            res.push_str(&format!(
-                "<div id=\"{}\" class=\"value tuple\">",
-                &state.id_prefix
-            ));
-            res.push_str(&render_values("tuple_child", v, state)?);
-            res.push_str("</div>");
-            Ok(res)
-        }
-        Value::Char(v) => Ok(format!(
-            "<span id=\"{}\" class=\"value char\">'{}'</span>",
-            &state.id_prefix, v
-        )),
-        Value::Struct(v) => render_struct(&v.name, &v.fields, state),
-        Value::Pointer(v) => {
-            let mut dst = String::new();
-            dst.push_str(&format!("L{}.{}", state.step_index, &v.name));
-            for selector in &v.selectors {
-                dst.push_str(&format!(".{}", selector));
-            }
-            let src = state.id_prefix.clone();
-            state.add_arrow(&src, &dst, &v.help);
-            Ok(format!(
-                "<span id=\"{}\" class=\"value pointer\">●<div class=\"dummy\"></div></span>",
-                &state.id_prefix,
-            ))
-        }
-        Value::Invalid => Ok(format!(
-            "<span id=\"{}\" class=\"value invalid\">❌</span>",
-            &state.id_prefix
-        )),
+        let dst_r = g_body.get_tagged(&dst_tag).context(format!("could not find tag '{}'", dst_tag))?.bounding_box(canvas)?;
+        let src_r = g_body.get_tagged(src_tag).context(format!("could not find tag '{}'", src_tag))?.bounding_box(canvas)?;
+        let arrow = choose_arrow(&src_r, &dst_r, &ptr.help, &rs.style);
+        // // Some debug code to draw bounding box
+        // result.push(Box::new(GBox::new_with_options(src_r, 2.0, ColorU8::from_rgba(255, 0, 0, 255))));
+        result.push(Box::new(arrow));
     }
+    Ok(Box::new(result))
 }
 
-fn render_values(inner_tag: &str, values: &[Value], state: &mut RenderState) -> Result<String> {
-    let mut res = String::new();
-    for (idx, value) in values.iter().enumerate() {
-        let mut state_p = state.extend_id(&format!("{}", idx));
-        let piece = render_value(value, &mut state_p)?;
-        res.push_str(&format!("<div class=\"{}\">", inner_tag));
-        res.push_str(&piece);
-        res.push_str("</div>");
-    }
-    Ok(res)
+pub fn draw_program(
+    program: &Program,
+) -> Result<Canvas> {
+    let style = standard_style()?;
+    // Start with measurement, empty canvas
+    let mut canvas = Canvas::new(1, 1)?;
+    canvas.load_fonts(&style);
+    let mut v = render_program(program, &canvas, &style)?;
+    let bb = v.bounding_box(&canvas)?;
+    // Translate to 0, 0
+    v.translate(point(-bb.min.x, -bb.min.y));
+    let w = bb.max.x - bb.min.x;
+    let h = bb.max.y - bb.min.y;
+    // Now we know size, recreate canvas at right size with fonts
+    canvas = Canvas::new(w.ceil() as u32, h.ceil() as u32)?;
+    canvas.load_fonts(&style);
+    let bgcolor_u8 = style.get_color_or("bg", ColorU8::from_rgba(0, 0, 0, 255));
+    let bgcolor = Color::from_rgba8(bgcolor_u8.red(), bgcolor_u8.green(), bgcolor_u8.blue(), bgcolor_u8.alpha());
+    canvas
+        .pixmap
+        .fill(bgcolor);
+    v.draw(&mut canvas)?;
+    Ok(canvas)
 }
 
-fn render_struct(
-    name: &str,
-    fields: &[(String, Value)],
-    state: &mut RenderState,
-) -> Result<String> {
-    let mut res = String::new();
-    res.push_str(&format!(
-        "<div id=\"{}\" class=\"value struct\">",
-        &state.id_prefix
-    ));
-    res.push_str(&format!("<span class=\"name\">{}</span>", &name));
-    for (idx, (label, value)) in fields.iter().enumerate() {
-        let v = render_field(label, value, &mut state.extend_id(&format!("{}", idx)))?;
-        res.push_str(&v);
-    }
-    res.push_str("</div>");
-    Ok(res)
+pub fn draw_program_png(program: &Program) -> Result<Vec<u8>> {
+    let canvas = draw_program(program)?;
+    canvas.png_data()
 }
 
-fn render_field(label: &str, value: &Value, state: &mut RenderState) -> Result<String> {
-    let mut res = String::new();
-    res.push_str("<div class=\"field\">");
-    res.push_str(&format!("<span class=\"label\">{}</span>", &label));
-    res.push_str("<span class=\"separator\">:</span>");
-    let v = render_value(value, state)?;
-    res.push_str(&v);
-    res.push_str("</div>");
-    Ok(res)
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    pub fn test_color() -> Result<()> {
+        assert_eq!(color("#000")?, ColorU8::from_rgba(0, 0, 0, 0xff));
+        assert_eq!(color("#f00")?, ColorU8::from_rgba(0xff, 0, 0, 0xff));
+        assert_eq!(color("#080")?, ColorU8::from_rgba(0, 0x88, 0, 0xff));
+        assert_eq!(color("#00a")?, ColorU8::from_rgba(0, 0, 0xaa, 0xff));
+        assert_eq!(color("#0008")?, ColorU8::from_rgba(0, 0, 0, 0x88));
+        assert_eq!(color("#1234")?, ColorU8::from_rgba(0x11, 0x22, 0x33, 0x44));
+        assert_eq!(
+            color("#123456")?,
+            ColorU8::from_rgba(0x12, 0x34, 0x56, 0xff)
+        );
+        assert_eq!(
+            color("#12345678")?,
+            ColorU8::from_rgba(0x12, 0x34, 0x56, 0x78)
+        );
+        assert!(color("000").is_err());
+        assert!(color("#12345").is_err());
+        assert!(color("#0g3456").is_err());
+        assert!(color("#fffffffff").is_err());
+        Ok(())
+    }
+
+    #[test]
+    pub fn test_render_alpha() -> Result<()> {
+        let mut canvas = Canvas::new(800, 800)?;
+        canvas
+            .pixmap
+            .fill(Color::from_rgba(0.2, 0.1, 0.3, 1.0).unwrap());
+
+        canvas.load_font(
+            "mono",
+            include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf"),
+        )?;
+        canvas.load_font("serif", include_bytes!("../fonts/Lato/Lato-Regular.ttf"))?;
+
+        let mut rs = RenderState::default();
+        rs.style.add_string("value.number.font", "mono");
+        rs.style.add_number("value.number.font_size", 48.0);
+        rs.style
+            .add_color("value.number.color", color("#bccfa980")?);
+
+        let mut v = render_value(&Value::Number(42.0), "", "", &mut rs, &canvas)?;
+        v.translate(point(400.0, 400.0));
+        v.draw(&mut canvas)?;
+        v.translate(point(10.0, 5.0));
+        v.draw(&mut canvas)?;
+        v.translate(point(10.0, 5.0));
+        v.draw(&mut canvas)?;
+
+        rs.style
+            .add_color("value.number.color", color("#cfa9bc80")?);
+        let mut v2 = render_value(&Value::Number(67.0), "", "", &mut rs, &canvas)?;
+        v2.translate(point(400.0, 430.0));
+        v2.draw(&mut canvas)?;
+        v2.translate(point(10.0, -7.0));
+        v2.draw(&mut canvas)?;
+        v2.translate(point(10.0, -7.0));
+        v2.draw(&mut canvas)?;
+
+        canvas.save("test_render_alpha.png")?;
+
+        Ok(())
+    }
+
+    fn demo_prg() -> Program {
+        Program(vec![
+            Step {
+                label: "L0".to_string(),
+                locations: vec![
+                    Location {
+                        name: "Stack".to_string(),
+                        definitions: vec![],
+                        regions: vec![
+                            Region {
+                                name: "main".to_string(),
+                                definitions: vec![
+                                    Def {
+                                        label: "x".to_string(),
+                                        value: Value::Struct(NamedStruct {
+                                            name: "Rect".to_string(),
+                                            fields: vec![
+                                                ("pos".to_string(), Value::Number(42.0)),
+                                                ("w".to_string(), Value::Number(3.0)),
+                                            ],
+                                        }),
+                                    },
+                                    Def {
+                                        label: "y2".to_string(),
+                                        value: Value::Array(vec![
+                                            Value::Number(42.0),
+                                            Value::Invalid,
+                                        ]),
+                                    },
+                                    Def {
+                                        label: "H0".to_string(),
+                                        value: Value::Invalid,
+                                    },
+                                ],
+                            },
+                            Region {
+                                name: "main::f".to_string(),
+                                definitions: vec![
+                                    Def {
+                                        label: "xs".to_string(),
+                                        value: Value::Number(42.0),
+                                    },
+                                    Def {
+                                        label: "y".to_string(),
+                                        value: Value::Number(2.0),
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    Location {
+                        name: "Heap".to_string(),
+                        definitions: vec![
+                            Def {
+                                label: "H0".to_string(),
+                                value: Value::Number(42.0),
+                            },
+                            Def {
+                                label: "y".to_string(),
+                                value: Value::Number(2.0),
+                            },
+                        ],
+                        regions: vec![],
+                    },
+                ],
+            },
+            Step {
+                label: "L1".to_string(),
+                locations: vec![
+                    Location {
+                        name: "Stack".to_string(),
+                        definitions: vec![],
+                        regions: vec![Region {
+                            name: "main".to_string(),
+                            definitions: vec![
+                                Def {
+                                    label: "x".to_string(),
+                                    value: Value::Struct(NamedStruct {
+                                        name: "Rect".to_string(),
+                                        fields: vec![
+                                            ("pos".to_string(), Value::Number(42.0)),
+                                            ("w".to_string(), Value::Number(3.0)),
+                                        ],
+                                    }),
+                                },
+                                Def {
+                                    label: "y2".to_string(),
+                                    value: Value::Array(vec![
+                                        Value::Number(42.0),
+                                        Value::Invalid,
+                                    ]),
+                                },
+                                Def {
+                                    label: "H0".to_string(),
+                                    value: Value::Pointer(Ptr { name: "x".to_string(), selectors: vec![], borrow: 0, help: vec![] }),
+                                },
+                            ],
+                        }],
+                    },
+                    Location {
+                        name: "Heap".to_string(),
+                        definitions: vec![],
+                        regions: vec![],
+                    },
+                ],
+            },
+        ])
+    }
+
+    #[test]
+    pub fn test_render_value() -> Result<()> {
+        let mut canvas = Canvas::new(2048, 2048)?;
+        canvas
+            .pixmap
+            .fill(Color::from_rgba8(0x19, 0x19, 0x19, 0xff));
+        canvas.load_font(
+            "mono",
+            include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf"),
+        )?;
+        canvas.load_font("serif", include_bytes!("../fonts/Lato/Lato-Regular.ttf"))?;
+        canvas.load_font("serif_bold", include_bytes!("../fonts/Lato/Lato-Bold.ttf"))?;
+
+        let mut rs = RenderState::default();
+        rs.style = standard_style()?;
+
+        let mut v = render_value(&Value::Number(42.0), "", "", &mut rs, &canvas)?;
+        v.translate(point(200.0, 200.0));
+        v.draw(&mut canvas)?;
+
+        let mut v = render_value(&Value::Char('H'), "", "", &mut rs, &canvas)?;
+        v.translate(point(250.0, 200.0));
+        v.draw(&mut canvas)?;
+
+        let mut v = render_value(
+            &Value::Pointer(Ptr {
+                name: "".to_string(),
+                selectors: vec![],
+                borrow: 0,
+                help: vec![],
+            }),
+            "",
+            "",
+            &mut rs,
+            &canvas,
+        )?;
+        v.translate(point(300.0, 200.0));
+        v.draw(&mut canvas)?;
+
+        let mut v = render_value(
+            &Value::Array(vec![
+                Value::Number(42.0),
+                Value::Number(67.0),
+                Value::Tuple(vec![]),
+                Value::Tuple(vec![
+                    Value::Char('C'),
+                    Value::Number(4.0),
+                    Value::Array(vec![]),
+                ]),
+            ]),
+            "",
+            "",
+            &mut rs,
+            &canvas,
+        )?;
+        v.translate(point(350.0, 200.0));
+        v.draw(&mut canvas)?;
+
+        let mut v = render_def(
+            &Def {
+                label: "a".to_string(),
+                value: Value::Array(vec![Value::Number(42.0), Value::Invalid]),
+            },
+            "",
+            "",
+            &mut rs,
+            &canvas,
+            true,
+        )?;
+        v.translate(point(200.0, 300.0));
+        v.draw(&mut canvas)?;
+
+        let mut v = render_def(
+            &Def {
+                label: "x".to_string(),
+                value: Value::Struct(NamedStruct {
+                    name: "Rect".to_string(),
+                    fields: vec![
+                        ("pos".to_string(), Value::Number(42.0)),
+                        ("w".to_string(), Value::Number(3.0)),
+                    ],
+                }),
+            },
+            "",
+            "",
+            &mut rs,
+            &canvas,
+            true,
+        )?;
+        v.translate(point(200.0, 380.0));
+        v.draw(&mut canvas)?;
+
+        let style = standard_style()?;
+        let mut v = render_program(
+            &demo_prg(),
+            &canvas,
+            &style,
+        )?;
+        v.translate(point(600.0, 500.0));
+        v.draw(&mut canvas)?;
+
+        // // Show some rects, draw them
+        // for id in rs.ids() {
+        //     let r = v.get_tagged(&id).unwrap().bounding_box(&canvas)?;
+        //     println!("{} => {:?}", id, r);
+        //     let bx = GBox::new_with_options(r, 1.0, color("#f00")?);
+        //     bx.draw(&mut canvas)?;
+        // }
+        // let vv = v.get_tagged("L1:Stack:y2").unwrap();
+        // println!("vv = {:?}", &vv);
+        // println!("vv.bb = {:?}", vv.bounding_box(&canvas)?);
+
+        canvas.save("test_render_value.png")?;
+
+        Ok(())
+    }
+
+    #[test]
+    pub fn test_draw_program() -> Result<()> {
+        let canvas = draw_program(&demo_prg())?;
+        canvas.save("test_draw_program.png")?;
+        Ok(())
+    }
+
+    #[test]
+    pub fn test_draw_program_png_data() -> Result<()> {
+        let data = draw_program_png(&demo_prg())?;
+        // just check for PNG magic at start
+        assert_eq!(data[0..4], [0x89, 0x50, 0x4e, 0x47]);
+        Ok(())
+    }
+
 }

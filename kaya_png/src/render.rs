@@ -626,6 +626,7 @@ fn choose_arrow(src_rect: &Rect, dst_rect: &Rect, help: &[String], style: &Styli
     } else {
         if src_direction == Direction::Auto { src_direction = Direction::Right; }
         if dst_direction == Direction::Auto { dst_direction = Direction::Right; }
+        // // This is how we would do it if we wanted short lines
         // if dy > 0.0 {
         //     if src_direction == Direction::Auto { src_direction = Direction::Bottom; }
         //     if dst_direction == Direction::Auto { dst_direction = Direction::Top; }
@@ -696,7 +697,8 @@ pub fn render_program(
         let dst_r = g_body.get_tagged(&dst_tag).expect(&format!("could not find tag '{}'", dst_tag)).bounding_box(&canvas)?;
         let src_r = g_body.get_tagged(&src_tag).expect(&format!("could not find tag '{}'", src_tag)).bounding_box(&canvas)?;
         let arrow = choose_arrow(&src_r, &dst_r, &ptr.help, &rs.style);
-        //result.push(Box::new(GBox::new_with_options(src_r, 2.0, ColorU8::from_rgba(255, 0, 0, 255))));
+        // // Some debug code to draw bounding box
+        // result.push(Box::new(GBox::new_with_options(src_r, 2.0, ColorU8::from_rgba(255, 0, 0, 255))));
         result.push(Box::new(arrow));
     }
     Ok(Box::new(result))

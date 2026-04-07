@@ -249,7 +249,7 @@ mod tests {
 
     #[test]
     pub fn test_draw_arrow() -> Result<()> {
-        let mut canvas = Canvas::new(800, 800)?;
+        let mut canvas = Canvas::new(800, 800, 1.0)?;
         canvas
             .pixmap
             .fill(Color::from_rgba(0.2, 0.1, 0.3, 1.0).unwrap());

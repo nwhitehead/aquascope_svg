@@ -47,9 +47,9 @@ pub fn parse_partial(txt: String) -> Result<JsValue, JsError> {
 }
 
 #[wasm_bindgen]
-pub fn draw_program_png(prg: JsValue) -> Result<Vec<u8>, JsError> {
+pub fn draw_program_png(prg: JsValue, scale: f32) -> Result<Vec<u8>, JsError> {
     let program: Program = serde_wasm_bindgen::from_value(prg)?;
-    kaya_lib::render::draw_program_png(&program).map_err(|e| JsError::from(&*e))
+    kaya_lib::render::draw_program_png(&program, scale).map_err(|e| JsError::from(&*e))
 }
 
 // #[wasm_bindgen]

@@ -577,7 +577,7 @@ mod tests {
 
     #[test]
     pub fn test_drawing() -> Result<()> {
-        let mut canvas = Canvas::new(800, 800)?;
+        let mut canvas = Canvas::new(800, 800, 1.0)?;
 
         canvas.load_font(
             "mono",

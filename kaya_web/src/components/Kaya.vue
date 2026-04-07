@@ -5,6 +5,7 @@ import init, { parse, parse_partial, draw_program_png } from '../../pkg/kaya_web
 
 const props = defineProps<{
     source: string,
+    scale?: number,
     show_partial?: boolean,
 }>();
 const emit = defineEmits<{
@@ -61,14 +62,15 @@ async function render() {
         prg = res2.Success;
     }
     if (prg && prg.length) {
-        let png_data = draw_program_png(prg);
+        console.log(prg, props.scale);
+        let png_data = draw_program_png(prg, (props.scale === undefined) ? 1.0 : props.scale);
         imgURI.value = createDataURI(png_data);
     }
 }
 
 watch(
     // Dependencies on rendering
-    () => [props.source, props.show_partial],
+    () => [props.source, props.show_partial, props.scale],
     async () => render(),
 );
 

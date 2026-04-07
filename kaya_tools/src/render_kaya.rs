@@ -20,7 +20,7 @@ struct Args {
         help = "Set scale factor for PNG output, 1.0 is web standard 96 DPI, 3.125 is 300 DPI",
         long
     )]
-    output_png_scale: Option<f64>,
+    scale: Option<f64>,
     #[arg(
         help = "Show labels starting with H (heap) (default is to hide)",
         long,
@@ -75,7 +75,7 @@ fn main() -> Result<()> {
         let contents = fs::read_to_string(&input_filename)
             .map_err(|err| anyhow!("{}, could not read input filename: {}", err, input_filename))?;
         let program = parse(&contents)?;
-        let canvas = draw_program(&program)?;
+        let canvas = draw_program(&program, (args.scale.unwrap_or(1.0)) as f32)?;
         canvas.save(&output_filename)?;
     }
     Ok(())

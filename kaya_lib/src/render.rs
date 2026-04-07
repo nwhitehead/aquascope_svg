@@ -702,10 +702,11 @@ pub fn render_program(
 
 pub fn draw_program(
     program: &Program,
+    scale: f32,
 ) -> Result<Canvas> {
     let style = standard_style()?;
     // Start with measurement, empty canvas
-    let mut canvas = Canvas::new(1, 1)?;
+    let mut canvas = Canvas::new(1, 1, scale)?;
     canvas.load_fonts(&style);
     let mut v = render_program(program, &canvas, &style)?;
     let bb = v.bounding_box(&canvas)?;
@@ -714,7 +715,7 @@ pub fn draw_program(
     let w = bb.max.x - bb.min.x;
     let h = bb.max.y - bb.min.y;
     // Now we know size, recreate canvas at right size with fonts
-    canvas = Canvas::new(w.ceil() as u32, h.ceil() as u32)?;
+    canvas = Canvas::new(w.ceil() as u32, h.ceil() as u32, scale)?;
     canvas.load_fonts(&style);
     let bgcolor_u8 = style.get_color_or("bg", ColorU8::from_rgba(0, 0, 0, 255));
     let bgcolor = Color::from_rgba8(bgcolor_u8.red(), bgcolor_u8.green(), bgcolor_u8.blue(), bgcolor_u8.alpha());
@@ -725,8 +726,8 @@ pub fn draw_program(
     Ok(canvas)
 }
 
-pub fn draw_program_png(program: &Program) -> Result<Vec<u8>> {
-    let canvas = draw_program(program)?;
+pub fn draw_program_png(program: &Program, scale: f32) -> Result<Vec<u8>> {
+    let canvas = draw_program(program, scale)?;
     canvas.png_data()
 }
 
@@ -759,7 +760,7 @@ mod tests {
 
     #[test]
     pub fn test_render_alpha() -> Result<()> {
-        let mut canvas = Canvas::new(800, 800)?;
+        let mut canvas = Canvas::new(800, 800, 1.0)?;
         canvas
             .pixmap
             .fill(Color::from_rgba(0.2, 0.1, 0.3, 1.0).unwrap());
@@ -910,7 +911,7 @@ mod tests {
 
     #[test]
     pub fn test_render_value() -> Result<()> {
-        let mut canvas = Canvas::new(2048, 2048)?;
+        let mut canvas = Canvas::new(2048, 2048, 1.0)?;
         canvas
             .pixmap
             .fill(Color::from_rgba8(0x19, 0x19, 0x19, 0xff));
@@ -1027,14 +1028,14 @@ mod tests {
 
     #[test]
     pub fn test_draw_program() -> Result<()> {
-        let canvas = draw_program(&demo_prg())?;
+        let canvas = draw_program(&demo_prg(), 1.0)?;
         canvas.save("test_draw_program.png")?;
         Ok(())
     }
 
     #[test]
     pub fn test_draw_program_png_data() -> Result<()> {
-        let data = draw_program_png(&demo_prg())?;
+        let data = draw_program_png(&demo_prg(), 1.0)?;
         // just check for PNG magic at start
         assert_eq!(data[0..4], [0x89, 0x50, 0x4e, 0x47]);
         Ok(())

@@ -21,21 +21,14 @@ p: ptr(H0).se.ds.g4
 ## Heap
 H0: (42, ptr(z).c4.sn.dw)
 `);
+
+const scale = ref(0.99999);
+
 //"# L0\n## Stack\nx: 5\ny: 7\nz: ptr(x)\np: ptr(H0)\n## Heap\nH0: 42\n");
 const renderedCode = ref("");
 const isDark = useDark();
 const autoUpdate = ref(false);
 const kayaKey = ref(0);
-const kayaElem = useTemplateRef('kaya');
-const outputElem = useTemplateRef('output');
-
-// Virtual offscreen canvas for arrow rendering (limits max size of diagram)
-const CANVAS_SIZE = 2048;
-// Not sure why this scale factor is needed for viewBox??? 
-const CANVAS_SCALE = 0.5;
-
-// Scale for display canvas (how much bigger than final size is it?)
-const CANVAS_QUALITY_SCALE = 4.0;
 
 function handleError(evt) {
     console.log(`ERROR ${evt}`);
@@ -121,7 +114,7 @@ function handlePNG() {
       <el-splitter-panel>
         <div class="demo-panel">
             <div class="kaya">
-                <Kaya :source="renderedCode" :show_partial="true" @error="handleError" :key="kayaKey"/>
+                <Kaya :source="renderedCode" :show_partial="true" :scale="scale" @error="handleError" :key="kayaKey"/>
             </div>
         </div>
       </el-splitter-panel>

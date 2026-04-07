@@ -27,7 +27,7 @@ deploy:
 
 # Generate some PNG files to test rendering
 rendertest:
-    rm -f kaya_png/test_*.png && clear && cargo test && eog kaya_png/
+    rm -f kaya_lib/test_*.png && clear && cargo test && eog kaya_lib/
 
 # Regenerate gold testing files
 regen_gold:

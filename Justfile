@@ -13,15 +13,22 @@ ci:
 wasm:
     cd kaya_web && wasm-pack build --target=web
 
-# Serve test page locally for testing
+# Serve web app locally for testing
 dev:
     cd kaya_web && miniserve .
 
+# Build rust part
 build:
     cd kaya_web && npm run build
 
+# Deploy to website (assumes webserver already configured)
 deploy:
     rsync --archive dist/ root@shimmermathlabs.com:/var/www/kaya/
 
+# Generate some PNG files to test rendering
 rendertest:
     rm -f kaya_png/test_*.png && clear && cargo test && eog kaya_png/
+
+# Regenerate gold testing files
+regen_gold:
+    cd kaya_tools/scripts && ./generate_gold.sh

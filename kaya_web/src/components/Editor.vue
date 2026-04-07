@@ -4,7 +4,6 @@ import { ref, watch, useTemplateRef, nextTick } from 'vue';
 import { Edit, Download } from '@element-plus/icons-vue';
 import { useDark } from '@vueuse/core';
 import Kaya from './Kaya.vue';
-import html2canvas from 'html2canvas-pro';
 
 const MONACO_EDITOR_OPTIONS = {
     automaticLayout: true,
@@ -79,102 +78,13 @@ function handleKaya() {
 }
 
 function handlePNG() {
-    nextTick(async () => {
-        if (!kayaElem.value) return;
-        if (!outputElem.value) return;
-
-        console.log("Generating PNG");
-        await convertArrowsSvg();
-        html2canvas(kayaElem.value, {
-            scale: 4.0,
-        }).then((canvas) => {
-            const img = canvas.toDataURL("image/png");
-            saveAsFile(img, "diagram.png");
-            const canvasRef = document.querySelector('.canvas-target');
-            if (!canvasRef) return;
-            const ctxc = canvasRef.getContext('2d');
-            ctxc.clearRect(0, 0, ctxc.canvas.width, ctxc.canvas.height);
-            kayaKey.value++;
+    handleUpdate();
+    nextTick(() => {
+        nextTick(() => {
+            const dataURL = document.querySelector('img.output').src;
+            saveAsFile(dataURL, "diagram.png");
         });
     });
-}
-
-async function waitForEvent(elem: Element, evt: any, setup: any) {
-    return new Promise((resolve) => {
-        elem.addEventListener(evt, () => {
-            resolve(null);
-        });
-        setup();
-    });
-}
-
-async function convertArrowsSvg() {
-    console.log('Render to canvas start');
-    const canvasRef = document.querySelector('.canvas-target');
-    const diaElem = document.querySelector('.dia');
-
-    if (!canvasRef) {
-        console.error("canvasRef null");
-        return;
-    }
-    if (!diaElem) {
-        console.error("diaElem null");
-        return;
-    }
-
-    // make offscreen canvas clear canvas
-    const canvas = new OffscreenCanvas(CANVAS_SIZE, CANVAS_SIZE);
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-        console.error('ctx null');
-        return;
-    }
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    const svgs = document.querySelectorAll('svg.leader-line');
-    if (!svgs.length) {
-        console.warn('No leader lines found');
-        return;
-    }
-    for (const svg of svgs) {
-        // Create copy of the svg using deep clone
-        const svgCopy = svg.cloneNode(true);
-        // Set viewbox to fixed size of big backing canvas
-        svgCopy.viewBox.baseVal.width = CANVAS_SIZE * CANVAS_SCALE;
-        svgCopy.viewBox.baseVal.height = CANVAS_SIZE * CANVAS_SCALE;
-
-        // User proper serializer to convert node to dataURI with svg contents
-        const serializer = new XMLSerializer();
-        const svgtxt = serializer.serializeToString(svgCopy);
-        const datauriv = 'data:image/svg+xml,' + encodeURIComponent(svgtxt);
-        // Now make an image with that svg data
-        const img = new Image();
-        // Wait until it is loaded (svg rendering is async even for dataURI I think)
-        await waitForEvent(img, "load", () => {
-            img.src = datauriv;
-        });
-        // Find original location of svg from node
-        let x = parseFloat(svgCopy.style.left);
-        let y = parseFloat(svgCopy.style.top);
-        // Draw SVG to canvas at that location
-        ctx.drawImage(img, 0, 0, CANVAS_SIZE, CANVAS_SIZE,  x, y, CANVAS_SIZE, CANVAS_SIZE);
-    }
-    const w = diaElem.clientWidth;
-    const h = diaElem.clientHeight;
-    console.log('client w,h = ', w, h);
-    document.querySelectorAll('.leader-line').forEach(el => el.remove());
-
-    // Render offscreen canvas to actual canvas
-    // first set actual gfx canvas size to final size to avoid stretching
-    canvasRef.width = w * CANVAS_QUALITY_SCALE;
-    canvasRef.height = h * CANVAS_QUALITY_SCALE;
-    canvasRef.style.width = `${w}px`;
-    canvasRef.style.height = `${h}px`;
-    const ctxc = canvasRef.getContext('2d');
-    if (!ctxc) return;
-    // read from (0, 0) - (w, h) scaled by vscale (2?)
-    // write to entire dst canvas (should already be right size)
-    const vscale = 2.0;
-    ctxc.drawImage(canvas, 0, 0, w * vscale, h * vscale, 0, 0, ctxc.canvas.width, ctxc.canvas.height);
 }
 
 </script>
@@ -206,13 +116,11 @@ async function convertArrowsSvg() {
                 <div class="gap"></div>
                 <el-button type="primary" @click="handleUpdate" :disabled="updateDisabled()">Update</el-button>
             </div>
-            <div ref="output">
-            </div>
         </div>
       </el-splitter-panel>
       <el-splitter-panel>
         <div class="demo-panel">
-            <div class="kaya" ref="kaya">
+            <div class="kaya">
                 <Kaya :source="renderedCode" :show_partial="true" @error="handleError" :key="kayaKey"/>
             </div>
         </div>

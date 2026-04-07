@@ -91,6 +91,6 @@ pre.error {
 
 <template>
     <pre v-if="error" class="error">{{ error_text() }}</pre>
-    <img :src="imgURI" />
+    <img class="output" :src="imgURI" />
     <p>{{ contents }}</p>
 </template>

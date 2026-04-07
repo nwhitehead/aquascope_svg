@@ -236,7 +236,6 @@ impl Drawable for Arrow {
             ArrowType::Fluid(ref fluid_options) => draw_fluid_arrow(self.start, self.end, &self.options, fluid_options, canvas),
             ArrowType::Straight => draw_straight_arrow(self.start, self.end, &self.options, canvas),
             ArrowType::Arc(ref arc_options) => draw_arc_arrow(self.start, self.end, &self.options, arc_options, canvas),
-            _ => bail!("only fluid supported right now"),
         }
     }
     fn clone_box(&self) -> Box<dyn Drawable> {

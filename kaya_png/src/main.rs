@@ -15,7 +15,7 @@ mod style;
 
 use crate::canvas::Canvas;
 use crate::render::{RenderState, render_program};
-use crate::style::standard_style;
+use crate::style::{Styling, standard_style};
 
 #[derive(Debug, Parser)]
 #[command(name = "render_states")]
@@ -95,7 +95,8 @@ fn main() -> Result<()> {
         )?;
         canvas.load_font("serif", include_bytes!("../fonts/Lato/Lato-Regular.ttf"))?;
         canvas.load_font("serif_bold", include_bytes!("../fonts/Lato/Lato-Bold.ttf"))?;
-        let mut v = render_program(&program, &canvas)?;
+        let style = standard_style()?;
+        let mut v = render_program(&program, &canvas, &style)?;
         let bb = v.bounding_box(&canvas)?;
         // Translate to 0, 0
         v.translate(point(-bb.min.x, -bb.min.y));

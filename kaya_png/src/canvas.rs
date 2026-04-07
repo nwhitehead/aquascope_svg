@@ -6,6 +6,7 @@ use anyhow::{Context, Result, bail};
 use tiny_skia::{Pixmap, PremultipliedColorU8};
 
 use crate::draw_state::DrawState;
+use crate::style::Styling;
 
 pub struct Canvas {
     pub pixmap: Pixmap,
@@ -138,6 +139,13 @@ impl Canvas {
             });
         }
 
+        Ok(())
+    }
+    pub fn load_fonts(&mut self, style: &Styling) -> Result<()> {
+        let fontdata = style.get_fontdata();
+        for (name, data) in &fontdata {
+            self.load_font(name, data)?;
+        }
         Ok(())
     }
     pub fn save(&self, filename: &str) -> Result<()> {

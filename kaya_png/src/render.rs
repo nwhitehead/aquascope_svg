@@ -2,7 +2,7 @@
 
 use ab_glyph::{point, Point, Rect};
 use anyhow::{Context, Result};
-use tiny_skia::ColorU8;
+use tiny_skia::{Color, ColorU8};
 
 use crate::canvas::Canvas;
 use crate::draw::{
@@ -668,11 +668,10 @@ fn choose_arrow(src_rect: &Rect, dst_rect: &Rect, help: &[String], style: &Styli
 pub fn render_program(
     value: &Program,
     canvas: &Canvas,
+    style: &Styling,
 ) -> Result<Box<dyn Drawable>> {
     let mut result = GArray::new();
-    let mut rs = RenderState::default();
-    rs.style = standard_style()?;
-    let style = &rs.style;
+    let mut rs = RenderState { style: style.clone(), ..RenderState::default() };
     let mut body: Vec<Box<dyn Drawable>> = vec![];
     let gap = style.get_number_or("program.step.gap", 5.0);
     for (idx, step) in value.0.iter().enumerate() {
@@ -704,11 +703,34 @@ pub fn render_program(
     Ok(Box::new(result))
 }
 
+pub fn draw_program(
+    program: &Program,
+) -> Result<Canvas> {
+    let style = standard_style()?;
+    // Start with measurement, empty canvas
+    let mut canvas = Canvas::new(1, 1)?;
+    canvas.load_fonts(&style);
+    let mut v = render_program(&program, &canvas, &style)?;
+    let bb = v.bounding_box(&canvas)?;
+    // Translate to 0, 0
+    v.translate(point(-bb.min.x, -bb.min.y));
+    let w = bb.max.x - bb.min.x;
+    let h = bb.max.y - bb.min.y;
+    // Now we know size, recreate canvas at right size with fonts
+    canvas = Canvas::new(w.ceil() as u32, h.ceil() as u32)?;
+    canvas.load_fonts(&style);
+    let bgcolor_u8 = style.get_color_or("bg", ColorU8::from_rgba(0, 0, 0, 255));
+    let bgcolor = Color::from_rgba8(bgcolor_u8.red(), bgcolor_u8.green(), bgcolor_u8.blue(), bgcolor_u8.alpha());
+    canvas
+        .pixmap
+        .fill(bgcolor);
+    v.draw(&mut canvas)?;
+    Ok(canvas)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::draw::GBox;
-    use tiny_skia::{Color, ColorU8};
 
     #[test]
     pub fn test_color() -> Result<()> {
@@ -867,6 +889,7 @@ mod tests {
         v.translate(point(200.0, 380.0));
         v.draw(&mut canvas)?;
 
+        let style = standard_style()?;
         let mut v = render_program(
             &Program(vec![
                 Step {
@@ -975,6 +998,7 @@ mod tests {
                 },
             ]),
             &canvas,
+            &style,
         )?;
         v.translate(point(600.0, 500.0));
         v.draw(&mut canvas)?;

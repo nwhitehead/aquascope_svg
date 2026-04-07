@@ -95,6 +95,13 @@ impl Styling {
             self.get_number_or(&format!("{}.sw", key), v),
         )
     }
+    pub fn get_fontdata(&self) -> HashMap<String, Vec<u8>> {
+        HashMap::from([
+            ("mono".into(), include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf").into()),
+            ("serif".into(), include_bytes!("../fonts/Lato/Lato-Regular.ttf").into()),
+            ("serif_bold".into(), include_bytes!("../fonts/Lato/Lato-Bold.ttf").into()),
+        ])
+    }
 }
 
 pub fn color(txt: &str) -> Result<ColorU8> {
@@ -264,6 +271,7 @@ pub fn standard_style() -> Result<Styling> {
     style.add_number("arrow.outline.width", 3.0);
     style.add_number("arrow.src.gap", 3.0);
     style.add_number("arrow.dst.gap", 3.0);
+    style.add_color("bg", color("#191919")?);
     Ok(style)
 }
 

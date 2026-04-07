@@ -1,7 +1,7 @@
 #![allow(unused)]
 
 use ab_glyph::{point, Point, Rect};
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use tiny_skia::{Color, ColorU8};
 
 use crate::canvas::Canvas;
@@ -639,9 +639,9 @@ fn choose_arrow(src_rect: &Rect, dst_rect: &Rect, help: &[String], style: &Styli
     let width = style.get_number_or("arrow.width", 1.0);
     let src_gap = width * 0.5 + style.get_number_or("arrow.src.gap", 1.0);
     let dst_gap = style.get_number_or("arrow.dst.gap", 1.0);
-    let src_p = pick_side(&src_rect, &src_direction) + scale(get_direction_vector(&src_direction), src_gap);
-    let dst_p = pick_side(&dst_rect, &dst_direction) + scale(get_direction_vector(&dst_direction), dst_gap);
-    let arrow = Arrow::new(
+    let src_p = pick_side(src_rect, &src_direction) + scale(get_direction_vector(&src_direction), src_gap);
+    let dst_p = pick_side(dst_rect, &dst_direction) + scale(get_direction_vector(&dst_direction), dst_gap);
+    Arrow::new(
         src_p,
         dst_p,
         ArrowType::Arc( ArcOptions {
@@ -659,10 +659,8 @@ fn choose_arrow(src_rect: &Rect, dst_rect: &Rect, help: &[String], style: &Styli
                 width: style.get_number_or("arrow.outline.width", 1.0),
                 color: style.get_color_or("arrow.outline.color", ColorU8::from_rgba(0, 0, 0, 255)),
             }),
-            ..Default::default()
         },
-    );
-    arrow
+    )
 }
 
 pub fn render_program(
@@ -693,8 +691,8 @@ pub fn render_program(
         for idx in &ptr.selectors {
             dst_tag.push_str(&format!(".{}", idx));
         }
-        let dst_r = g_body.get_tagged(&dst_tag).expect(&format!("could not find tag '{}'", dst_tag)).bounding_box(&canvas)?;
-        let src_r = g_body.get_tagged(&src_tag).expect(&format!("could not find tag '{}'", src_tag)).bounding_box(&canvas)?;
+        let dst_r = g_body.get_tagged(&dst_tag).context(format!("could not find tag '{}'", dst_tag))?.bounding_box(canvas)?;
+        let src_r = g_body.get_tagged(src_tag).context(format!("could not find tag '{}'", src_tag))?.bounding_box(canvas)?;
         let arrow = choose_arrow(&src_r, &dst_r, &ptr.help, &rs.style);
         // // Some debug code to draw bounding box
         // result.push(Box::new(GBox::new_with_options(src_r, 2.0, ColorU8::from_rgba(255, 0, 0, 255))));
@@ -710,7 +708,7 @@ pub fn draw_program(
     // Start with measurement, empty canvas
     let mut canvas = Canvas::new(1, 1)?;
     canvas.load_fonts(&style);
-    let mut v = render_program(&program, &canvas, &style)?;
+    let mut v = render_program(program, &canvas, &style)?;
     let bb = v.bounding_box(&canvas)?;
     // Translate to 0, 0
     v.translate(point(-bb.min.x, -bb.min.y));

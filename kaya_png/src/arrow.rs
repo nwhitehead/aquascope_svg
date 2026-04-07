@@ -206,7 +206,7 @@ fn draw_straight_arrow(start: Point, end: Point, options: &ArrowOptions, canvas:
         start_dir: end - start,
         end_dir: end - start,
     };
-    draw_fluid_arrow(start, end, &options, &fluid_options, canvas)
+    draw_fluid_arrow(start, end, options, &fluid_options, canvas)
 }
 
 fn draw_arc_arrow(start: Point, end: Point, options: &ArrowOptions, arc_options: &ArcOptions, canvas: &mut Canvas) -> Result<()> {
@@ -217,7 +217,7 @@ fn draw_arc_arrow(start: Point, end: Point, options: &ArrowOptions, arc_options:
         start_dir: arc_options.start_dir,
         end_dir: arc_options.end_dir,
     };
-    draw_fluid_arrow(start, end, &options, &fluid_options, canvas)
+    draw_fluid_arrow(start, end, options, &fluid_options, canvas)
 }
 
 impl Drawable for Arrow {

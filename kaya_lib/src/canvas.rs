@@ -28,7 +28,10 @@ fn pixmap_pixel_mut(pixmap: &mut Pixmap, x: i32, y: i32) -> Option<&mut Premulti
 
 impl Canvas {
     pub fn new(width: u32, height: u32, scale: f32) -> Result<Self> {
-        let Some(pixmap) = Pixmap::new(((width as f32) * scale) as u32 + 1, ((height as f32) * scale) as u32 + 1) else {
+        let Some(pixmap) = Pixmap::new(
+            ((width as f32) * scale) as u32 + 1,
+            ((height as f32) * scale) as u32 + 1,
+        ) else {
             bail!("pixmap failed");
         };
         Ok(Self {

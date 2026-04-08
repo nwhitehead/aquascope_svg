@@ -97,9 +97,18 @@ impl Styling {
     }
     pub fn get_fontdata(&self) -> HashMap<String, Vec<u8>> {
         HashMap::from([
-            ("mono".into(), include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf").into()),
-            ("serif".into(), include_bytes!("../fonts/Lato/Lato-Regular.ttf").into()),
-            ("serif_bold".into(), include_bytes!("../fonts/Lato/Lato-Bold.ttf").into()),
+            (
+                "mono".into(),
+                include_bytes!("../fonts/DejaVu/DejaVuSansMono-Bold.ttf").into(),
+            ),
+            (
+                "serif".into(),
+                include_bytes!("../fonts/Lato/Lato-Regular.ttf").into(),
+            ),
+            (
+                "serif_bold".into(),
+                include_bytes!("../fonts/Lato/Lato-Bold.ttf").into(),
+            ),
         ])
     }
 }

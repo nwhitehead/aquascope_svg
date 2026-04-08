@@ -1,14 +1,14 @@
 #![allow(unused)]
 
-use ab_glyph::{point, Point, Rect};
-use anyhow::{bail, Context, Result};
+use ab_glyph::{Point, Rect, point};
+use anyhow::{Context, Result, bail};
 use tiny_skia::{Color, ColorU8};
 
-use crate::arrow::{Arrow, ArrowType, ArrowOptions, ArcOptions, FluidOptions, ArrowOutline};
+use crate::arrow::{ArcOptions, Arrow, ArrowOptions, ArrowOutline, ArrowType, FluidOptions};
 use crate::canvas::Canvas;
 use crate::draw::{
-    Drawable, FormulaType, GArray, GBox, GLine, GPadding, GSpace, GTagged, GText, border, compute_align,
-    hstack, hstack_top, scale, vstack_left, vstack_none,
+    Drawable, FormulaType, GArray, GBox, GLine, GPadding, GSpace, GTagged, GText, border,
+    compute_align, hstack, hstack_top, scale, vstack_left, vstack_none,
 };
 use crate::draw_state::DrawState;
 use crate::states::{Def, Location, NamedStruct, Program, Ptr, Region, Step, Value};
@@ -65,7 +65,13 @@ fn render_value_array(
     // Draw all the parts separately
     let mut a_draws: Vec<Box<dyn Drawable>> = vec![];
     for (idx, x) in a.iter().enumerate() {
-        let draw = render_value(x, &format!("{}.{}", prefix, idx), ptr_dst_prefix, render_state, canvas)?;
+        let draw = render_value(
+            x,
+            &format!("{}.{}", prefix, idx),
+            ptr_dst_prefix,
+            render_state,
+            canvas,
+        )?;
         a_draws.push(draw);
     }
     let style = &render_state.style;
@@ -116,7 +122,13 @@ fn render_value_tuple(
     // Draw all the parts separately
     let mut a_draws: Vec<Box<dyn Drawable>> = vec![];
     for (idx, x) in a.iter().enumerate() {
-        let draw = render_value(x, &format!("{}.{}", prefix, idx), ptr_dst_prefix, render_state, canvas)?;
+        let draw = render_value(
+            x,
+            &format!("{}.{}", prefix, idx),
+            ptr_dst_prefix,
+            render_state,
+            canvas,
+        )?;
         a_draws.push(draw);
     }
     let style = &render_state.style;
@@ -375,7 +387,9 @@ fn render_value_pointer(
 ) -> Result<Box<dyn Drawable>> {
     // Record the pointer information into render_state for drawing arrows after layout
     // Clone the ptr, but also extend the destination label to have the ptr_dst_prefix
-    render_state.ptrs.push((ptr_dst_prefix.to_string(), prefix.to_string(), p.clone()));
+    render_state
+        .ptrs
+        .push((ptr_dst_prefix.to_string(), prefix.to_string(), p.clone()));
     let style = &render_state.style;
     let ds = DrawState {
         font: style.get_string_or("value.pointer.font", "mono"),
@@ -536,7 +550,13 @@ pub fn render_step(
     body.push(Box::new(g_padded_sep));
     let gap = style.get_number_or("step.location.gap", 5.0);
     for (idx, location) in value.locations.iter().enumerate() {
-        let g_location = render_location(location, &value.label.to_string(), &value.label.to_string(), render_state, canvas)?;
+        let g_location = render_location(
+            location,
+            &value.label.to_string(),
+            &value.label.to_string(),
+            render_state,
+            canvas,
+        )?;
         if idx > 0 {
             body.push(Box::new(GSpace::new(gap, 0.0)));
         }
@@ -557,7 +577,11 @@ pub fn render_step(
 
 #[derive(PartialEq)]
 enum Direction {
-    Auto, Top, Right, Bottom, Left
+    Auto,
+    Top,
+    Right,
+    Bottom,
+    Left,
 }
 
 fn pick_side(r: &Rect, d: &Direction) -> Point {
@@ -609,22 +633,40 @@ fn choose_arrow(src_rect: &Rect, dst_rect: &Rect, help: &[String], style: &Styli
     }
     // Compute auto directions
     // FIXME: Assumes src and dst rectangles don't overlap (annoying edge cases there)
-    let src_mid = point((src_rect.min.x + src_rect.max.x) * 0.5, (src_rect.min.y + src_rect.max.y) * 0.5);
-    let dst_mid = point((dst_rect.min.x + dst_rect.max.x) * 0.5, (dst_rect.min.y + dst_rect.max.y) * 0.5);
+    let src_mid = point(
+        (src_rect.min.x + src_rect.max.x) * 0.5,
+        (src_rect.min.y + src_rect.max.y) * 0.5,
+    );
+    let dst_mid = point(
+        (dst_rect.min.x + dst_rect.max.x) * 0.5,
+        (dst_rect.min.y + dst_rect.max.y) * 0.5,
+    );
     let dx = dst_mid.x - src_mid.x;
     let dy = dst_mid.y - src_mid.y;
     // Do horizontal connection if dx is bigger, vertical connection if dy is bigger
     if dx.abs() > dy.abs() {
         if dx > 0.0 {
-            if src_direction == Direction::Auto { src_direction = Direction::Right; }
-            if dst_direction == Direction::Auto { dst_direction = Direction::Left; }
+            if src_direction == Direction::Auto {
+                src_direction = Direction::Right;
+            }
+            if dst_direction == Direction::Auto {
+                dst_direction = Direction::Left;
+            }
         } else {
-            if src_direction == Direction::Auto { src_direction = Direction::Left; }
-            if dst_direction == Direction::Auto { dst_direction = Direction::Right; }
+            if src_direction == Direction::Auto {
+                src_direction = Direction::Left;
+            }
+            if dst_direction == Direction::Auto {
+                dst_direction = Direction::Right;
+            }
         }
     } else {
-        if src_direction == Direction::Auto { src_direction = Direction::Right; }
-        if dst_direction == Direction::Auto { dst_direction = Direction::Right; }
+        if src_direction == Direction::Auto {
+            src_direction = Direction::Right;
+        }
+        if dst_direction == Direction::Auto {
+            dst_direction = Direction::Right;
+        }
         // // This is how we would do it if we wanted short lines
         // if dy > 0.0 {
         //     if src_direction == Direction::Auto { src_direction = Direction::Bottom; }
@@ -638,12 +680,14 @@ fn choose_arrow(src_rect: &Rect, dst_rect: &Rect, help: &[String], style: &Styli
     let width = style.get_number_or("arrow.width", 1.0);
     let src_gap = width * 0.5 + style.get_number_or("arrow.src.gap", 1.0);
     let dst_gap = style.get_number_or("arrow.dst.gap", 1.0);
-    let src_p = pick_side(src_rect, &src_direction) + scale(get_direction_vector(&src_direction), src_gap);
-    let dst_p = pick_side(dst_rect, &dst_direction) + scale(get_direction_vector(&dst_direction), dst_gap);
+    let src_p =
+        pick_side(src_rect, &src_direction) + scale(get_direction_vector(&src_direction), src_gap);
+    let dst_p =
+        pick_side(dst_rect, &dst_direction) + scale(get_direction_vector(&dst_direction), dst_gap);
     Arrow::new(
         src_p,
         dst_p,
-        ArrowType::Arc( ArcOptions {
+        ArrowType::Arc(ArcOptions {
             start_dir: get_direction_vector(&src_direction),
             // end_dir is reversed because arrow is going into that side
             end_dir: scale(get_direction_vector(&dst_direction), -1.0),
@@ -668,7 +712,10 @@ pub fn render_program(
     style: &Styling,
 ) -> Result<Box<dyn Drawable>> {
     let mut result = GArray::new();
-    let mut rs = RenderState { style: style.clone(), ..RenderState::default() };
+    let mut rs = RenderState {
+        style: style.clone(),
+        ..RenderState::default()
+    };
     let mut body: Vec<Box<dyn Drawable>> = vec![];
     let gap = style.get_number_or("program.step.gap", 5.0);
     for (idx, step) in value.0.iter().enumerate() {
@@ -690,8 +737,14 @@ pub fn render_program(
         for idx in &ptr.selectors {
             dst_tag.push_str(&format!(".{}", idx));
         }
-        let dst_r = g_body.get_tagged(&dst_tag).context(format!("could not find tag '{}'", dst_tag))?.bounding_box(canvas)?;
-        let src_r = g_body.get_tagged(src_tag).context(format!("could not find tag '{}'", src_tag))?.bounding_box(canvas)?;
+        let dst_r = g_body
+            .get_tagged(&dst_tag)
+            .context(format!("could not find tag '{}'", dst_tag))?
+            .bounding_box(canvas)?;
+        let src_r = g_body
+            .get_tagged(src_tag)
+            .context(format!("could not find tag '{}'", src_tag))?
+            .bounding_box(canvas)?;
         let arrow = choose_arrow(&src_r, &dst_r, &ptr.help, &rs.style);
         // // Some debug code to draw bounding box
         // result.push(Box::new(GBox::new_with_options(src_r, 2.0, ColorU8::from_rgba(255, 0, 0, 255))));
@@ -700,10 +753,7 @@ pub fn render_program(
     Ok(Box::new(result))
 }
 
-pub fn draw_program(
-    program: &Program,
-    scale: f32,
-) -> Result<Canvas> {
+pub fn draw_program(program: &Program, scale: f32) -> Result<Canvas> {
     let style = standard_style()?;
     // Start with measurement, empty canvas
     let mut canvas = Canvas::new(1, 1, scale)?;
@@ -718,10 +768,13 @@ pub fn draw_program(
     canvas = Canvas::new(w.ceil() as u32, h.ceil() as u32, scale)?;
     canvas.load_fonts(&style);
     let bgcolor_u8 = style.get_color_or("bg", ColorU8::from_rgba(0, 0, 0, 255));
-    let bgcolor = Color::from_rgba8(bgcolor_u8.red(), bgcolor_u8.green(), bgcolor_u8.blue(), bgcolor_u8.alpha());
-    canvas
-        .pixmap
-        .fill(bgcolor);
+    let bgcolor = Color::from_rgba8(
+        bgcolor_u8.red(),
+        bgcolor_u8.green(),
+        bgcolor_u8.blue(),
+        bgcolor_u8.alpha(),
+    );
+    canvas.pixmap.fill(bgcolor);
     v.draw(&mut canvas)?;
     Ok(canvas)
 }
@@ -887,14 +940,16 @@ mod tests {
                                 },
                                 Def {
                                     label: "y2".to_string(),
-                                    value: Value::Array(vec![
-                                        Value::Number(42.0),
-                                        Value::Invalid,
-                                    ]),
+                                    value: Value::Array(vec![Value::Number(42.0), Value::Invalid]),
                                 },
                                 Def {
                                     label: "H0".to_string(),
-                                    value: Value::Pointer(Ptr { name: "x".to_string(), selectors: vec![], borrow: 0, help: vec![] }),
+                                    value: Value::Pointer(Ptr {
+                                        name: "x".to_string(),
+                                        selectors: vec![],
+                                        borrow: 0,
+                                        help: vec![],
+                                    }),
                                 },
                             ],
                         }],
@@ -1002,11 +1057,7 @@ mod tests {
         v.draw(&mut canvas)?;
 
         let style = standard_style()?;
-        let mut v = render_program(
-            &demo_prg(),
-            &canvas,
-            &style,
-        )?;
+        let mut v = render_program(&demo_prg(), &canvas, &style)?;
         v.translate(point(600.0, 500.0));
         v.draw(&mut canvas)?;
 
@@ -1040,5 +1091,4 @@ mod tests {
         assert_eq!(data[0..4], [0x89, 0x50, 0x4e, 0x47]);
         Ok(())
     }
-
 }

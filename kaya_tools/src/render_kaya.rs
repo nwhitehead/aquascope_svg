@@ -22,12 +22,6 @@ struct Args {
     )]
     scale: Option<f64>,
     #[arg(
-        help = "Show labels starting with H (heap) (default is to hide)",
-        long,
-        default_value_t = false
-    )]
-    show_heap: bool,
-    #[arg(
         help = "Output filename(s), required, (use - for stdout), (must be PNG)",
         long
     )]

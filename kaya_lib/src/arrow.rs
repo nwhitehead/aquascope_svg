@@ -76,12 +76,7 @@ pub fn decomp(dir: Point) -> (Point, Point) {
 }
 
 impl Arrow {
-    pub fn new(
-        start: Point,
-        end: Point,
-        arrow_type: ArrowType,
-        options: ArrowOptions,
-    ) -> Self {
+    pub fn new(start: Point, end: Point, arrow_type: ArrowType, options: ArrowOptions) -> Self {
         Self {
             start,
             end,
@@ -91,7 +86,13 @@ impl Arrow {
     }
 }
 
-fn draw_fluid_arrow(start: Point, end: Point, options: &ArrowOptions, fluid_options: &FluidOptions, canvas: &mut Canvas) -> Result<()> {
+fn draw_fluid_arrow(
+    start: Point,
+    end: Point,
+    options: &ArrowOptions,
+    fluid_options: &FluidOptions,
+    canvas: &mut Canvas,
+) -> Result<()> {
     let transform = Transform::from_scale(canvas.scale, canvas.scale);
     let (par, perp) = decomp(fluid_options.end_dir);
     let (par_src, perp_src) = decomp(fluid_options.start_dir);
@@ -181,18 +182,19 @@ fn draw_fluid_arrow(start: Point, end: Point, options: &ArrowOptions, fluid_opti
         .stroke_path(&body_path, &paint, &stroke, transform, None);
 
     // Draw arrow head
-    canvas.pixmap.fill_path(
-        &head_path,
-        &paint,
-        FillRule::EvenOdd,
-        transform,
-        None,
-    );
+    canvas
+        .pixmap
+        .fill_path(&head_path, &paint, FillRule::EvenOdd, transform, None);
 
     Ok(())
 }
 
-fn draw_straight_arrow(start: Point, end: Point, options: &ArrowOptions, canvas: &mut Canvas) -> Result<()> {
+fn draw_straight_arrow(
+    start: Point,
+    end: Point,
+    options: &ArrowOptions,
+    canvas: &mut Canvas,
+) -> Result<()> {
     let fluid_options = FluidOptions {
         start_gravity: 0.0,
         end_gravity: 0.0,
@@ -202,7 +204,13 @@ fn draw_straight_arrow(start: Point, end: Point, options: &ArrowOptions, canvas:
     draw_fluid_arrow(start, end, options, &fluid_options, canvas)
 }
 
-fn draw_arc_arrow(start: Point, end: Point, options: &ArrowOptions, arc_options: &ArcOptions, canvas: &mut Canvas) -> Result<()> {
+fn draw_arc_arrow(
+    start: Point,
+    end: Point,
+    options: &ArrowOptions,
+    arc_options: &ArcOptions,
+    canvas: &mut Canvas,
+) -> Result<()> {
     let gravity = norm(end - start) * 0.5;
     let fluid_options = FluidOptions {
         start_gravity: gravity,
@@ -226,9 +234,13 @@ impl Drawable for Arrow {
     }
     fn draw(&self, canvas: &mut Canvas) -> Result<()> {
         match self.arrow_type {
-            ArrowType::Fluid(ref fluid_options) => draw_fluid_arrow(self.start, self.end, &self.options, fluid_options, canvas),
+            ArrowType::Fluid(ref fluid_options) => {
+                draw_fluid_arrow(self.start, self.end, &self.options, fluid_options, canvas)
+            }
             ArrowType::Straight => draw_straight_arrow(self.start, self.end, &self.options, canvas),
-            ArrowType::Arc(ref arc_options) => draw_arc_arrow(self.start, self.end, &self.options, arc_options, canvas),
+            ArrowType::Arc(ref arc_options) => {
+                draw_arc_arrow(self.start, self.end, &self.options, arc_options, canvas)
+            }
         }
     }
     fn clone_box(&self) -> Box<dyn Drawable> {
@@ -281,7 +293,8 @@ mod tests {
                 }),
                 ..Default::default()
             },
-        ).draw(&mut canvas)?;
+        )
+        .draw(&mut canvas)?;
 
         Arrow::new(
             point(200.0, 200.0),
@@ -299,12 +312,13 @@ mod tests {
                 }),
                 ..Default::default()
             },
-        ).draw(&mut canvas)?;
+        )
+        .draw(&mut canvas)?;
 
         Arrow::new(
             point(600.0, 200.0),
             point(400.0, 600.0),
-            ArrowType::Arc( ArcOptions {
+            ArrowType::Arc(ArcOptions {
                 start_dir: point(0.0, 1.0),
                 end_dir: point(-1.0, 0.0),
             }),
@@ -320,7 +334,8 @@ mod tests {
                 }),
                 ..Default::default()
             },
-        ).draw(&mut canvas)?;
+        )
+        .draw(&mut canvas)?;
 
         canvas.save("test_render_arrow.png")?;
         Ok(())

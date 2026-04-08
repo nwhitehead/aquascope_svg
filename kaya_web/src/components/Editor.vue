@@ -83,7 +83,7 @@ function handlePNG() {
 }
 
 const theme = computed(() => {
-    if (transparent.value) return 'transparent';
+    if (transparent.value) return isDark.value ? 'dark_transparent' : 'light_transparent';
     return isDark.value ? 'dark' : 'light';
 });
 

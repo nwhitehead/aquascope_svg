@@ -385,8 +385,11 @@ fn render_value_char(
         font_size: style.get_number_or("value.char.font_size", 24.0),
         ..DrawState::default()
     };
+    let padding = style.get_padding("value.char.padding", 5.0);
     let text = format!("'{}'", c);
-    Ok(Box::new(GText::new(&text, point(0.0, 0.0), ds)))
+    let gtxt = GText::new(&text, point(0.0, 0.0), ds);
+    let padded_gtxt = GPadding::new(Box::new(gtxt), padding);
+    Ok(Box::new(padded_gtxt))
 }
 
 fn render_value_pointer(

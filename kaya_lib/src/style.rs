@@ -157,6 +157,8 @@ fn buildout_style(style: &mut Styling) {
     style.add_number("value.number.padding.bottom", 8.0);
     style.add_string("value.char.font", "mono");
     style.add_number("value.char.font_size", 23.0);
+    style.add_number("value.char.padding", 5.0);
+    style.add_number("value.char.padding.bottom", 8.0);
     style.add_string("value.pointer.font", "mono");
     style.add_number("value.pointer.font_size", 23.0);
     style.add_number("value.pointer.padding.bottom", 7.0);

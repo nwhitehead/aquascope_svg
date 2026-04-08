@@ -150,23 +150,18 @@ pub fn color(txt: &str) -> Result<ColorU8> {
     Ok(ColorU8::from_rgba(r, g, b, a))
 }
 
-pub fn standard_style() -> Result<Styling> {
-    let mut style = Styling::new();
+fn buildout_style(style: &mut Styling) {
     style.add_string("value.number.font", "mono");
     style.add_number("value.number.font_size", 23.0);
-    style.add_color("value.number.color", color("#bccfa9")?);
     style.add_number("value.number.padding", 5.0);
     style.add_number("value.number.padding.bottom", 8.0);
     style.add_string("value.char.font", "mono");
     style.add_number("value.char.font_size", 23.0);
-    style.add_color("value.char.color", color("#bf947a")?);
     style.add_string("value.pointer.font", "mono");
     style.add_number("value.pointer.font_size", 23.0);
-    style.add_color("value.pointer.color", color("#ccc")?);
     style.add_number("value.pointer.padding.bottom", 7.0);
     style.add_number("value.array.empty.w", 0.0);
     style.add_number("value.array.empty.h", 20.0);
-    style.add_color("value.array.separator.color", color("#7197d580")?);
     style.add_number("value.array.separator.vmargin", 5.0);
     style.add_number("value.array.separator.padding.left", 10.0);
     style.add_number("value.array.separator.padding.top", 5.0);
@@ -176,12 +171,10 @@ pub fn standard_style() -> Result<Styling> {
     style.add_number("value.array.padding.top", 2.0);
     style.add_number("value.array.padding.right", 10.0);
     style.add_number("value.array.padding.bottom", 2.0);
-    style.add_color("value.array.border.color", color("#7197d5")?);
     style.add_number("value.array.border.width", 1.5);
     style.add_number("value.array.border.radius", 5.0);
     style.add_number("value.tuple.empty.w", 0.0);
     style.add_number("value.tuple.empty.h", 20.0);
-    style.add_color("value.tuple.separator.color", color("#b785c080")?);
     style.add_number("value.tuple.separator.vmargin", 5.0);
     style.add_number("value.tuple.separator.padding.left", 10.0);
     style.add_number("value.tuple.separator.padding.top", 5.0);
@@ -191,17 +184,14 @@ pub fn standard_style() -> Result<Styling> {
     style.add_number("value.tuple.padding.top", 2.0);
     style.add_number("value.tuple.padding.right", 10.0);
     style.add_number("value.tuple.padding.bottom", 2.0);
-    style.add_color("value.tuple.border.color", color("#b785c0")?);
     style.add_number("value.tuple.border.width", 1.5);
     style.add_number("value.tuple.border.radius", 5.0);
     style.add_number("value.tuple.border.radius.nw", 0.0);
     style.add_number("value.tuple.border.radius.se", 0.0);
     style.add_string("def.label.font", "mono");
     style.add_number("def.label.font_size", 23.0);
-    style.add_color("def.label.color", color("#b2d9fd")?);
     style.add_string("def.separator.font", "mono");
     style.add_number("def.separator.font_size", 23.0);
-    style.add_color("def.separator.color", color("#ccc")?);
     style.add_string("def.separator.text", ":");
     style.add_number("def.separator.padding.left", 3.0);
     style.add_number("def.separator.padding.right", 5.0);
@@ -210,24 +200,19 @@ pub fn standard_style() -> Result<Styling> {
     style.add_number("def.value.margin", 0.0);
     style.add_number("def.value.margin.top", 3.0);
     style.add_number("def.value.margin.bottom", 3.0);
-    style.add_color("def.value.border.color", color("#282828")?);
     style.add_number("def.value.border.width", 1.5);
     style.add_number("def.value.border.radius", 5.0);
     style.add_string("value.struct.name.font", "mono");
     style.add_number("value.struct.name.font_size", 23.0);
-    style.add_color("value.struct.name.color", color("#7fc8b0")?);
     style.add_string("value.struct.label.font", "mono");
     style.add_number("value.struct.label.font_size", 23.0);
-    style.add_color("value.struct.label.color", color("#7fc8b0")?);
     style.add_string("value.struct.separator.font", "mono");
     style.add_number("value.struct.separator.font_size", 23.0);
-    style.add_color("value.struct.separator.color", color("#ccc")?);
     style.add_string("value.struct.separator.text", ":");
     style.add_number("value.struct.separator.padding.left", 3.0);
     style.add_number("value.struct.separator.padding.right", 3.0);
     style.add_number("value.struct.padding", 10.0);
     style.add_number("value.struct.margin.left", 10.0);
-    style.add_color("value.struct.border.color", color("#789a56")?);
     style.add_number("value.struct.border.width", 1.5);
     style.add_number("value.struct.border.radius", 5.0);
     style.add_number("value.struct.left.padding.bottom", 3.0);
@@ -235,15 +220,12 @@ pub fn standard_style() -> Result<Styling> {
     style.add_number("value.struct.divider.padding", 0.0);
     style.add_number("value.struct.divider.padding.left", 7.0);
     style.add_number("value.struct.divider.padding.right", 12.0);
-    style.add_color("value.struct.divider.color", color("#789a5680")?);
     style.add_string("value.invalid.font", "mono");
     style.add_number("value.invalid.font_size", 48.0);
-    style.add_color("value.invalid.color", color("#e44")?);
     style.add_number("value.invalid.padding", 0.0);
     style.add_number("value.invalid.padding.bottom", 10.0);
     style.add_string("region.header.font", "serif");
     style.add_number("region.header.font_size", 23.0);
-    style.add_color("region.header.color", color("#ccc")?);
     style.add_number("region.header.padding", 0.0);
     style.add_number("region.header.padding.top", 10.0);
     style.add_number("region.header.padding.bottom", 10.0);
@@ -251,14 +233,11 @@ pub fn standard_style() -> Result<Styling> {
     style.add_number("location.region.gap", 25.0);
     style.add_string("location.header.font", "serif_bold");
     style.add_number("location.header.font_size", 28.0);
-    style.add_color("location.header.color", color("#ccc")?);
     style.add_number("location.header.padding", 0.0);
     style.add_string("step.header.font", "serif_bold");
     style.add_number("step.header.font_size", 28.0);
-    style.add_color("step.header.color", color("#dbdeab")?);
     style.add_number("step.header.padding", 3.0);
     style.add_number("step.header.padding.right", 20.0);
-    style.add_color("step.separator.color", color("#404040")?);
     style.add_number("step.separator.size", 26.0);
     style.add_number("step.separator.padding", 5.0);
     style.add_number("step.separator.padding.right", 25.0);
@@ -267,20 +246,45 @@ pub fn standard_style() -> Result<Styling> {
     style.add_number("step.padding.left", 40.0);
     style.add_number("step.padding.right", 40.0);
     style.add_number("step.margin", 5.0);
-    style.add_color("step.border.color", color("#404040")?);
     style.add_number("step.border.width", 1.5);
     style.add_number("step.border.radius", 5.0);
     style.add_number("program.step.gap", 5.0);
-    style.add_color("arrow.color", color("#ff0")?);
     style.add_number("arrow.width", 6.0);
     style.add_number("arrow.head.length", 10.0);
     style.add_number("arrow.head.width", 10.0);
     style.add_number("arrow.dent.ratio", 0.2);
-    style.add_color("arrow.outline.color", color("#000")?);
     style.add_number("arrow.outline.width", 3.0);
     style.add_number("arrow.src.gap", 3.0);
     style.add_number("arrow.dst.gap", 3.0);
+}
+
+pub fn standard_style() -> Result<Styling> {
+    let mut style = Styling::new();
+    style.add_color("value.number.color", color("#bccfa9")?);
+    style.add_color("value.char.color", color("#bf947a")?);
+    style.add_color("value.pointer.color", color("#ccc")?);
+    style.add_color("value.array.separator.color", color("#7197d580")?);
+    style.add_color("value.array.border.color", color("#7197d5")?);
+    style.add_color("value.tuple.separator.color", color("#b785c080")?);
+    style.add_color("value.tuple.border.color", color("#b785c0")?);
+    style.add_color("def.label.color", color("#b2d9fd")?);
+    style.add_color("def.separator.color", color("#ccc")?);
+    style.add_color("def.value.border.color", color("#282828")?);
+    style.add_color("value.struct.name.color", color("#7fc8b0")?);
+    style.add_color("value.struct.label.color", color("#7fc8b0")?);
+    style.add_color("value.struct.separator.color", color("#ccc")?);
+    style.add_color("value.struct.border.color", color("#789a56")?);
+    style.add_color("value.struct.divider.color", color("#789a5680")?);
+    style.add_color("value.invalid.color", color("#e44")?);
+    style.add_color("region.header.color", color("#ccc")?);
+    style.add_color("location.header.color", color("#ccc")?);
+    style.add_color("step.header.color", color("#dbdeab")?);
+    style.add_color("step.separator.color", color("#404040")?);
+    style.add_color("step.border.color", color("#404040")?);
+    style.add_color("arrow.color", color("#ff0")?);
+    style.add_color("arrow.outline.color", color("#000")?);
     style.add_color("bg", color("#191919")?);
+    buildout_style(&mut style);
     Ok(style)
 }
 

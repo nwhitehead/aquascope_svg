@@ -255,7 +255,7 @@ impl Drawable for Arrow {
 mod tests {
     use super::*;
     use crate::draw::GBox;
-    use crate::style::standard_style;
+    use crate::style::{dark_style, light_style};
     use rand::{RngExt, SeedableRng, rngs::ChaCha8Rng};
     use tiny_skia::{Color, ColorU8};
 

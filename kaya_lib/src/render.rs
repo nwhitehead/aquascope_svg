@@ -12,7 +12,9 @@ use crate::draw::{
 };
 use crate::draw_state::DrawState;
 use crate::states::{Def, Location, NamedStruct, Program, Ptr, Region, Step, Value};
-use crate::style::{Styling, color, light_style, standard_style};
+use crate::style::{
+    Styling, color, dark_style, dark_transparent_style, light_style, light_transparent_style,
+};
 
 #[derive(Clone, Debug)]
 pub struct RenderState {
@@ -755,9 +757,11 @@ pub fn render_program(
 
 pub fn draw_program(program: &Program, scale: f32, theme: &str) -> Result<Canvas> {
     let style = match theme {
-        "dark" => standard_style()?,
+        "dark" => dark_style()?,
         "light" => light_style()?,
-        _ => standard_style()?,
+        "dark_transparent" => dark_transparent_style()?,
+        "light_transparent" => light_transparent_style()?,
+        _ => dark_style()?,
         // "light" => light_style()?,
     };
     // Start with measurement, empty canvas
@@ -983,7 +987,7 @@ mod tests {
         canvas.load_font("serif_bold", include_bytes!("../fonts/Lato/Lato-Bold.ttf"))?;
 
         let mut rs = RenderState::default();
-        rs.style = standard_style()?;
+        rs.style = dark_style()?;
 
         let mut v = render_value(&Value::Number(42.0), "", "", &mut rs, &canvas)?;
         v.translate(point(200.0, 200.0));
@@ -1061,7 +1065,7 @@ mod tests {
         v.translate(point(200.0, 380.0));
         v.draw(&mut canvas)?;
 
-        let style = standard_style()?;
+        let style = dark_style()?;
         let mut v = render_program(&demo_prg(), &canvas, &style)?;
         v.translate(point(600.0, 500.0));
         v.draw(&mut canvas)?;

@@ -258,7 +258,7 @@ fn buildout_style(style: &mut Styling) {
     style.add_number("arrow.dst.gap", 3.0);
 }
 
-pub fn standard_style() -> Result<Styling> {
+pub fn dark_base_style() -> Result<Styling> {
     let mut style = Styling::new();
     style.add_color("value.number.color", color("#bccfa9")?);
     style.add_color("value.char.color", color("#bf947a")?);
@@ -283,12 +283,23 @@ pub fn standard_style() -> Result<Styling> {
     style.add_color("step.border.color", color("#404040")?);
     style.add_color("arrow.color", color("#ff0")?);
     style.add_color("arrow.outline.color", color("#000")?);
-    style.add_color("bg", color("#191919")?);
     buildout_style(&mut style);
     Ok(style)
 }
 
-pub fn light_style() -> Result<Styling> {
+pub fn dark_style() -> Result<Styling> {
+    let mut style = dark_base_style()?;
+    style.add_color("bg", color("#191919")?);
+    Ok(style)
+}
+
+pub fn dark_transparent_style() -> Result<Styling> {
+    let mut style = dark_base_style()?;
+    style.add_color("bg", color("#00000000")?);
+    Ok(style)
+}
+
+pub fn light_base_style() -> Result<Styling> {
     let mut style = Styling::new();
     style.add_color("value.number.color", color("#488658")?);
     style.add_color("value.char.color", color("#8d241d")?);
@@ -313,8 +324,19 @@ pub fn light_style() -> Result<Styling> {
     style.add_color("step.border.color", color("#aaa")?);
     style.add_color("arrow.color", color("#22c")?);
     style.add_color("arrow.outline.color", color("#fff")?);
-    style.add_color("bg", color("#fff")?);
     buildout_style(&mut style);
+    Ok(style)
+}
+
+pub fn light_style() -> Result<Styling> {
+    let mut style = light_base_style()?;
+    style.add_color("bg", color("#fff")?);
+    Ok(style)
+}
+
+pub fn light_transparent_style() -> Result<Styling> {
+    let mut style = light_base_style()?;
+    style.add_color("bg", color("#00000000")?);
     Ok(style)
 }
 

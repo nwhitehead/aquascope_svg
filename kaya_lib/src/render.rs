@@ -12,7 +12,7 @@ use crate::draw::{
 };
 use crate::draw_state::DrawState;
 use crate::states::{Def, Location, NamedStruct, Program, Ptr, Region, Step, Value};
-use crate::style::{Styling, color, standard_style};
+use crate::style::{Styling, color, light_style, standard_style};
 
 #[derive(Clone, Debug)]
 pub struct RenderState {
@@ -756,6 +756,7 @@ pub fn render_program(
 pub fn draw_program(program: &Program, scale: f32, theme: &str) -> Result<Canvas> {
     let style = match theme {
         "dark" => standard_style()?,
+        "light" => light_style()?,
         _ => standard_style()?,
         // "light" => light_style()?,
     };

@@ -288,6 +288,36 @@ pub fn standard_style() -> Result<Styling> {
     Ok(style)
 }
 
+pub fn light_style() -> Result<Styling> {
+    let mut style = Styling::new();
+    style.add_color("value.number.color", color("#488658")?);
+    style.add_color("value.char.color", color("#8d241d")?);
+    style.add_color("value.pointer.color", color("#3b3b3b")?);
+    style.add_color("value.array.separator.color", color("#2300fd80")?);
+    style.add_color("value.array.border.color", color("#2300fd")?);
+    style.add_color("value.tuple.separator.color", color("#a361f280")?);
+    style.add_color("value.tuple.border.color", color("#a361f2")?);
+    style.add_color("def.label.color", color("#0f007f")?);
+    style.add_color("def.separator.color", color("#000")?);
+    style.add_color("def.value.border.color", color("#d3d3d3")?);
+    style.add_color("value.struct.name.color", color("#4d7c98")?);
+    style.add_color("value.struct.label.color", color("#4d7c98")?);
+    style.add_color("value.struct.separator.color", color("#000")?);
+    style.add_color("value.struct.border.color", color("#438106")?);
+    style.add_color("value.struct.divider.color", color("#43810680")?);
+    style.add_color("value.invalid.color", color("#800")?);
+    style.add_color("region.header.color", color("#3b3b3b")?);
+    style.add_color("location.header.color", color("#3b3b3b")?);
+    style.add_color("step.header.color", color("#1b1b1b")?);
+    style.add_color("step.separator.color", color("#1b1b1b")?);
+    style.add_color("step.border.color", color("#aaa")?);
+    style.add_color("arrow.color", color("#22c")?);
+    style.add_color("arrow.outline.color", color("#fff")?);
+    style.add_color("bg", color("#fff")?);
+    buildout_style(&mut style);
+    Ok(style)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

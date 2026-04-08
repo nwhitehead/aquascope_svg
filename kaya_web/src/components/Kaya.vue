@@ -14,7 +14,6 @@ const emit = defineEmits<{
 
 let ready = false;
 const error = ref(null);
-const contents = ref('');
 let imgURI = ref('');
 
 /// Given Uint8Array with PNG data, construct a Data URI for IMG tags to use for it
@@ -89,10 +88,12 @@ pre.error {
     text-align: left;
     background-color: var(--el-color-danger-light-5);
 }
+img.output {
+    width: 100%;
+}
 </style>
 
 <template>
     <pre v-if="error" class="error">{{ error_text() }}</pre>
     <img class="output" :src="imgURI" />
-    <p>{{ contents }}</p>
 </template>

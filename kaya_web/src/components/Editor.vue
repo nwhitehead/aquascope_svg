@@ -22,13 +22,14 @@ p: ptr(H0).se.ds.g4
 H0: (42, ptr(z).c4.sn.dw)
 `);
 
-const scale = ref(0.99999);
+const scale = ref(4.0);
 
 //"# L0\n## Stack\nx: 5\ny: 7\nz: ptr(x)\np: ptr(H0)\n## Heap\nH0: 42\n");
 const renderedCode = ref("");
 const isDark = useDark();
 const autoUpdate = ref(false);
 const kayaKey = ref(0);
+const resolution = ref(100);
 
 function handleError(evt) {
     console.log(`ERROR ${evt}`);
@@ -109,12 +110,18 @@ function handlePNG() {
                 <div class="gap"></div>
                 <el-button type="primary" @click="handleUpdate" :disabled="updateDisabled()">Update</el-button>
             </div>
+            <div class="row">
+                <div class="slider-demo-block">
+                    <span class="demonstration">Resolution</span>
+                    <el-slider v-model="resolution" :min="50" :max="600" :step="50" show-stops />
+                </div>
+            </div>
         </div>
       </el-splitter-panel>
       <el-splitter-panel>
         <div class="demo-panel">
             <div class="kaya">
-                <Kaya :source="renderedCode" :show_partial="true" :scale="scale" @error="handleError" :key="kayaKey"/>
+                <Kaya :source="renderedCode" :show_partial="true" :scale="resolution / 100.0" @error="handleError" :key="kayaKey"/>
             </div>
         </div>
       </el-splitter-panel>
@@ -151,4 +158,29 @@ html.dark div.demo-panel {
 .el-spliiter-panel {
     overflow: clip;
 }
+.slider-demo-block {
+    max-width: 600px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+.slider-demo-block .el-slider {
+    margin-top: 0;
+    margin-left: 12px;
+    margin-right: 12px;
+}
+.slider-demo-block .demonstration {
+    font-size: 14px;
+    color: var(--el-text-color-secondary);
+    line-height: 44px;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 0;
+}
+.slider-demo-block .demonstration + .el-slider {
+    flex: 0 0 70%;
+}
+
 </style>

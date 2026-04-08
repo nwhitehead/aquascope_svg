@@ -40,8 +40,9 @@ help = { "." ~ CNAME }
 
 value = { number | array_value | tuple_value | char_value | struct_value | ptr_value | invalid_value }
 
-array_value = { "[" ~ value ~ ("," ~ value)* ~ "]" }
-tuple_value = { "(" ~ value ~ ("," ~ value)* ~ ")" }
+// allow 0 values inside, or one value with no commas, or comma separated list of values
+array_value = { "[" ~ ( value ~ ("," ~ value)* )? ~ "]" }
+tuple_value = { "(" ~ ( value ~ ("," ~ value)* )? ~ ")" }
 char_value = { "'" ~ !("'") ~ ANY ~ "'" }
 struct_value = { label ~ "{" ~ (def_ ~ ("," ~ def_)*)? ~ "}" }
 ptr_value = { "ptr" ~ "(" ~ destination ~ ")" ~ help* }

@@ -220,6 +220,8 @@ fn buildout_style(style: &mut Styling) {
     style.add_number("value.struct.divider.padding", 0.0);
     style.add_number("value.struct.divider.padding.left", 7.0);
     style.add_number("value.struct.divider.padding.right", 12.0);
+    style.add_number("value.struct.empty.w", 0.0);
+    style.add_number("value.struct.empty.h", 20.0);
     style.add_string("value.invalid.font", "mono");
     style.add_number("value.invalid.font_size", 48.0);
     style.add_number("value.invalid.padding", 0.0);

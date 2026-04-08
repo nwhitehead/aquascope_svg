@@ -314,6 +314,15 @@ fn render_value_struct(
         body.push(Box::new(g_padded_left));
         body.push(v_draws[i].clone_box());
     }
+    if body.is_empty() {
+        body.push(
+            GSpace::new(
+                style.get_number_or("value.struct.empty.w", 5.0),
+                style.get_number_or("value.struct.empty.h", 5.0),
+            )
+            .clone_box(),
+        );
+    }
     let g_body = hstack(body, canvas)?;
 
     ds.padding = style.get_padding("value.struct.padding", 0.0);

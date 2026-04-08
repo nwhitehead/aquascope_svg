@@ -22,6 +22,11 @@ struct Args {
     )]
     scale: Option<f64>,
     #[arg(
+        help = "Choose theme, choices are: dark, light, transparent",
+        long
+    )]
+    theme: Option<String>,
+    #[arg(
         help = "Output filename(s), required, (use - for stdout), (must be PNG)",
         long
     )]
@@ -58,6 +63,8 @@ fn main() -> Result<()> {
         ));
     }
 
+    let theme = args.theme.unwrap_or("default".to_string());
+    let scale = (args.scale.unwrap_or(1.0)) as f32;
     for (input_filename, output_filename) in std::iter::zip(args.input, args.output) {
         let output_png = output_filename.ends_with(".png");
         if !output_png {
@@ -69,7 +76,7 @@ fn main() -> Result<()> {
         let contents = fs::read_to_string(&input_filename)
             .map_err(|err| anyhow!("{}, could not read input filename: {}", err, input_filename))?;
         let program = parse(&contents)?;
-        let canvas = draw_program(&program, (args.scale.unwrap_or(1.0)) as f32)?;
+        let canvas = draw_program(&program, scale, &theme)?;
         canvas.save(&output_filename)?;
     }
     Ok(())

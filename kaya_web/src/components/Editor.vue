@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import { ref, watch, useTemplateRef, nextTick } from 'vue';
+import { ref, watch, computed, nextTick } from 'vue';
 import { Edit, Download } from '@element-plus/icons-vue';
 import { useDark } from '@vueuse/core';
 import Kaya from './Kaya.vue';
@@ -30,6 +30,7 @@ const isDark = useDark();
 const autoUpdate = ref(false);
 const kayaKey = ref(0);
 const resolution = ref(100);
+const transparent = ref(false);
 
 function handleError(evt) {
     console.log(`ERROR ${evt}`);
@@ -81,6 +82,11 @@ function handlePNG() {
     });
 }
 
+const theme = computed(() => {
+    if (transparent.value) return 'transparent';
+    return isDark.value ? 'dark' : 'light';
+});
+
 </script>
 
 <template>
@@ -88,7 +94,7 @@ function handlePNG() {
         <el-menu router default-active="1" class="el-menu-vertical-demo">
             <el-menu-item index="/" @click="handleKaya">
                 <el-icon><Download /></el-icon>
-                <template #title>Kaya</template>
+                <template #title>Kaya (text)</template>
             </el-menu-item>
             <el-menu-item index="/" @click="handlePNG">
                 <el-icon><Download /></el-icon>
@@ -110,18 +116,22 @@ function handlePNG() {
                 <div class="gap"></div>
                 <el-button type="primary" @click="handleUpdate" :disabled="updateDisabled()">Update</el-button>
             </div>
+            <p class="label">PNG generation options</p>
             <div class="row">
                 <div class="slider-demo-block">
                     <span class="demonstration">Resolution</span>
                     <el-slider v-model="resolution" :min="50" :max="600" :step="50" show-stops />
                 </div>
             </div>
+            <div class="row">
+                <el-switch active-text="Transparent background" v-model="transparent" />
+            </div>
         </div>
       </el-splitter-panel>
       <el-splitter-panel>
         <div class="demo-panel">
             <div class="kaya">
-                <Kaya :source="renderedCode" :show_partial="true" :scale="resolution / 100.0" @error="handleError" :key="kayaKey"/>
+                <Kaya :source="renderedCode" :show_partial="true" :theme="theme" :scale="resolution / 100.0" @error="handleError" :key="kayaKey"/>
             </div>
         </div>
       </el-splitter-panel>
@@ -157,6 +167,16 @@ html.dark div.demo-panel {
 }
 .el-spliiter-panel {
     overflow: clip;
+}
+.label {
+    font-size: 14px;
+    color: var(--el-text-color-secondary);
+    line-height: 44px;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 0;
 }
 .slider-demo-block {
     max-width: 600px;

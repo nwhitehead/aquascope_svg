@@ -753,8 +753,12 @@ pub fn render_program(
     Ok(Box::new(result))
 }
 
-pub fn draw_program(program: &Program, scale: f32) -> Result<Canvas> {
-    let style = standard_style()?;
+pub fn draw_program(program: &Program, scale: f32, theme: &str) -> Result<Canvas> {
+    let style = match theme {
+        "dark" => standard_style()?,
+        _ => standard_style()?,
+        // "light" => light_style()?,
+    };
     // Start with measurement, empty canvas
     let mut canvas = Canvas::new(1, 1, scale)?;
     canvas.load_fonts(&style);
@@ -779,8 +783,8 @@ pub fn draw_program(program: &Program, scale: f32) -> Result<Canvas> {
     Ok(canvas)
 }
 
-pub fn draw_program_png(program: &Program, scale: f32) -> Result<Vec<u8>> {
-    let canvas = draw_program(program, scale)?;
+pub fn draw_program_png(program: &Program, scale: f32, theme: &str) -> Result<Vec<u8>> {
+    let canvas = draw_program(program, scale, theme)?;
     canvas.png_data()
 }
 
@@ -1079,14 +1083,14 @@ mod tests {
 
     #[test]
     pub fn test_draw_program() -> Result<()> {
-        let canvas = draw_program(&demo_prg(), 1.0)?;
+        let canvas = draw_program(&demo_prg(), 1.0, "dark")?;
         canvas.save("test_draw_program.png")?;
         Ok(())
     }
 
     #[test]
     pub fn test_draw_program_png_data() -> Result<()> {
-        let data = draw_program_png(&demo_prg(), 1.0)?;
+        let data = draw_program_png(&demo_prg(), 1.0, "dark")?;
         // just check for PNG magic at start
         assert_eq!(data[0..4], [0x89, 0x50, 0x4e, 0x47]);
         Ok(())

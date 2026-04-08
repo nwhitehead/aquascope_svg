@@ -92,11 +92,11 @@ pre.error {
     background-color: var(--el-color-danger-light-5);
 }
 img.output {
-    width: 100%;
+    transform-origin: top left;
 }
 </style>
 
 <template>
     <pre v-if="error" class="error">{{ error_text() }}</pre>
-    <img class="output" :src="imgURI" />
+    <img :style="{ 'transform': `scale(${ 1.0 / props.scale })` }" class="output" :src="imgURI" />
 </template>

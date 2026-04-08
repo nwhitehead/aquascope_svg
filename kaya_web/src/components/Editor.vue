@@ -155,7 +155,6 @@ div.demo-panel {
     display: flex;
     flex-direction: column;
     width: 100%;
-    overflow: auto;
     background-color: transparent !important;
 }
 .kaya {

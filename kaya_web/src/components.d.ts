@@ -11,6 +11,7 @@ declare module 'vue' {
     BaseHeader: typeof import('./components/layouts/BaseHeader.vue')['default']
     Editor: typeof import('./components/Editor.vue')['default']
     Kaya: typeof import('./components/Kaya.vue')['default']
+    MdEditor: typeof import('./components/MdEditor.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
   }

@@ -25,6 +25,10 @@
     "html-to-image": "^1.11.11",
     "monaco-editor": "^0.55.1",
     "monaco-editor-vue3": "^1.0.5",
+    "rehype-stringify": "^10.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "unified": "^11.0.5",
     "unocss": "^66.6.7",
     "vue": "^3.5.18",
     "vue-router": "^4.5.1"

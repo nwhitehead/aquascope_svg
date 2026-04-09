@@ -25,6 +25,7 @@
     "html-to-image": "^1.11.11",
     "monaco-editor": "^0.55.1",
     "monaco-editor-vue3": "^1.0.5",
+    "rehype-highlight": "^7.0.2",
     "rehype-stringify": "^10.0.1",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",

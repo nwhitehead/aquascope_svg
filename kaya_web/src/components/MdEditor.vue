@@ -1,14 +1,18 @@
 <script setup lang="ts">
 
-import { ref, watch, computed, nextTick } from 'vue';
+import { ref, watch, computed, onMounted } from 'vue';
 import { useDark } from '@vueuse/core';
 
 import rehypeStringify from 'rehype-stringify';
+import rehypeHighlight from 'rehype-highlight';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import {unified} from 'unified';
+
+import '../styles/github-dark.css';
+import '../styles/github-markdown.css';
 
 const MONACO_EDITOR_OPTIONS = {
     automaticLayout: true,
@@ -31,6 +35,17 @@ p: ptr(H0)
 ## Heap
 H0: (42, ptr(z))
 \`\`\`
+
+And some python:
+
+\`\`\`python
+print(f"What is ${2 + 2}?")
+for i in range(10):
+    print(i * i)
+\`\`\`
+
+Yes
+
 `;
 
 const code = ref(DEFAULT_CODE);
@@ -45,6 +60,7 @@ const processor = unified()
     .use(remarkGfm)
     .use(remarkMath)
     .use(remarkRehype, { allowDangerousHtml: false })
+    .use(rehypeHighlight)
     .use(rehypeStringify);
 
 async function handleUpdate() {
@@ -70,6 +86,10 @@ watch(() => [code.value, theme.value], () => {
     timeoutId = setTimeout(() => handleUpdate(), INPUT_DEBOUCE_DELAY);
 });
 
+onMounted(() => {
+    handleUpdate();
+});
+
 </script>
 
 <template>
@@ -87,8 +107,8 @@ watch(() => [code.value, theme.value], () => {
         </div>
       </el-splitter-panel>
       <el-splitter-panel>
-        <div class="demo-panel" v-html="renderedHtml">
-        </div>
+        <article class="markdown-body" v-html="renderedHtml">
+        </article>
       </el-splitter-panel>
     </el-splitter>
 </div>
@@ -110,11 +130,6 @@ div.demo-panel {
     display: flex;
     flex-direction: column;
     width: 100%;
-    background-color: transparent !important;
-}
-.kaya {
-    background-color: transparent !important;
-    width: fit-content;
 }
 html.dark div.demo-panel {
     background-color: var(--el-bg-color);
@@ -155,6 +170,19 @@ html.dark div.demo-panel {
 }
 .slider-demo-block .demonstration + .el-slider {
     flex: 0 0 70%;
+}
+.markdown-body {
+    box-sizing: border-box;
+    min-width: 200px;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 45px;
+}
+
+@media (max-width: 767px) {
+    .markdown-body {
+        padding: 15px;
+    }
 }
 
 </style>

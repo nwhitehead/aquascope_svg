@@ -4,6 +4,8 @@ import { ref, watch, computed, nextTick } from 'vue';
 import { useDark } from '@vueuse/core';
 
 import rehypeStringify from 'rehype-stringify';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import {unified} from 'unified';
@@ -40,6 +42,8 @@ const transparent = ref(false);
 
 const processor = unified()
     .use(remarkParse)
+    .use(remarkGfm)
+    .use(remarkMath)
     .use(remarkRehype, { allowDangerousHtml: false })
     .use(rehypeStringify);
 

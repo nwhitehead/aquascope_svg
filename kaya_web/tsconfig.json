@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "target": "esnext",
     "jsx": "preserve",
     "lib": ["esnext", "dom"],

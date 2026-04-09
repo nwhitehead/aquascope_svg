@@ -13,10 +13,10 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { install as VueMonacoEditorPlugin } from '@guolao/vue-monaco-editor';
 import ElementPlus from 'element-plus'
 
-import MdEditor from './components/MdEditor.vue';
+import Editor from './components/Editor.vue';
 
 const routes = [
-    { path: '/', component: MdEditor },
+    { path: '/', component: Editor },
 ];
 
 const app = createApp(App);

@@ -2,7 +2,11 @@
 
 import { ref, watch, computed, nextTick } from 'vue';
 import { useDark } from '@vueuse/core';
-import Kaya from './Kaya.vue';
+
+import rehypeStringify from 'rehype-stringify';
+import remarkParse from 'remark-parse';
+import remarkRehype from 'remark-rehype';
+import {unified} from 'unified';
 
 const MONACO_EDITOR_OPTIONS = {
     automaticLayout: true,
@@ -10,7 +14,12 @@ const MONACO_EDITOR_OPTIONS = {
     formatOnPaste: true,
 };
 
-const code = ref(`
+const INPUT_DEBOUCE_DELAY = 300;
+
+const DEFAULT_CODE = `
+Here is a Kaya diagram showing memory:
+
+\`\`\`kaya
 # L1
 ## Stack
 x: 5
@@ -19,68 +28,42 @@ z: ptr(x)
 p: ptr(H0)
 ## Heap
 H0: (42, ptr(z))
-`);
+\`\`\`
+`;
 
-const renderedCode = ref("");
+const code = ref(DEFAULT_CODE);
+const renderedCode = ref('');
+const renderedTheme = ref('');
+const renderedHtml = ref('');
 const isDark = useDark();
-const autoUpdate = ref(false);
-const kayaKey = ref(0);
-const resolution = ref(100);
 const transparent = ref(false);
 
-function handleError(evt) {
-    console.log(`ERROR ${evt}`);
-}
+const processor = unified()
+    .use(remarkParse)
+    .use(remarkRehype, { allowDangerousHtml: false })
+    .use(rehypeStringify);
 
-function handleUpdate() {
-    renderedCode.value = code.value;
-    kayaKey.value++;
-}
-
-function updateDisabled() {
-    return false;
-    // // or we could do:
-    // return renderedCode.value === code.value;
-}
-
-watch(() => code.value, () => {
-    if (autoUpdate.value) handleUpdate();
-});
-
-// use the above approach for string input
-function base64(string) {
-    const bytes = new TextEncoder().encode(string);
-    const binString = String.fromCodePoint(...bytes);
-    return btoa(binString);
-}
-
-function saveAsFile(dataUri, filename) {
-    var link = document.createElement('a');
-    link.download = filename;
-    link.href = dataUri;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-function handleKaya() {
-    const dataURL = `data:text/plain;base64,${base64(code.value + '\n')}`
-    saveAsFile(dataURL, "diagram.kaya");
-}
-
-function handlePNG() {
-    handleUpdate();
-    nextTick(() => {
-        nextTick(() => {
-            const dataURL = document.querySelector('img.output').src;
-            saveAsFile(dataURL, "diagram.png");
-        });
-    });
+async function handleUpdate() {
+    if (renderedCode.value !== code.value || renderedTheme.value !== theme.value) {
+        console.log("updated theme=", theme.value);
+        renderedCode.value = code.value;
+        renderedTheme.value = theme.value;
+        const html = await processor.process(renderedCode.value);
+        renderedHtml.value = String(html);
+    }
 }
 
 const theme = computed(() => {
     if (transparent.value) return isDark.value ? 'dark_transparent' : 'light_transparent';
     return isDark.value ? 'dark' : 'light';
+});
+
+let timeoutId: number | undefined = undefined;
+
+watch(() => [code.value, theme.value], () => {
+    // Debouce input changes to input
+    if (timeoutId) clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => handleUpdate(), INPUT_DEBOUCE_DELAY);
 });
 
 </script>
@@ -100,10 +83,7 @@ const theme = computed(() => {
         </div>
       </el-splitter-panel>
       <el-splitter-panel>
-        <div class="demo-panel">
-            <div class="kaya">
-                <Kaya :source="renderedCode" :show_partial="true" :theme="theme" :scale="1.0" @error="handleError" :key="kayaKey"/>
-            </div>
+        <div class="demo-panel" v-html="renderedHtml">
         </div>
       </el-splitter-panel>
     </el-splitter>

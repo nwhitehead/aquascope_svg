@@ -1,8 +1,7 @@
 <script setup lang="ts">
 
 import { ref, watch, onMounted } from 'vue';
-//import init, { parse, parse_partial, draw_program_png } from '../../pkg/kaya_web.js';
-import { ErrorInformation, setOptions, render } from '../kaya.ts';
+import { ErrorInformation, setOptions, render } from '../../../kaya_ts/ts/kaya.ts';
 
 const props = defineProps<{
     source: string,

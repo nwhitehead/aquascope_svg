@@ -11,14 +11,14 @@ ci:
 
 # Build WASM files from Rust library
 wasm:
-    cd kaya_web && wasm-pack build --target=web
+    cd kaya_ts && wasm-pack build --target=web
 
 # Serve web app locally for testing
 dev:
     cd kaya_web && npm run dev
 
-# Build rust part
-build:
+# Build vue demo app for deployment
+build_website:
     cd kaya_web && npm run build
 
 # Deploy to website (assumes webserver already configured)

@@ -11,7 +11,7 @@ ci:
 
 # Build WASM files from Rust library
 wasm:
-    cd kaya_ts && wasm-pack build --target=web
+    cd kaya_ts && wasm-pack build --target=web && node ts/build.ts
 
 # Serve web app locally for testing
 dev:

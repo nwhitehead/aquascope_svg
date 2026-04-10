@@ -435,8 +435,14 @@ pub fn render_value(
         Value::Struct(a) => render_value_struct(a, prefix, ptr_dst_prefix, render_state, canvas)?,
         Value::Invalid => render_value_invalid(render_state, canvas)?,
     };
-    let tagged = GTagged::new(item, prefix);
-    render_state.register(prefix);
+    // see if tag is already present
+    let mut tag = prefix.to_string();
+    // see if tag is already present, keep adding ' to end if so
+    while render_state.ids().contains(&tag) {
+        tag.push('\'');
+    }
+    let tagged = GTagged::new(item, &tag);
+    render_state.register(&tag);
     Ok(Box::new(tagged))
 }
 
@@ -750,6 +756,9 @@ pub fn render_program(
         dst_tag.push_str(&format!("{}:{}", dst_prefix, ptr.name));
         for idx in &ptr.selectors {
             dst_tag.push_str(&format!(".{}", idx));
+        }
+        for i in 0..ptr.borrow {
+            dst_tag.push('\'');
         }
         let dst_r = g_body
             .get_tagged(&dst_tag)

@@ -63,6 +63,31 @@ q: ptr(x')
 ## Heap
 </pre>
 
+<p>Example from the <code>README.md</code> page:</p>
+<pre class="kaya">
+# L1
+## Stack
+### main
+x: ptr(H0)
+y: ptr(H1)
+## Heap
+H0: 1
+H1: (4, ptr(H2))
+##
+H2: (2, *)
+
+# L2
+## Stack
+### main
+x: ptr(H0)
+y: *
+z: ptr(H2.0).ds
+## Heap
+H0: 1
+H1: (4, ptr(H2))
+##
+H2: (2, *)
+</pre>
 
 <script type="module">
 

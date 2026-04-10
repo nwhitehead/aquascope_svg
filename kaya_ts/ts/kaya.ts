@@ -13,8 +13,8 @@ export type Options = {
 
 export type ErrorInformation = {
     msg: string,
-    row: number,
-    col: number,
+    row?: number,
+    col?: number,
 }
 
 export type Response = {
@@ -80,7 +80,7 @@ export async function run(opts: Options | null) {
                 const img = document.createElement('img');
                 img.src = response.imgUri || '';
                 err.after(img);
-                return;
+                continue;
             }
             // If we are not showing errors on page, at least log it to console
             console.log('KAYA: Error', response.error.msg);
@@ -130,9 +130,13 @@ export async function render(src: string, opts: Options | null) {
         // Use partial parse for rendering
         prg = res2.Success;
     }
-    const pngData = draw_program_png(prg, options.scale || 1.0, options.theme || "dark");
-    const imgUri = createDataURI(pngData);
-    return { error, imgUri };
+    try {
+        const pngData = draw_program_png(prg, options.scale || 1.0, options.theme || "dark");
+        const imgUri = createDataURI(pngData);
+        return { error, imgUri };
+    } catch (error) {
+        return { error: { msg: error } };
+    }
 }
 
 export default {

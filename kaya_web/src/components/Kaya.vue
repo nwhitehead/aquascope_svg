@@ -51,9 +51,10 @@ function error_text() {
 </script>
 
 <style scoped>
-pre.error {
+code.language-kaya pre.error {
     text-align: left;
-    background-color: var(--el-color-danger-light-5);
+    /* background-color: var(--el-color-danger-light-5); */
+    background-color: #f00;
 }
 img.output {
     transform-origin: top left;

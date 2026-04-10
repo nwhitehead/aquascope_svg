@@ -1,15 +1,15 @@
 {
-  "name": "kaya-ts",
-  "type": "module",
-  "version": "0.1.0",
-  "private": true,
-  "packageManager": "pnpm@10.14.0",
-  "license": "MIT",
-  "homepage": "https://kaya.shimmermathlabs.com",
-  "repository": {
-    "url": "https://github.com/nwhitehead/kaya"
-  },
-  "devDependencies": {
-    "esbuild": "0.28.0"
-  }
+    "name": "kaya-ts",
+    "type": "module",
+    "version": "0.1.0",
+    "private": true,
+    "packageManager": "pnpm@10.14.0",
+    "license": "MIT",
+    "homepage": "https://kaya.shimmermathlabs.com",
+    "repository": {
+        "url": "https://github.com/nwhitehead/kaya"
+    },
+    "devDependencies": {
+        "esbuild": "0.28.0"
+    }
 }

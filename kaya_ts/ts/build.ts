@@ -1,13 +1,13 @@
-import * as esbuild from 'esbuild'
+import * as esbuild from 'esbuild';
 
 await esbuild.build({
-  entryPoints: ['./ts/kaya.ts'],
-  bundle: true,
-  minify: true,
-  sourcemap: true,
-  outdir: './dist',
-  outfile: 'kaya.js',
-  banner: {
-    ts: '// hithere',
-  }
-})
+    entryPoints: ['./ts/kaya.ts'],
+    bundle: true,
+    format: 'esm',
+    minify: true,
+    sourcemap: true,
+    outdir: './dist',
+    banner: {
+        js: '// hithere',
+    },
+});

@@ -98,22 +98,7 @@ the pointer arrow.
 
 .dn .de .dw .ds         End destination on north side, east side, ...
 
-.straight .arc .fluid   Strategies to draw the arrow.
-.magnet .grid           Default is .fluid.
-
-.svlight                Set gravity of the source, from very light
-.slight                 to very heavy. Higher gravity influences the
-.smedium                arrow more.
-.sheavy
-.svheavy
-
-.dvlight ...            Set gravity of the destination.
-
-.vl .vlight             Set gravity of both source and destination.
-.l .light
-.m .medium
-.h .heavy
-.vh .vheavy
+.c0 .c1 .c2 ...         Set color of arrow (actual color determined by theme)
 ```
 
 ## Example

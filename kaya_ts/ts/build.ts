@@ -1,4 +1,5 @@
 import * as esbuild from 'esbuild';
+import { copy } from 'esbuild-plugin-copy';
 
 await esbuild.build({
     entryPoints: ['./ts/kaya.ts'],
@@ -10,4 +11,12 @@ await esbuild.build({
     banner: {
         js: '// hithere',
     },
+    plugins: [
+        copy({
+            assets: {
+                from: ['./pkg/kaya_ts_bg.wasm'],
+                to: ['.'],
+            },
+        }),
+    ],
 });

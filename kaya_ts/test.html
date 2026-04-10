@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kaya Diagram Tool Test</title>
+  </head>
+  <body>
+    <pre class="kaya">
+# L1
+## Stack
+x: 5
+y: 7
+p: ptr(x)
+## Heap
+/H0: 8
+    </pre>
+    <script type="module">
+
+import kaya from './dist/kaya.js';
+kaya.initialize({ scale: 2 });
+    </script>
+  </body>
+</html>

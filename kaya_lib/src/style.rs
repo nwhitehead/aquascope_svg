@@ -288,6 +288,16 @@ pub fn dark_base_style() -> Result<Styling> {
     style.add_color("step.separator.color", color("#404040")?);
     style.add_color("step.border.color", color("#404040")?);
     style.add_color("arrow.color", color("#ff0")?);
+    style.add_color("arrow.color0", color("#ff0")?);
+    style.add_color("arrow.color1", color("#0af")?);
+    style.add_color("arrow.color2", color("#a6f")?);
+    style.add_color("arrow.color3", color("#4f0")?);
+    style.add_color("arrow.color4", color("#ff0")?);
+    style.add_color("arrow.color5", color("#eee")?);
+    style.add_color("arrow.color6", color("#ff0")?);
+    style.add_color("arrow.color7", color("#ff0")?);
+    style.add_color("arrow.color8", color("#ff0")?);
+    style.add_color("arrow.color9", color("#ff0")?);
     style.add_color("arrow.outline.color", color("#000")?);
     buildout_style(&mut style);
     Ok(style)
@@ -329,6 +339,16 @@ pub fn light_base_style() -> Result<Styling> {
     style.add_color("step.separator.color", color("#1b1b1b")?);
     style.add_color("step.border.color", color("#aaa")?);
     style.add_color("arrow.color", color("#22c")?);
+    style.add_color("arrow.color0", color("#22c")?);
+    style.add_color("arrow.color1", color("#82c")?);
+    style.add_color("arrow.color2", color("#282")?);
+    style.add_color("arrow.color3", color("#28c")?);
+    style.add_color("arrow.color4", color("#d72")?);
+    style.add_color("arrow.color5", color("#555")?);
+    style.add_color("arrow.color6", color("#222")?);
+    style.add_color("arrow.color7", color("#86c")?);
+    style.add_color("arrow.color8", color("#060")?);
+    style.add_color("arrow.color9", color("#882")?);
     style.add_color("arrow.outline.color", color("#fff")?);
     buildout_style(&mut style);
     Ok(style)

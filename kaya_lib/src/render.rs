@@ -656,6 +656,30 @@ fn choose_arrow(src_rect: &Rect, dst_rect: &Rect, help: &[String], style: &Styli
                 src_direction = Direction::Bottom;
                 dst_direction = Direction::Bottom;
             }
+            ".sg0" => src_gravity = 0,
+            ".sg1" => src_gravity = 1,
+            ".sg2" => src_gravity = 2,
+            ".sg3" => src_gravity = 3,
+            ".sg4" => src_gravity = 4,
+            ".sg5" => src_gravity = 5,
+            ".sg6" => src_gravity = 6,
+            ".sg7" => src_gravity = 7,
+            ".sg8" => src_gravity = 8,
+            ".sg9" => src_gravity = 9,
+            ".dg0" => dst_gravity = 0,
+            ".dg1" => dst_gravity = 1,
+            ".dg2" => dst_gravity = 2,
+            ".dg3" => dst_gravity = 3,
+            ".dg4" => dst_gravity = 4,
+            ".dg5" => dst_gravity = 5,
+            ".dg6" => dst_gravity = 6,
+            ".dg7" => dst_gravity = 7,
+            ".dg8" => dst_gravity = 8,
+            ".dg9" => dst_gravity = 9,
+            ".g0" => {
+                src_gravity = 0;
+                dst_gravity = 0;
+            }
             ".g1" => {
                 src_gravity = 1;
                 dst_gravity = 1;
@@ -776,7 +800,10 @@ fn choose_arrow(src_rect: &Rect, dst_rect: &Rect, help: &[String], style: &Styli
             head_length: style.get_number_or("arrow.head.length", 1.0),
             head_width: style.get_number_or("arrow.head.width", 1.0),
             dent_ratio: style.get_number_or("arrow.dent.ratio", 0.0),
-            color: style.get_color_or("arrow.color", ColorU8::from_rgba(255, 255, 0, 255)),
+            color: style.get_color_or(
+                &format!("arrow.color{}", color),
+                ColorU8::from_rgba(255, 255, 0, 255),
+            ),
             outline: Some(ArrowOutline {
                 width: style.get_number_or("arrow.outline.width", 1.0),
                 color: style.get_color_or("arrow.outline.color", ColorU8::from_rgba(0, 0, 0, 255)),

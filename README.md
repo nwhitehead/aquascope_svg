@@ -4,10 +4,9 @@ Kaya is a set of tools for producing beautiful memory state diagrams for small
 example programs.
 
 Kaya introduces a human readable diagram text format that can be used to create
-diagrams for any language. The diagrams created can be in HTML or PNG format and
-aim to be high quality for publication online or in print. Kaya can also connect
-to the Aquascope project to automatically analyze Rust code and produce
-diagrams.
+diagrams for any language. The diagrams created can be in PNG format and aim to
+be high quality for publication online or in print. Kaya can also connect to the
+Aquascope project to automatically analyze Rust code and produce diagrams.
 
 ## Kaya Format
 
@@ -53,11 +52,11 @@ See [FORMAT.md](docs/FORMAT.md) for details on the `kaya` diagram description fo
 The simplest workflow for `kaya` is:
 
 ```
-Kaya format file --> HTML/PNG diagram
+Kaya format file --> PNG diagram
 ```
 
 In this workflow you write a `kaya` diagram description directly in a text
-editor then use the `render_kaya` tool to create the output HTML/PNG file. The
+editor then use the `render_kaya` tool to create the output PNG file. The
 diagram can then be included inside other documentation.
 
 If a build system is being used then changes to the `kaya` source files can
@@ -69,27 +68,27 @@ It is also possible to put `kaya` format diagrams inside other Markdown
 documents. The workflow then becomes:
 
 ```
-Markdown -> extrated Kaya --> HTML/PNG diagram
+Markdown -> extrated Kaya --> PNG diagram
 ```
 
 In this case the locations where `kaya` diagrams appear in the source text can
 be code fences in the Markdown source tagged with `kaya`. This workflow requires
 a Markdown processor plugin that extracts the `kaya` blocks, calls `render_kaya`
-to get HTML/PNG output, then includes the output in the final rendered Markdown.
+to get PNG output, then includes the output in the final rendered Markdown.
 
 ### Automatic Rust Analysis Workflow
 
 The general flow:
 
 ```
-Rust code --> JSON analysis --> Kaya format --> HTML/PNG diagram
+Rust code --> JSON analysis --> Kaya format --> PNG diagram
 ```
 
 #### Details
 
 The [Aquascope](https://github.com/cognitive-engineering-lab/aquascope) project
-does the Rust code analysis (Rust to JSON). This can be a bit involved since
-it involves compiling the snippet with a custom Rust compiler that allows some
+does the Rust code analysis (Rust to JSON). This can be a bit involved since it
+involves compiling the snippet with a custom Rust compiler that allows some
 types of errors and looking at the generated intermediate bytecode to extract
 program state.
 
@@ -101,9 +100,9 @@ containing a short Rust program and it outputs the JSON analysis data to
 Next, this project has a tool `aquascope_json_to_kaya` for converting the JSON
 format to `kaya` format. 
 
-This project has a tool `render_kaya` for rendering `kaya` diagrams into
-HTML/PNG. Usually this will be called from some sort of document preparation
-system (e.g. during Markdown rendering).
+This project has a tool `render_kaya` for rendering `kaya` diagrams into PNG.
+Usually this will be called from some sort of document preparation system (e.g.
+during Markdown rendering).
 
 #### Markdown plugin
 
@@ -125,22 +124,18 @@ The `render_kaya` tool has the following options:
 ```
 A tool for rendering Kaya diagrams
 
-Usage: render_kaya [OPTIONS] --output <OUTPUT> <INPUT>
+Usage: render_kaya [OPTIONS] [INPUT]...
 
 Arguments:
-  <INPUT>  Input filename
+  [INPUT]...  Input filename(s)
 
 Options:
-      --show-parse
-          Parse the input and show debug parsing output to stdout
-      --output-png-scale <OUTPUT_PNG_SCALE>
-          Set scale factor for PNG output, 1.0 is web standard 96 DPI, 3.125 is 300 DPI
-      --show-heap
-          Show labels starting with H (heap) (default is to hide)
-      --output <OUTPUT>
-          Output filename, required, (use - for stdout), (HTML/PNG allowed)
-  -h, --help
-          Print help```
+      --show-parse       Parse the input and show debug parsing output to stdout
+      --scale <SCALE>    Set scale factor for PNG output, 1.0 is web standard 96 DPI, 3.125 is 300 DPI
+      --theme <THEME>    Choose theme, choices are: dark, light, dark_transparent, light_transparent
+      --output <OUTPUT>  Output filename(s), required, (use - for stdout), (must be PNG)
+  -h, --help             Print help
+```
 
 ## Building from source
 

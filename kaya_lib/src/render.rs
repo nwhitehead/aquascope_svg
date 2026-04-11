@@ -8,7 +8,7 @@ use crate::arrow::{ArcOptions, Arrow, ArrowOptions, ArrowOutline, ArrowType, Flu
 use crate::canvas::Canvas;
 use crate::draw::{
     Drawable, FormulaType, GArray, GBox, GLine, GPadding, GSpace, GTagged, GText, border,
-    compute_align, hstack, hstack_top, scale, vstack_left, vstack_none,
+    compute_align, hstack, hstack_top, norm, scale, vstack_left, vstack_none,
 };
 use crate::draw_state::DrawState;
 use crate::states::{Def, Location, NamedStruct, Program, Ptr, Region, Step, Value};
@@ -628,6 +628,8 @@ fn choose_arrow(src_rect: &Rect, dst_rect: &Rect, help: &[String], style: &Styli
     let mut src_direction = Direction::Auto;
     let mut dst_direction = Direction::Auto;
     let mut color = 0; // index
+    let mut src_gravity = 5;
+    let mut dst_gravity = 5;
     for h in help {
         match h.as_str() {
             ".sn" => src_direction = Direction::Top,
@@ -638,6 +640,58 @@ fn choose_arrow(src_rect: &Rect, dst_rect: &Rect, help: &[String], style: &Styli
             ".de" => dst_direction = Direction::Right,
             ".ds" => dst_direction = Direction::Bottom,
             ".dw" => dst_direction = Direction::Left,
+            ".e" => {
+                src_direction = Direction::Right;
+                dst_direction = Direction::Right;
+            }
+            ".w" => {
+                src_direction = Direction::Left;
+                dst_direction = Direction::Left;
+            }
+            ".n" => {
+                src_direction = Direction::Top;
+                dst_direction = Direction::Top;
+            }
+            ".s" => {
+                src_direction = Direction::Bottom;
+                dst_direction = Direction::Bottom;
+            }
+            ".g1" => {
+                src_gravity = 1;
+                dst_gravity = 1;
+            }
+            ".g2" => {
+                src_gravity = 2;
+                dst_gravity = 2;
+            }
+            ".g3" => {
+                src_gravity = 3;
+                dst_gravity = 3;
+            }
+            ".g4" => {
+                src_gravity = 4;
+                dst_gravity = 4;
+            }
+            ".g5" => {
+                src_gravity = 5;
+                dst_gravity = 5;
+            }
+            ".g6" => {
+                src_gravity = 6;
+                dst_gravity = 6;
+            }
+            ".g7" => {
+                src_gravity = 7;
+                dst_gravity = 7;
+            }
+            ".g8" => {
+                src_gravity = 8;
+                dst_gravity = 8;
+            }
+            ".g9" => {
+                src_gravity = 9;
+                dst_gravity = 9;
+            }
             ".c0" => color = 0,
             ".c1" => color = 1,
             ".c2" => color = 2,
@@ -704,13 +758,18 @@ fn choose_arrow(src_rect: &Rect, dst_rect: &Rect, help: &[String], style: &Styli
         pick_side(src_rect, &src_direction) + scale(get_direction_vector(&src_direction), src_gap);
     let dst_p =
         pick_side(dst_rect, &dst_direction) + scale(get_direction_vector(&dst_direction), dst_gap);
+    let dist = norm(point(src_p.x - dst_p.x, src_p.y - dst_p.y));
+    let src_gravity_f = dist * (src_gravity as f32) / 5.0 * 0.3;
+    let dst_gravity_f = dist * (dst_gravity as f32) / 5.0 * 0.3;
     Arrow::new(
         src_p,
         dst_p,
-        ArrowType::Arc(ArcOptions {
+        ArrowType::Fluid(FluidOptions {
             start_dir: get_direction_vector(&src_direction),
             // end_dir is reversed because arrow is going into that side
             end_dir: scale(get_direction_vector(&dst_direction), -1.0),
+            start_gravity: src_gravity_f,
+            end_gravity: dst_gravity_f,
         }),
         ArrowOptions {
             width,

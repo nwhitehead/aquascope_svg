@@ -17,7 +17,6 @@ const error = ref<ErrorInformation | null>(null);
 let imgURI = ref<string>('');
 
 async function renderDiagram() {
-    console.log('Starting render');
     // Access dependency on props before we wait for anything so it's tracked properly
     const scale = (props.scale === undefined) ? 1.0 : props.scale;
     const theme = (props.theme === undefined) ? "" : props.theme;

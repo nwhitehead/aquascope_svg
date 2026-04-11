@@ -226,8 +226,10 @@ fn buildout_style(style: &mut Styling) {
     style.add_number("value.struct.empty.h", 20.0);
     style.add_string("value.invalid.font", "mono");
     style.add_number("value.invalid.font_size", 48.0);
-    style.add_number("value.invalid.padding", 0.0);
-    style.add_number("value.invalid.padding.bottom", 10.0);
+    style.add_number("value.invalid.padding.left", 0.0);
+    style.add_number("value.invalid.padding.right", 0.0);
+    style.add_number("value.invalid.padding.top", -8.0);
+    style.add_number("value.invalid.padding.bottom", 2.0);
     style.add_string("region.header.font", "serif");
     style.add_number("region.header.font_size", 23.0);
     style.add_number("region.header.padding", 0.0);

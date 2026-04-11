@@ -8,10 +8,19 @@ import { ElMenu, ElMenuItem } from 'element-plus';
 
 <template>
   <el-menu class="el-menu-bh" mode="horizontal" :ellipsis="false" router>
+    <el-menu-item index="/about">
+      <div class="flex items-center justify-center gap-2">
+        <span>Kaya</span>
+      </div>
+    </el-menu-item>
     <el-menu-item index="/">
       <div class="flex items-center justify-center gap-2">
-        <div class="text-xl" i-el-data-analysis />
-        <span>Kaya</span>
+        <span>Diagram</span>
+      </div>
+    </el-menu-item>
+    <el-menu-item index="/markdown">
+      <div class="flex items-center justify-center gap-2">
+        <span>Markdown</span>
       </div>
     </el-menu-item>
 

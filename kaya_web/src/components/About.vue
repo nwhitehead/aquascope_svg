@@ -36,19 +36,22 @@ const processor = unified()
     .use(rehypeStringify);
 
 async function updateKaya() {
-    run({
-        scale: 0.85,
-        querySelector: '.language-kaya',
-        theme: theme.value,
+    const html = await processor.process(manualMarkdownSrc);
+    rendered.value = '';
+    nextTick(() => {
+        rendered.value = String(html);
+        nextTick(() => {
+            run({
+                scale: 0.85,
+                querySelector: '.language-kaya',
+                theme: theme.value,
+            });
+        });
     });
 }
 
 onMounted(async () => {
-    const html = await processor.process(manualMarkdownSrc);
-    rendered.value = String(html);
-    nextTick(() => {
-        updateKaya();
-    });
+    updateKaya();
     watch(() => [theme.value], () => {
         updateKaya();
     });

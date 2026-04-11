@@ -9,12 +9,16 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
-import {unified} from 'unified';
+import { unified } from 'unified';
 
-import { ErrorInformation, render, initialize, run } from '../../../kaya_ts/ts/kaya.ts';
+import manualMarkdownSrc from '../../../docs/manual.md?raw';
+
+import { initialize, run } from '../../../kaya_ts/ts/kaya.ts';
 
 import '../styles/github-dark.css';
 import '../styles/github-markdown.css';
+
+initialize({ startOnLoad: false });
 
 const MONACO_EDITOR_OPTIONS = {
     automaticLayout: true,
@@ -24,31 +28,7 @@ const MONACO_EDITOR_OPTIONS = {
 
 const INPUT_DEBOUCE_DELAY = 300;
 
-const DEFAULT_CODE = `
-Here is a Kaya diagram showing memory:
-
-\`\`\`kaya
-# L1
-## Stack
-x: 5
-y: 7
-z: ptr(x)
-p: ptr(H0)
-## Heap
-H0: (42, ptr(z))
-\`\`\`
-
-And some python:
-
-\`\`\`python
-print(f"What is ${2 + 2}?")
-for i in range(10):
-    print(i * i)
-\`\`\`
-
-Yes
-
-`;
+const DEFAULT_CODE = manualMarkdownSrc;
 
 const code = ref(DEFAULT_CODE);
 const renderedCode = ref('');
@@ -67,35 +47,11 @@ const processor = unified()
     .use(remarkGfm)
     .use(remarkMath)
     .use(remarkRehype, { allowDangerousHtml: false })
-    .use(rehypeHighlight)
+    .use(rehypeHighlight, { plainText: ['kaya'] })
     .use(rehypeStringify);
 
 async function updateKaya() {
-    run();
-    // const elems = document.querySelectorAll("pre code.language-kaya");
-    // for (const elem of elems) {
-    //     const src = elem.innerHTML;
-    //     elem.innerHTML = '';
-    //     // Access dependency on props before we wait for anything so it's tracked properly
-    //     const scale = 1.0;
-    //     const theme = "dark";
-    //     const showPartial = true;
-    //     // If source is empty, render nothing
-    //     if (src === '') {
-    //         return;
-    //     }
-    //     const response = await render(src, { scale, theme, showPartial });
-    //     if (response.error) {
-    //         console.log(response.error);
-    //         const err = document.createElement('pre');
-    //         err.innerHTML = response.error.msg;
-    //         err.classList.add("error");
-    //         elem.appendChild(err);
-    //     }
-    //     const img = document.createElement('img');
-    //     img.src = response.imgUri || '';
-    //     elem.appendChild(img);
-    // }
+    run({ querySelector: '.language-kaya'});
 }
 
 async function handleUpdate() {

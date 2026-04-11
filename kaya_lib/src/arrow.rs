@@ -211,8 +211,12 @@ fn bounds_fluid_arrow(
     canvas: &Canvas,
 ) -> Result<Rect> {
     let (head_path, body_path) = paths_fluid_arrow(start, end, options, fluid_options, canvas)?;
-    let head_b = head_path.bounds();
-    let body_b = body_path.bounds();
+    let head_b = head_path
+        .compute_tight_bounds()
+        .ok_or("Need tight bounds")?;
+    let body_b = body_path
+        .compute_tight_bounds()
+        .ok_or("Need tight bounds")?;
     Ok(Rect {
         min: point(
             head_b.left().min(body_b.left()),

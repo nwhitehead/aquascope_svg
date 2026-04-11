@@ -55,6 +55,7 @@ async function updateKaya() {
     run({
         scale: 0.85,
         querySelector: '.language-kaya',
+        theme: theme.value,
     });
 }
 
@@ -63,9 +64,12 @@ async function handleUpdate() {
         renderedCode.value = code.value;
         renderedTheme.value = theme.value;
         const html = await processor.process(renderedCode.value);
-        renderedHtml.value = String(html);
+        renderedHtml.value = '';
         nextTick(() => {
-            updateKaya();
+            renderedHtml.value = String(html);
+            nextTick(() => {
+                updateKaya();
+            });
         });
     }
 }

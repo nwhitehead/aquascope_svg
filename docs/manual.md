@@ -31,31 +31,34 @@ include the following things:
 * Illustration of the heap with values
 * Arrows drawn between values on the stack and heap representing pointers or references
 
+You might use the diagrams in things like tutorials or other explanatory texts
+desribing various programming concepts. The diagrams are also well suited to
+programming exercises and quiz problems inside of learning resources. The format
+is designed to be relatively simple to automatically generate so the diagrams
+can also be used within systems doing program analysis to communicate results of
+the analysis. Finally, Kaya diagrams are amenable to generation by LLMs for
+general communication purposes so can be part of agentic program analysis or
+synthesis workflows.
+
 ## Basic Examples
 
-## More Examples
+Here is a simple Rust program, with location comments `L0` through `L4` marking
+locations at runtime that we will illustrate with diagrams.
 
-## Setting Up
-
-Here is a Kaya diagram showing memory:
-
-```kaya
-# L1
-## Stack
-x: 5
-y: 7
-z: ptr(x)
-p: ptr(H0)
-## Heap
-H0: (42, ptr(z))
+```rust
+fn main()                  /* L0 */ {
+  let mut x = Box::new(0); /* L1 */
+  *x += 1;                 /* L2 */
+  let y = x;               /* L3 */
+}                          /* L4 */
 ```
-
-And some python:
 
 ```python
 print(f"What is 4?")
 for i in range(10):
     print(i * i)
 ```
+## More Examples
 
-Yes
+## Setting Up
+

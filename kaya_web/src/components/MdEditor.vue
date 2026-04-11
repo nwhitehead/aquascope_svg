@@ -15,9 +15,6 @@ import manualMarkdownSrc from '../../../docs/manual.md?raw';
 
 import { initialize, run } from '../../../kaya_ts/ts/kaya.ts';
 
-import '../styles/github-dark.css';
-import '../styles/github-markdown.css';
-
 initialize({ startOnLoad: false });
 
 const MONACO_EDITOR_OPTIONS = {

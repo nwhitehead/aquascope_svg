@@ -15,9 +15,6 @@ import manualMarkdownSrc from '../../../docs/manual.md?raw';
 
 import { initialize, run } from '../../../kaya_ts/ts/kaya.ts';
 
-import '../styles/github-dark.css';
-import '../styles/github-markdown.css';
-
 initialize({ startOnLoad: false });
 
 const isDark = useDark();
@@ -93,6 +90,11 @@ html.dark div.demo-panel {
     max-width: 980px;
     margin: 0 auto;
     padding: 45px;
+    height: fit-content;
+}
+
+.markdown-body pre code {
+    color: #f00;
 }
 
 @media (max-width: 767px) {

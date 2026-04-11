@@ -2,6 +2,10 @@
 
 import BaseHeader from './components/layouts/BaseHeader.vue';
 
+import './styles/github.css';
+import './styles/github-dark.css';
+import './styles/github-markdown.css';
+
 </script>
 
 <template>

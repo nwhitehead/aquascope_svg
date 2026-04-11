@@ -7,11 +7,13 @@
 
   Outdated base version: https://github.com/primer/github-syntax-dark
   Current colors taken from GitHub's CSS
+
+  MODIFIED to have html.dark around and removed bg color
 */
+html.dark {
 
 .hljs {
   color: #c9d1d9;
-  background: #0d1117;
 }
 
 .hljs-doctag,
@@ -122,4 +124,6 @@
 .hljs-punctuation,
 .hljs-tag {
   /* purposely ignored */
+}
+
 }

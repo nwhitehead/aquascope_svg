@@ -52,7 +52,10 @@ const processor = unified()
     .use(rehypeStringify);
 
 async function updateKaya() {
-    run({ querySelector: '.language-kaya'});
+    run({
+        scale: 0.85,
+        querySelector: '.language-kaya',
+    });
 }
 
 async function handleUpdate() {
@@ -176,7 +179,6 @@ html.dark div.demo-panel {
 .error {
     text-align: left;
     background-color: #f00;
-    /* background-color: var(--el-color-danger-light-5); */
 }
 
 </style>

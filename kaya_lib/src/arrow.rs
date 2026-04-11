@@ -2,7 +2,9 @@
 
 use ab_glyph::{Point, Rect, point};
 use anyhow::{Result, bail};
-use tiny_skia::{ColorU8, FillRule, LineCap, LineJoin, Paint, PathBuilder, Stroke, Transform};
+use tiny_skia::{
+    ColorU8, FillRule, LineCap, LineJoin, Paint, Path, PathBuilder, Stroke, Transform,
+};
 
 use crate::canvas::Canvas;
 use crate::draw::{Drawable, norm, scale};
@@ -86,13 +88,14 @@ impl Arrow {
     }
 }
 
-fn draw_fluid_arrow(
+/// Compute head and body paths for arrow (no actual drawing)
+fn paths_fluid_arrow(
     start: Point,
     end: Point,
     options: &ArrowOptions,
     fluid_options: &FluidOptions,
-    canvas: &mut Canvas,
-) -> Result<()> {
+    canvas: &Canvas,
+) -> Result<(Path, Path)> {
     let transform = Transform::from_scale(canvas.scale, canvas.scale);
     let (par, perp) = decomp(fluid_options.end_dir);
     let (par_src, perp_src) = decomp(fluid_options.start_dir);
@@ -140,7 +143,18 @@ fn draw_fluid_arrow(
     }) else {
         bail!("could not make path2");
     };
+    Ok((head_path, body_path))
+}
 
+fn draw_fluid_arrow(
+    start: Point,
+    end: Point,
+    options: &ArrowOptions,
+    fluid_options: &FluidOptions,
+    canvas: &mut Canvas,
+) -> Result<()> {
+    let (head_path, body_path) = paths_fluid_arrow(start, end, options, fluid_options, canvas)?;
+    let transform = Transform::from_scale(canvas.scale, canvas.scale);
     let mut paint = Paint {
         anti_alias: true,
         ..Paint::default()
@@ -189,6 +203,28 @@ fn draw_fluid_arrow(
     Ok(())
 }
 
+fn bounds_fluid_arrow(
+    start: Point,
+    end: Point,
+    options: &ArrowOptions,
+    fluid_options: &FluidOptions,
+    canvas: &Canvas,
+) -> Result<Rect> {
+    let (head_path, body_path) = paths_fluid_arrow(start, end, options, fluid_options, canvas)?;
+    let head_b = head_path.bounds();
+    let body_b = body_path.bounds();
+    Ok(Rect {
+        min: point(
+            head_b.left().min(body_b.left()),
+            head_b.top().min(body_b.top()),
+        ),
+        max: point(
+            head_b.right().max(body_b.right()),
+            head_b.bottom().max(body_b.bottom()),
+        ),
+    })
+}
+
 fn draw_straight_arrow(
     start: Point,
     end: Point,
@@ -202,6 +238,21 @@ fn draw_straight_arrow(
         end_dir: end - start,
     };
     draw_fluid_arrow(start, end, options, &fluid_options, canvas)
+}
+
+fn bounds_straight_arrow(
+    start: Point,
+    end: Point,
+    options: &ArrowOptions,
+    canvas: &Canvas,
+) -> Result<Rect> {
+    let fluid_options = FluidOptions {
+        start_gravity: 0.0,
+        end_gravity: 0.0,
+        start_dir: end - start,
+        end_dir: end - start,
+    };
+    bounds_fluid_arrow(start, end, options, &fluid_options, canvas)
 }
 
 fn draw_arc_arrow(
@@ -221,16 +272,40 @@ fn draw_arc_arrow(
     draw_fluid_arrow(start, end, options, &fluid_options, canvas)
 }
 
+fn bounds_arc_arrow(
+    start: Point,
+    end: Point,
+    options: &ArrowOptions,
+    arc_options: &ArcOptions,
+    canvas: &Canvas,
+) -> Result<Rect> {
+    let gravity = norm(end - start) * 0.5;
+    let fluid_options = FluidOptions {
+        start_gravity: gravity,
+        end_gravity: gravity,
+        start_dir: arc_options.start_dir,
+        end_dir: arc_options.end_dir,
+    };
+    bounds_fluid_arrow(start, end, options, &fluid_options, canvas)
+}
+
 impl Drawable for Arrow {
     fn translate(&mut self, t: Point) {
         self.start += t;
         self.end += t;
     }
-    fn bounding_box(&self, _canvas: &Canvas) -> Result<Rect> {
-        Ok(Rect {
-            min: point(self.start.x.min(self.end.x), self.start.y.min(self.end.y)),
-            max: point(self.start.x.max(self.end.x), self.start.y.max(self.end.y)),
-        })
+    fn bounding_box(&self, canvas: &Canvas) -> Result<Rect> {
+        match self.arrow_type {
+            ArrowType::Fluid(ref fluid_options) => {
+                bounds_fluid_arrow(self.start, self.end, &self.options, fluid_options, canvas)
+            }
+            ArrowType::Straight => {
+                bounds_straight_arrow(self.start, self.end, &self.options, canvas)
+            }
+            ArrowType::Arc(ref arc_options) => {
+                bounds_arc_arrow(self.start, self.end, &self.options, arc_options, canvas)
+            }
+        }
     }
     fn draw(&self, canvas: &mut Canvas) -> Result<()> {
         match self.arrow_type {

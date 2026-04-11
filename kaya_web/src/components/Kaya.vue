@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import { ref, watch, onMounted } from 'vue';
-import { ErrorInformation, setOptions, render } from '../../../kaya_ts/ts/kaya.ts';
+import { ErrorInformation, render } from '../../../kaya_ts/ts/kaya.ts';
 
 const props = defineProps<{
     source: string,
@@ -22,14 +22,13 @@ async function renderDiagram() {
     const scale = (props.scale === undefined) ? 1.0 : props.scale;
     const theme = (props.theme === undefined) ? "" : props.theme;
     const showPartial = (props.show_partial === true);
-    setOptions({ scale, theme, showPartial });
     const src = props.source + '\n';
     // If source is empty, render nothing
     if (props.source === '') {
         imgURI.value = '';
         return;
     }
-    const response = await render(src);
+    const response = await render(src, { scale, theme, showPartial });
     error.value = response.error;
     imgURI.value = response.imgUri || "";
 }

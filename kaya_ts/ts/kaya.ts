@@ -18,8 +18,8 @@ export type ErrorInformation = {
 }
 
 export type Response = {
-    error: null | ErrorInformation,
-    imgUri: null | string;
+    error?: ErrorInformation,
+    imgUri?: string;
 }
 
 const defaultOptions: Options = {
@@ -32,22 +32,22 @@ const defaultOptions: Options = {
     querySelector: '.kaya',
 };
 
-function computeOptions(opts: Options | null): Options {
+function computeOptions(opts: Options | undefined): Options {
     let options = {};
     Object.assign(options, defaultOptions);
-    if (opts !== null) {
+    if (opts !== undefined) {
         Object.assign(options, opts);
     }
     return options;
 }
 
-let loadedOpts = computeOptions(null);
+let loadedOpts = computeOptions(undefined);
 async function handleLoaded() {
     await init();
     await run(loadedOpts);
 }
 
-export async function initialize(opts: Options | null) {
+export async function initialize(opts: Options | undefined) {
     const options = computeOptions(opts);
     if (options.startOnLoad === false) {
         document.removeEventListener("DOMContentLoaded", handleLoaded);
@@ -57,7 +57,7 @@ export async function initialize(opts: Options | null) {
 
 document.addEventListener("DOMContentLoaded", handleLoaded);
 
-export async function run(opts: Options | null) {
+export async function run(opts: Options | undefined) {
     const options = computeOptions(opts);
     await init();
     const nodes = (options.nodes === undefined) ? document.querySelectorAll(options.querySelector || '.kaya') : options.nodes;
@@ -99,7 +99,7 @@ function createDataURI(data: Uint8Array) {
     return URL.createObjectURL(new Blob([data], { type: 'image/png' }));
 }
 
-export async function render(src: string, opts: Options | null) {
+export async function render(src: string, opts: Options | undefined) {
     const options = computeOptions(opts);
     await init();
     // Try to parse, if it fails then try with partial parse

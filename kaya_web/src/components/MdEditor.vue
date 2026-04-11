@@ -11,7 +11,7 @@ import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import {unified} from 'unified';
 
-import { ErrorInformation, setOptions, render } from '../../../kaya_ts/ts/kaya.ts';
+import { ErrorInformation, render, initialize, run } from '../../../kaya_ts/ts/kaya.ts';
 
 import '../styles/github-dark.css';
 import '../styles/github-markdown.css';
@@ -57,6 +57,11 @@ const renderedHtml = ref('');
 const isDark = useDark();
 const transparent = ref(false);
 
+const theme = computed(() => {
+    if (transparent.value) return isDark.value ? 'dark_transparent' : 'light_transparent';
+    return isDark.value ? 'dark' : 'light';
+});
+
 const processor = unified()
     .use(remarkParse)
     .use(remarkGfm)
@@ -65,41 +70,36 @@ const processor = unified()
     .use(rehypeHighlight)
     .use(rehypeStringify);
 
-
 async function updateKaya() {
-    const elems = document.querySelectorAll("pre code.language-kaya");
-    for (const elem of elems) {
-        const src = elem.innerHTML;
-        elem.innerHTML = '';
-        // Access dependency on props before we wait for anything so it's tracked properly
-        const scale = 1.0;
-        const theme = "dark";
-        const showPartial = true;
-        setOptions({ scale, theme, showPartial });
-        // If source is empty, render nothing
-        if (src === '') {
-            return;
-        }
-        const response = await render(src);
-        console.log(response);
-        if (response.error) {
-            console.log(response.error);
-            const err = document.createElement('pre');
-            err.innerHTML = response.error.msg;
-            err.classList.add("error");
-            elem.appendChild(err);
-        }
-        const img = document.createElement('img');
-        img.src = response.imgUri || '';
-        elem.appendChild(img);
-        // error.value = response.error;
-        // imgURI.value = response.imgUri || "";
-    }
+    run();
+    // const elems = document.querySelectorAll("pre code.language-kaya");
+    // for (const elem of elems) {
+    //     const src = elem.innerHTML;
+    //     elem.innerHTML = '';
+    //     // Access dependency on props before we wait for anything so it's tracked properly
+    //     const scale = 1.0;
+    //     const theme = "dark";
+    //     const showPartial = true;
+    //     // If source is empty, render nothing
+    //     if (src === '') {
+    //         return;
+    //     }
+    //     const response = await render(src, { scale, theme, showPartial });
+    //     if (response.error) {
+    //         console.log(response.error);
+    //         const err = document.createElement('pre');
+    //         err.innerHTML = response.error.msg;
+    //         err.classList.add("error");
+    //         elem.appendChild(err);
+    //     }
+    //     const img = document.createElement('img');
+    //     img.src = response.imgUri || '';
+    //     elem.appendChild(img);
+    // }
 }
 
 async function handleUpdate() {
     if (renderedCode.value !== code.value || renderedTheme.value !== theme.value) {
-        console.log("updated theme=", theme.value);
         renderedCode.value = code.value;
         renderedTheme.value = theme.value;
         const html = await processor.process(renderedCode.value);
@@ -110,21 +110,15 @@ async function handleUpdate() {
     }
 }
 
-const theme = computed(() => {
-    if (transparent.value) return isDark.value ? 'dark_transparent' : 'light_transparent';
-    return isDark.value ? 'dark' : 'light';
-});
-
 let timeoutId: number | undefined = undefined;
-
-watch(() => [code.value, theme.value], () => {
-    // Debouce input changes to input
-    if (timeoutId) clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => handleUpdate(), INPUT_DEBOUCE_DELAY);
-});
 
 onMounted(() => {
     handleUpdate();
+    watch(() => [code.value, theme.value], () => {
+        // Debouce input changes to input
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => handleUpdate(), INPUT_DEBOUCE_DELAY);
+    });
 });
 
 </script>

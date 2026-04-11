@@ -24,6 +24,7 @@ const MONACO_EDITOR_OPTIONS = {
     automaticLayout: true,
     formatOnType: true,
     formatOnPaste: true,
+    minimap: { enabled: false },
 };
 
 const INPUT_DEBOUCE_DELAY = 300;
@@ -89,7 +90,7 @@ onMounted(() => {
                 v-model:value="code"
                 :theme="isDark ? 'vs-dark' : 'vs-light'"
                 :options="MONACO_EDITOR_OPTIONS"
-                height="50vh"
+                height="calc(100vh - var(--el-menu-horizontal-height))"
             />
         </div>
       </el-splitter-panel>

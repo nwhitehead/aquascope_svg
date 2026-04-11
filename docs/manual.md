@@ -1,9 +1,9 @@
 # Kaya Manual
 
 Kaya is a human-readable text format that uses some Markdown conventions and
-encodes program state at various points. In this manual we'll explain how
-Kaya works and give examples to show how you might use it. At the end we'll
-also cover adding Kaya support to your Markdown renderer.
+encodes program state at various points. In this manual we'll explain how Kaya
+works and give examples to show how you might use it. At the end we'll also
+cover adding Kaya support to your Markdown renderer.
 
 ## Overview
 

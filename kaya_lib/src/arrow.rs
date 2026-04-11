@@ -1,7 +1,7 @@
 #![allow(unused)]
 
 use ab_glyph::{Point, Rect, point};
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use tiny_skia::{
     ColorU8, FillRule, LineCap, LineJoin, Paint, Path, PathBuilder, Stroke, Transform,
 };
@@ -213,10 +213,10 @@ fn bounds_fluid_arrow(
     let (head_path, body_path) = paths_fluid_arrow(start, end, options, fluid_options, canvas)?;
     let head_b = head_path
         .compute_tight_bounds()
-        .ok_or("Need tight bounds")?;
+        .context("Need tight bounds")?;
     let body_b = body_path
         .compute_tight_bounds()
-        .ok_or("Need tight bounds")?;
+        .context("Need tight bounds")?;
     Ok(Rect {
         min: point(
             head_b.left().min(body_b.left()),

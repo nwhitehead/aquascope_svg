@@ -40,7 +40,146 @@ the analysis. Finally, Kaya diagrams are amenable to generation by LLMs for
 general communication purposes so can be part of agentic program analysis or
 synthesis workflows.
 
-## Basic Rust Examples
+## Pseudocode Examples
+
+These examples are Kaya diagrams for pseudocode programs that illustrate
+different fundamental concepts in programming.
+
+### Example: _Simple Stack Values_
+
+Here is a simple program with location comments `L0` through `L4` marking
+locations at runtime that we will illustrate in the diagram.
+
+```text
+main():      /* L0 */
+  x = 1      /* L1 */
+  y = x      /* L2 */
+  x += 1     /* L3 */
+```
+
+Here is the Kaya diagram showing the state of the program at `L0` through `L4`.
+
+```kaya
+# L0
+## Stack
+### main
+
+# L1
+## Stack
+### main
+x: 1
+
+# L2
+## Stack
+### main
+x: 1
+y: 1
+
+# L3
+## Stack
+### main
+x: 2
+y: 1
+```
+
+#### Concept
+
+The main thing being illustrated here is how `x` and `y` are independent. The
+initial value of `y` is copied from `x`, but when `x` is then later updated it
+does not affect `y`.
+
+### Example: _Aliased Heap Value_
+
+```text
+main():      /* L0 */
+  x = new(1) /* L1 */
+  y = x      /* L2 */
+  *x += 1    /* L3 */
+```
+
+```kaya
+# L0
+## Stack
+### main
+
+# L1
+## Stack
+### main
+x: ptr(H0)
+## Heap
+H0: 1
+
+# L2
+## Stack
+### main
+x: ptr(H0)
+y: ptr(H0)
+## Heap
+H0: 1
+
+# L3
+## Stack
+### main
+x: ptr(H0)
+y: ptr(H0)
+## Heap
+H0: 2
+```
+
+### Example: _Linked List_
+
+```text
+...setup       /* L0 */
+mid = lst.snd  /* L1 */
+```
+
+```kaya
+# L0
+## Stack
+### main
+lst: ptr(H0)
+## Heap
+H0: (1, ptr(H1))
+H1: (2, ptr(H2))
+H2: (3, *)
+
+# L1
+## Stack
+### main
+lst: ptr(H0)
+mid: ptr(H1)
+## Heap
+H0: (1, ptr(H1))
+H1: (2, ptr(H2))
+H2: (3, *)
+```
+
+```kaya
+# L0
+## Stack
+### main
+lst: ptr(H0)
+## Heap
+H0: (1, ptr(H1))
+##
+H1: (2, ptr(H2))
+##
+H2: (3, *)
+
+# L1
+## Stack
+### main
+lst: ptr(H0)
+mid: ptr(H1)
+## Heap
+H0: (1, ptr(H1))
+##
+H1: (2, ptr(H2))
+##
+H2: (3, *)
+```
+
+## Rust Examples
 
 These examples are Kaya diagrams for simple Rust programs that illustrate
 different fundamental concepts in programming.

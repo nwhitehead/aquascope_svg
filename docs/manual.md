@@ -40,24 +40,266 @@ the analysis. Finally, Kaya diagrams are amenable to generation by LLMs for
 general communication purposes so can be part of agentic program analysis or
 synthesis workflows.
 
-## Basic Examples
+## Basic Rust Examples
 
-Here is a simple Rust program, with location comments `L0` through `L4` marking
-locations at runtime that we will illustrate with diagrams.
+These examples are Kaya diagrams for simple Rust programs that illustrate
+different fundamental concepts in programming.
+
+### Example: _Simple Stack Values_
+
+Here is a simple Rust program with location comments `L0` through `L4` marking
+locations at runtime that we will illustrate in the diagram.
+
+```rust
+fn main()        /* L0 */ {
+  let mut x = 1; /* L1 */
+  let y = x;     /* L2 */
+  x += 1;        /* L3 */
+}                /* L4 */
+```
+
+Here is the Kaya diagram showing the state of the program at `L0` through `L4`.
+
+```kaya
+# L0
+## Stack
+### main
+
+# L1
+## Stack
+### main
+x: 1
+
+# L2
+## Stack
+### main
+x: 1
+y: 1
+
+# L3
+## Stack
+### main
+x: 2
+y: 1
+
+# L4
+## Stack
+### main
+```
+
+#### Concept
+
+The main thing being illustrated here is how `x` and `y` are independent. The
+initial value of `y` is copied from `x`, but when `x` is then later updated it
+does not affect `y`.
+
+### Example: _One Boxed Heap Value_
+
+Here is a simple Rust program with location comments `L0` through `L3` marking
+locations at runtime that we will illustrate in the diagram.
 
 ```rust
 fn main()                  /* L0 */ {
   let mut x = Box::new(0); /* L1 */
   *x += 1;                 /* L2 */
-  let y = x;               /* L3 */
+}                          /* L3 */
+```
+
+Here is the Kaya diagram showing the state of the program at `L0` through `L3`.
+
+```kaya
+# L0
+## Stack
+### main
+
+# L1
+## Stack
+### main
+x: ptr(H0)
+## Heap
+H0: 0
+
+# L2
+## Stack
+### main
+x: ptr(H0)
+## Heap
+H0: 1
+
+# L3
+## Stack
+### main
+```
+
+#### Concept
+
+The main thing being illustrated here is how `x` is a pointer value that points
+to a value on the heap that can be manipulated by following the pointer.
+
+### Example: _Pointer Chain_
+
+```rust
+fn main()                              /* L0 */ {
+    let mut x = Box::new(Box::new(2)); /* L1 */
+    **x += 1;                          /* L2 */
+}                                      /* L3 */
+```
+
+```kaya
+# L0
+## Stack
+### main
+
+# L1
+## Stack
+### main
+x: ptr(H0)
+## Heap
+H0: ptr(H1)
+##
+H1: 2
+
+# L2
+## Stack
+### main
+x: ptr(H0)
+## Heap
+H0: ptr(H1)
+##
+H1: 3
+
+# L3
+## Stack
+### main
+```
+
+In the Kaya diagram source above the multiple heap values are split into two
+separate columns. The first column is labelled "Heap", the second is unlabelled.
+This is just to arrange the values in the heap in a way that shows off the
+chained arrows.
+
+```text
+# L2
+## Stack
+### main
+x: ptr(H0)
+## Heap
+H0: ptr(H1)
+##    // <--- this splits and starts new nameless heap column
+H1: 3
+```
+
+The diagram can also be done showing both heap values in a single heap by
+removing the `##` line.
+
+```kaya
+# L2
+## Stack
+### main
+x: ptr(H0)
+## Heap
+H0: ptr(H1)
+H1: 3
+```
+
+#### Concept
+
+This example illustrates nested pointers and nested dereferencing. It also shows
+how to use multiple heap columns to arrange heap values.
+
+### Example: _Aliased Heap Value_
+
+Here is a simple *but wrong* Rust program with location comments `L0` through `L4` marking
+locations at runtime that we will illustrate in the diagram.
+
+```rust
+fn main()                  /* L0 */ {
+  let mut x = Box::new(0); /* L1 */
+  let y = x;               /* L2 */
+  *x += 1;                 /* L3 */ // REJECTED: value used after move
 }                          /* L4 */
 ```
 
-```python
-print(f"What is 4?")
-for i in range(10):
-    print(i * i)
+Because the compiler rejects the above program there is no correct diagram
+showing the execution of the program.
+
+Here is the Kaya diagram showing what the programmer _incorrectly thinks_ will
+be the state of the program at `L0` through `L4`.
+
+```kaya
+# L0
+## Stack
+### main
+
+# L1
+## Stack
+### main
+x: ptr(H0)
+## Heap
+H0: 0
+
+# L2
+## Stack
+### main
+x: ptr(H0)
+y: ptr(H0)
+## Heap
+H0: 0
+
+# L3
+## Stack
+### main
+x: ptr(H0)
+y: ptr(H0)
+## Heap
+H0: 1
+
+# L4
+## Stack
+### main
 ```
+
+The programmer thinks that the line `let y = x` will create a new pointer to the
+single heap value and that both `x` and `y` will see any updates to the value.
+
+In reality the line `let y = x` *moves* the heap value to `y`. Once that has
+happened there is no way to use `x`.
+
+Here is the Kaya diagram showing what might happen if the Rust compiler
+let the code execute:
+
+```kaya
+# L0
+## Stack
+### main
+
+# L1
+## Stack
+### main
+x: ptr(H0)
+## Heap
+H0: 0
+
+# L2
+## Stack
+### main
+x: *
+y: ptr(H0)
+## Heap
+H0: 0
+```
+
+In this sequence there is no `L3` because the operation at point `L2` is a
+pointer access through an invalid pointer, e.g. a `segfault`.
+
+#### Concept
+
+The main thing being illustrated here is how moving a value invalidates the
+previous binding to the value. The Kaya diagrams can show what the programmer
+might expect to happen, or what could happen if the Rust compiler allowed access
+to invalidated values. In actuality the compiler rejects the program so it
+cannot execute.
+
 ## More Examples
 
 ## Setting Up

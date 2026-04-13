@@ -2,6 +2,7 @@
 
 use ab_glyph::{Point, Rect, point};
 use anyhow::{Context, Result, bail};
+use std::collections::HashMap;
 use tiny_skia::{Color, ColorU8};
 
 use crate::arrow::{ArcOptions, Arrow, ArrowOptions, ArrowOutline, ArrowType, FluidOptions};
@@ -16,19 +17,35 @@ use crate::style::{
     Styling, color, dark_style, dark_transparent_style, light_style, light_transparent_style,
 };
 
+/// Keep track of rendering stuff
+// We would like to just put all the details about tags and rects in here, but
+// the layout algorithms use methods and move things around. We have to wait
+// until everything is drawn to know where the bounding boxes of targets for
+// pointers actually are for rendering arrows. So we can't register values in
+// the RenderState with bounding boxes as we encounter them, we have to somehow
+// revisit them at the end. This is done with GTagged drawing elements, we can
+// look up tags in the drawables after everything is laid out.
+//
+// We can keep track of IndexLocation values for sources and targets as we
+// encounter them since they don't change during layout.
 #[derive(Clone, Debug)]
 pub struct RenderState {
     pub style: Styling,
     skip_heap: bool,
     /// Which ids we've seen (these are valid targets of arrows)
     ids: Vec<String>,
-    /// Keep track of step location names to avoid duplicates (duplicates screw up arrow drawing, uniqueness of labels)
+    /// Keep track of step location names to avoid duplicates (duplicates screw
+    /// up arrow drawing, uniqueness of labels)
     step_names: Vec<String>,
     /// Set of pointers we will need to draw, containing (dst prefix, src prefix, ptr stuff)
-    // The prefix stuff is needed for dst to know what step location label is (e.g. L0:...)
-    // The prefix is needed for src to know precise stuff about label we are coming from (e..g L0:x.0.1)
-    // The Ptr part itself has bare target label, like "x" or whatever, plus information about selectors (e.g. .1.0) and borrows
+    // The prefix stuff is needed for dst to know what step location label is
+    // (e.g. L0:...) The prefix is needed for src to know precise stuff about
+    // label we are coming from (e..g L0:x.0.1) The Ptr part itself has bare
+    // target label, like "x" or whatever, plus information about selectors
+    // (e.g. .1.0) and borrows
     ptrs: Vec<(String, String, Ptr)>,
+    /// Remember IndexLocations for tagged values
+    idxmap: HashMap<String, IndexLocation>,
 }
 
 impl Default for RenderState {
@@ -39,13 +56,15 @@ impl Default for RenderState {
             ids: vec![],
             step_names: vec![],
             ptrs: vec![],
+            idxmap: Default::default(),
         }
     }
 }
 
 impl RenderState {
-    pub fn register(&mut self, id: &str) {
+    pub fn register(&mut self, id: &str, idx_loc: &IndexLocation) {
         self.ids.push(id.to_string());
+        self.idxmap.insert(id.to_string(), idx_loc.clone());
     }
     pub fn ids(&self) -> Vec<String> {
         self.ids.clone()
@@ -59,6 +78,23 @@ impl RenderState {
     }
     pub fn step_names(&self) -> Vec<String> {
         self.step_names.clone()
+    }
+}
+
+/// Keep track of which step and which location things are in (e.g. L0 is step 0, "Heap" might be location index 1)
+// These index values help with arrow layout decisions
+#[derive(Clone, Debug)]
+pub struct IndexLocation {
+    step_idx: usize,
+    location_idx: usize,
+}
+
+impl IndexLocation {
+    fn new(step_idx: usize, location_idx: usize) -> Self {
+        Self {
+            step_idx,
+            location_idx,
+        }
     }
 }
 
@@ -248,7 +284,14 @@ fn render_def(
     // Note that ptr_dst_prefix just passes through here, it is for getting common step name prefix only.
     // Values can be L0:x.0.1 or something, even inside we still want ptr_dst_prefix to be just L0
     // Point is to convert a pointer to "x.0" into the label "L0:x.0".
-    let g_value = render_value(&def.value, prefix, ptr_dst_prefix, loc_idx, render_state, canvas)?;
+    let g_value = render_value(
+        &def.value,
+        prefix,
+        ptr_dst_prefix,
+        loc_idx,
+        render_state,
+        canvas,
+    )?;
     let mut g_border_value = border(g_value, canvas, ds.clone())?;
 
     // Now align the value to right of separator, centered vertically
@@ -452,9 +495,15 @@ pub fn render_value(
         Value::Number(v) => render_value_number(*v, render_state, canvas)?,
         Value::Char(c) => render_value_char(*c, render_state, canvas)?,
         Value::Pointer(p) => render_value_pointer(p, prefix, ptr_dst_prefix, render_state, canvas)?,
-        Value::Array(a) => render_value_array(a, prefix, ptr_dst_prefix, loc_idx, render_state, canvas)?,
-        Value::Tuple(a) => render_value_tuple(a, prefix, ptr_dst_prefix, loc_idx, render_state, canvas)?,
-        Value::Struct(a) => render_value_struct(a, prefix, ptr_dst_prefix, loc_idx, render_state, canvas)?,
+        Value::Array(a) => {
+            render_value_array(a, prefix, ptr_dst_prefix, loc_idx, render_state, canvas)?
+        }
+        Value::Tuple(a) => {
+            render_value_tuple(a, prefix, ptr_dst_prefix, loc_idx, render_state, canvas)?
+        }
+        Value::Struct(a) => {
+            render_value_struct(a, prefix, ptr_dst_prefix, loc_idx, render_state, canvas)?
+        }
         Value::Invalid => render_value_invalid(render_state, canvas)?,
     };
     // see if tag is already present
@@ -464,7 +513,7 @@ pub fn render_value(
         tag.push('\'');
     }
     let tagged = GTagged::new(item, &tag);
-    render_state.register(&tag);
+    render_state.register(&tag, loc_idx);
     Ok(Box::new(tagged))
 }
 
@@ -492,7 +541,15 @@ pub fn render_region(
     // Body
     let mut body: Vec<Box<dyn Drawable>> = vec![];
     for def in &value.definitions {
-        let g_def = render_def(def, prefix, ptr_dst_prefix, idx, render_state, canvas, skip_heap)?;
+        let g_def = render_def(
+            def,
+            prefix,
+            ptr_dst_prefix,
+            idx,
+            render_state,
+            canvas,
+            skip_heap,
+        )?;
         body.push(g_def);
     }
     // stack vertically without moving horizontally (to keep : aligned)
@@ -564,21 +621,6 @@ pub fn render_location(
     let g_final = vstack_left(vec![Box::new(padded_gtxt), Box::new(g_body)], canvas)?;
 
     Ok(Box::new(g_final))
-}
-
-#[derive(Clone, Debug)]
-pub struct IndexLocation {
-    step_idx: usize,
-    location_idx: usize,
-}
-
-impl IndexLocation {
-    fn new(step_idx: usize, location_idx: usize) -> Self {
-        Self {
-            step_idx,
-            location_idx,
-        }
-    }
 }
 
 pub fn render_step(
@@ -993,7 +1035,14 @@ mod tests {
         rs.style
             .add_color("value.number.color", color("#bccfa980")?);
 
-        let mut v = render_value(&Value::Number(42.0), "", "", &IndexLocation::new(0, 0), &mut rs, &canvas)?;
+        let mut v = render_value(
+            &Value::Number(42.0),
+            "",
+            "",
+            &IndexLocation::new(0, 0),
+            &mut rs,
+            &canvas,
+        )?;
         v.translate(point(400.0, 400.0));
         v.draw(&mut canvas)?;
         v.translate(point(10.0, 5.0));
@@ -1003,7 +1052,14 @@ mod tests {
 
         rs.style
             .add_color("value.number.color", color("#cfa9bc80")?);
-        let mut v2 = render_value(&Value::Number(67.0), "", "", &IndexLocation::new(0, 0), &mut rs, &canvas)?;
+        let mut v2 = render_value(
+            &Value::Number(67.0),
+            "",
+            "",
+            &IndexLocation::new(0, 0),
+            &mut rs,
+            &canvas,
+        )?;
         v2.translate(point(400.0, 430.0));
         v2.draw(&mut canvas)?;
         v2.translate(point(10.0, -7.0));
@@ -1143,11 +1199,25 @@ mod tests {
         let mut rs = RenderState::default();
         rs.style = dark_style()?;
 
-        let mut v = render_value(&Value::Number(42.0), "", "", &IndexLocation::new(0, 0), &mut rs, &canvas)?;
+        let mut v = render_value(
+            &Value::Number(42.0),
+            "",
+            "",
+            &IndexLocation::new(0, 0),
+            &mut rs,
+            &canvas,
+        )?;
         v.translate(point(200.0, 200.0));
         v.draw(&mut canvas)?;
 
-        let mut v = render_value(&Value::Char('H'), "", "", &IndexLocation::new(0, 0), &mut rs, &canvas)?;
+        let mut v = render_value(
+            &Value::Char('H'),
+            "",
+            "",
+            &IndexLocation::new(0, 0),
+            &mut rs,
+            &canvas,
+        )?;
         v.translate(point(250.0, 200.0));
         v.draw(&mut canvas)?;
 

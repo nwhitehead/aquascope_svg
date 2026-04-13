@@ -51,7 +51,7 @@ Here is another example showing more features of Kaya:
 
 ## Manual
 
-See the [Manual](https://kaya.shimmermathlabs.com/about) for examples of
+See the [Manual](https://kaya.shimmermathlabs.com/manual) for examples of
 Kaya diagrams and how you might use them.
 
 See [FORMAT.md](docs/FORMAT.md) for details on the `kaya` diagram description format.
@@ -100,10 +100,10 @@ a Markdown processor plugin that extracts the `kaya` blocks, calls `render_kaya`
 to get PNG output, then includes the output in the final rendered Markdown.
 
 This repository includes a [demonstration
-program](kaya_web/src/components/About.vue) written in Vue that shows the Kaya
+program](kaya_web/src/components/Manual.vue) written in Vue that shows the Kaya
 manual Markdown on a webpage using the [remark
 ecosystem](https://remark.js.org/). You can see the final result online at the
-[Kaya manual](https://kaya.shimmermathlabs.com/about).
+[Kaya manual](https://kaya.shimmermathlabs.com/manual).
 
 ### Automatic Rust Analysis Workflow
 

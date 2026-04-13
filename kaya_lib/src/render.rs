@@ -860,16 +860,18 @@ fn choose_arrow(
     }
 
     // Do horizontal connection if dx is bigger, vertical connection if dy is bigger
-    if dx.abs() > dy.abs() {
-        if dx > 0.0 && dst_direction == Direction::Auto {
-            dst_direction = Direction::Left;
-        } else if dst_direction == Direction::Auto {
-            dst_direction = Direction::Right;
+    if dst_direction == Direction::Auto {
+        if dx.abs() > dy.abs() {
+            if dx > 0.0 {
+                dst_direction = Direction::Left;
+            } else {
+                dst_direction = Direction::Right;
+            }
+        } else if dy > 0.0 {
+            dst_direction = Direction::Top;
+        } else {
+            dst_direction = Direction::Bottom;
         }
-    } else if dy > 0.0 && dst_direction == Direction::Auto {
-        dst_direction = Direction::Top;
-    } else if dst_direction == Direction::Auto {
-        dst_direction = Direction::Bottom;
     }
     // src of arrow is drawn with square edge, so need to adjust point by 1/2 width of arrow
     let width = style.get_number_or("arrow.width", 1.0);

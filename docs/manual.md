@@ -184,6 +184,40 @@ H1: (2, ptr(H2))
 H2: (3, *)
 ```
 
+### Example: _Stack Pointers_
+
+```text
+main():     /* L0 */
+    x = 1   /* L1 */
+    y = &x  /* L2 */
+    *y = 2  /* L3 */
+```
+
+```kaya
+# L0
+## Stack
+### main
+
+# L1
+## Stack
+### main
+x: 1
+
+# L2
+## Stack
+### main
+x: 1
+y: ptr(x)
+
+# L3
+## Stack
+### main
+x: 2
+y: ptr(x)
+
+```
+
+
 ## Rust Examples
 
 These examples are Kaya diagrams for simple Rust programs that illustrate

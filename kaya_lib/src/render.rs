@@ -79,14 +79,17 @@ impl RenderState {
     pub fn step_names(&self) -> Vec<String> {
         self.step_names.clone()
     }
+    pub fn lookup(&self, name: &str) -> Option<&IndexLocation> {
+        self.idxmap.get(name)
+    }
 }
 
 /// Keep track of which step and which location things are in (e.g. L0 is step 0, "Heap" might be location index 1)
 // These index values help with arrow layout decisions
 #[derive(Clone, Debug)]
 pub struct IndexLocation {
-    step_idx: usize,
-    location_idx: usize,
+    pub step_idx: usize,
+    pub location_idx: usize,
 }
 
 impl IndexLocation {
@@ -713,7 +716,14 @@ fn get_direction_vector(d: &Direction) -> Point {
     }
 }
 
-fn choose_arrow(src_rect: &Rect, dst_rect: &Rect, help: &[String], style: &Styling) -> Arrow {
+fn choose_arrow(
+    src_rect: &Rect,
+    dst_rect: &Rect,
+    src_iloc: &IndexLocation,
+    dst_iloc: &IndexLocation,
+    help: &[String],
+    style: &Styling,
+) -> Arrow {
     let mut src_direction = Direction::Auto;
     let mut dst_direction = Direction::Auto;
     let mut color = 0; // index
@@ -830,6 +840,15 @@ fn choose_arrow(src_rect: &Rect, dst_rect: &Rect, help: &[String], style: &Styli
     );
     let dx = dst_mid.x - src_mid.x;
     let dy = dst_mid.y - src_mid.y;
+    if src_iloc.location_idx == dst_iloc.location_idx {
+        if src_direction == Direction::Auto {
+            src_direction = Direction::Right;
+        }
+        if dst_direction == Direction::Auto {
+            dst_direction = Direction::Right;
+        }
+    }
+
     // Do horizontal connection if dx is bigger, vertical connection if dy is bigger
     if dx.abs() > dy.abs() {
         if dx > 0.0 {
@@ -848,20 +867,22 @@ fn choose_arrow(src_rect: &Rect, dst_rect: &Rect, help: &[String], style: &Styli
             }
         }
     } else {
-        if src_direction == Direction::Auto {
-            src_direction = Direction::Right;
+        // This is how we would do it if we wanted short lines
+        if dy > 0.0 {
+            if src_direction == Direction::Auto {
+                src_direction = Direction::Bottom;
+            }
+            if dst_direction == Direction::Auto {
+                dst_direction = Direction::Top;
+            }
+        } else {
+            if src_direction == Direction::Auto {
+                src_direction = Direction::Top;
+            }
+            if dst_direction == Direction::Auto {
+                dst_direction = Direction::Bottom;
+            }
         }
-        if dst_direction == Direction::Auto {
-            dst_direction = Direction::Right;
-        }
-        // // This is how we would do it if we wanted short lines
-        // if dy > 0.0 {
-        //     if src_direction == Direction::Auto { src_direction = Direction::Bottom; }
-        //     if dst_direction == Direction::Auto { dst_direction = Direction::Top; }
-        // } else {
-        //     if src_direction == Direction::Auto { src_direction = Direction::Top; }
-        //     if dst_direction == Direction::Auto { dst_direction = Direction::Bottom; }
-        // }
     }
     // src of arrow is drawn with square edge, so need to adjust point by 1/2 width of arrow
     let width = style.get_number_or("arrow.width", 1.0);
@@ -943,7 +964,13 @@ pub fn render_program(
             .get_tagged(src_tag)
             .context(format!("could not find tag '{}'", src_tag))?
             .bounding_box(canvas)?;
-        let arrow = choose_arrow(&src_r, &dst_r, &ptr.help, &rs.style);
+        let dst_iloc = rs
+            .lookup(&dst_tag)
+            .context(format!("need index location for tag {}", &dst_tag))?;
+        let src_iloc = rs
+            .lookup(src_tag)
+            .context(format!("need index location for tag {}", src_tag))?;
+        let arrow = choose_arrow(&src_r, &dst_r, src_iloc, dst_iloc, &ptr.help, &rs.style);
         // // Some debug code to draw bounding box
         // result.push(Box::new(GBox::new_with_options(src_r, 2.0, ColorU8::from_rgba(255, 0, 0, 255))));
         result.push(Box::new(arrow));

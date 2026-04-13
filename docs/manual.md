@@ -47,7 +47,7 @@ different fundamental concepts in programming.
 
 ### Example: _Simple Stack Values_
 
-Here is a simple program with location comments `L0` through `L4` marking
+Here is a simple program with location comments `L0` through `L3` marking
 locations at runtime that we will illustrate in the diagram.
 
 ```text
@@ -57,7 +57,7 @@ main():      /* L0 */
   x += 1     /* L3 */
 ```
 
-Here is the Kaya diagram showing the state of the program at `L0` through `L4`.
+Here is the Kaya diagram showing the state of the program at `L0` through `L3`.
 
 ```kaya
 # L0
@@ -90,12 +90,17 @@ does not affect `y`.
 
 ### Example: _Aliased Heap Value_
 
+Here is a simple program with location comments `L0` through `L3` marking
+locations at runtime that we will illustrate in the diagram.
+
 ```text
 main():      /* L0 */
   x = new(1) /* L1 */
   y = x      /* L2 */
   *x += 1    /* L3 */
 ```
+
+Here is the Kaya diagram showing the state of the program at `L0` through `L3`.
 
 ```kaya
 # L0
@@ -126,18 +131,34 @@ y: ptr(H0)
 H0: 2
 ```
 
+#### Concept
+
+The main thing being illustrated here is how `x` and `y` are both pointers to
+the same heap value. When `x` is used to update the value both pointers will
+then see the new value.
+
 ### Example: _Linked List_
 
+Here is a program with location comments `L0` through `L2` marking locations at
+runtime that we will illustrate in the diagram. The program constructs a linked
+list where each node is a tuple of two values where the first is the data in the
+linked list and the second is a pointer to the next node or an invalid pointer
+if there are no more nodes in the list.
+
 ```text
-...setup       /* L0 */
-mid = lst.snd  /* L1 */
+main():
+    x = new((1, (2, (3, *)))) /* L0 */
+    y = x[1]                  /* L1 */
+    x = y                     /* L2 */
 ```
+
+Here is the Kaya diagram showing the state of the program at `L0` through `L2`.
 
 ```kaya
 # L0
 ## Stack
 ### main
-lst: ptr(H0)
+x: ptr(H0)
 ## Heap
 H0: (1, ptr(H1))
 H1: (2, ptr(H2))
@@ -146,36 +167,20 @@ H2: (3, *)
 # L1
 ## Stack
 ### main
-lst: ptr(H0)
-mid: ptr(H1)
+x: ptr(H0)
+y: ptr(H1)
 ## Heap
 H0: (1, ptr(H1))
 H1: (2, ptr(H2))
 H2: (3, *)
-```
 
-```kaya
-# L0
+# L2
 ## Stack
 ### main
-lst: ptr(H0)
+x: ptr(H1)
 ## Heap
 H0: (1, ptr(H1))
-##
 H1: (2, ptr(H2))
-##
-H2: (3, *)
-
-# L1
-## Stack
-### main
-lst: ptr(H0)
-mid: ptr(H1)
-## Heap
-H0: (1, ptr(H1))
-##
-H1: (2, ptr(H2))
-##
 H2: (3, *)
 ```
 
@@ -344,7 +349,7 @@ H1: 3
 #### Concept
 
 This example illustrates nested pointers and nested dereferencing. It also shows
-how to use multiple heap columns to arrange heap values.
+how to use multiple heap columns to arrange heap values visually.
 
 ### Example: _Aliased Heap Value_
 

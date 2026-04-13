@@ -1,3 +1,10 @@
+/* 
+Demo Kaya diagram
+
+This demo is designed to demonstrate a few features of Kaya in a somewhat
+realistic way without being overwhelming.
+*/
+
 # L1
 ## Stack
 ### main
@@ -14,7 +21,7 @@ H2: (2, *)
 ### main
 x: ptr(H0)
 y: *
-z: ptr(H2.0).ds
+z: ptr(H2).ds
 ## Heap
 H0: 1
 H1: (4, ptr(H2))

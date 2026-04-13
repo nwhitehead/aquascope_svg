@@ -4,6 +4,7 @@ import { ref, watch, computed, nextTick } from 'vue';
 import { Download } from '@element-plus/icons-vue';
 import { useDark } from '@vueuse/core';
 import Kaya from './Kaya.vue';
+import demoTxt from '../../../testdata/kaya/demo.kaya?raw';
 
 const MONACO_EDITOR_OPTIONS = {
     automaticLayout: true,
@@ -14,17 +15,7 @@ const MONACO_EDITOR_OPTIONS = {
     },
 };
 
-const code = ref(`
-# L0
-## Stack
-x: 5
-y: 7
-z: ptr(x).se.de.g5
-p: ptr(H0).se.ds.g4
-## Heap
-H0: (42, ptr(z).c4.sn.dw)
-`);
-
+const code = ref(demoTxt);
 const renderedCode = ref("");
 const isDark = useDark();
 const autoUpdate = ref(false);

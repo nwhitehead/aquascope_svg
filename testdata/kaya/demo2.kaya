@@ -1,20 +1,45 @@
+/* 
+Demo2 Kaya diagram
+
+This demo is designed to demonstrate as many features of Kaya as possible in one
+diagram.
+
+* Steps
+* Stack values
+* Stack regions
+* Heap values
+* Multiple nameless heaps
+* Multiple named heaps
+* Pointers to stack
+* Pointers to heap
+* Pointers to contents of struct/tuple
+* Pointers to contents of array
+* Pointers to deep contents
+* Pointers inside struct
+* Pointers inside array
+* Invalid pointers
+* Char values
+* Number values
+* Looped pointers
+
+*/
+
 # L0
 ## Stack
+### main
 x: 5
-y: 7
-z: ptr(x)
-p: ptr(H0)
+y: [67, ptr(x)]
+### foo
+m: ptr(H0)
+d: ptr(H1)
+l: ptr(H2)
+u: (1000, 1001, ptr(H1.0).ds)
+z: [1, [2, [3, 4]]]
 ## Heap
-H0: 42
-
-# L1
-## Stack
-x: 5
-y: 7
-z: ptr(x)
-p: ptr(H0.0)
-## Heap
-H0: (2, ptr(H1))
-##
-H1: 42
-H2: ptr(H2)
+H0: ['H', 'e', 'l', 'l', 'o', ptr(H100)]
+H1: person{ id: 1000 }
+H2: [5, ptr(H3)]
+H3: [4, *]
+## Arena
+H100: [67, 5]
+end: ptr(end)

@@ -10,7 +10,9 @@ struct StatesParser;
 
 /// Parse kaya string, return error if parse fails
 pub fn parse(content: &str) -> Result<Program, pest::error::Error<Rule>> {
-    let pairs = StatesParser::parse(Rule::start, content)?;
+    // Always start with newline at end to avoid confusing error messages at end of program
+    let padded_content = format!("{}\n", content);
+    let pairs = StatesParser::parse(Rule::start, &padded_content)?;
     Ok(parse_program(pairs))
 }
 

@@ -2,8 +2,8 @@
 ## Stack
 x: 5
 y: 7
-z: ptr(x).se.de.vl
-p: ptr(H0).se.ds.vl
+z: ptr(x)
+p: ptr(H0)
 ## Heap
 H0: 42
 
@@ -11,9 +11,10 @@ H0: 42
 ## Stack
 x: 5
 y: 7
-z: ptr(x).se.de.vl
-p: ptr(H0.0).se.ds.vl
+z: ptr(x)
+p: ptr(H0.0)
 ## Heap
-H0: (2, ptr(H1).straight)
+H0: (2, ptr(H1))
 ##
 H1: 42
+H2: ptr(H2)

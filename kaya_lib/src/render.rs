@@ -17,6 +17,8 @@ use crate::style::{
     Styling, color, dark_style, dark_transparent_style, light_style, light_transparent_style,
 };
 
+const SMALL_LOOP_THRESHOLD: f32 = 50.0;
+
 /// Keep track of rendering stuff
 // We would like to just put all the details about tags and rects in here, but
 // the layout algorithms use methods and move things around. We have to wait
@@ -840,49 +842,34 @@ fn choose_arrow(
     );
     let dx = dst_mid.x - src_mid.x;
     let dy = dst_mid.y - src_mid.y;
-    if src_iloc.location_idx == dst_iloc.location_idx {
-        if src_direction == Direction::Auto {
-            src_direction = Direction::Right;
-        }
+    // Default source direction is right unless set otherwise
+    if src_direction == Direction::Auto {
+        src_direction = Direction::Right;
+    }
+    let mut min_gravity = 0.0;
+    // Loop heuristic: if total distance is very small, draw as a loop e-s
+    if dx.abs() + dy.abs() < SMALL_LOOP_THRESHOLD {
         if dst_direction == Direction::Auto {
-            dst_direction = Direction::Right;
+            dst_direction = Direction::Bottom;
         }
+        min_gravity += 40.0;
+    }
+    // If both locations are in same location (column of values), default to E-E connection
+    if src_iloc.location_idx == dst_iloc.location_idx && dst_direction == Direction::Auto {
+        dst_direction = Direction::Right;
     }
 
     // Do horizontal connection if dx is bigger, vertical connection if dy is bigger
     if dx.abs() > dy.abs() {
-        if dx > 0.0 {
-            if src_direction == Direction::Auto {
-                src_direction = Direction::Right;
-            }
-            if dst_direction == Direction::Auto {
-                dst_direction = Direction::Left;
-            }
-        } else {
-            if src_direction == Direction::Auto {
-                src_direction = Direction::Left;
-            }
-            if dst_direction == Direction::Auto {
-                dst_direction = Direction::Right;
-            }
+        if dx > 0.0 && dst_direction == Direction::Auto {
+            dst_direction = Direction::Left;
+        } else if dst_direction == Direction::Auto {
+            dst_direction = Direction::Right;
         }
-    } else {
-        // This is how we would do it if we wanted short lines
-        if dy > 0.0 {
-            if src_direction == Direction::Auto {
-                src_direction = Direction::Bottom;
-            }
-            if dst_direction == Direction::Auto {
-                dst_direction = Direction::Top;
-            }
-        } else {
-            if src_direction == Direction::Auto {
-                src_direction = Direction::Top;
-            }
-            if dst_direction == Direction::Auto {
-                dst_direction = Direction::Bottom;
-            }
-        }
+    } else if dy > 0.0 && dst_direction == Direction::Auto {
+        dst_direction = Direction::Top;
+    } else if dst_direction == Direction::Auto {
+        dst_direction = Direction::Bottom;
     }
     // src of arrow is drawn with square edge, so need to adjust point by 1/2 width of arrow
     let width = style.get_number_or("arrow.width", 1.0);
@@ -893,8 +880,8 @@ fn choose_arrow(
     let dst_p =
         pick_side(dst_rect, &dst_direction) + scale(get_direction_vector(&dst_direction), dst_gap);
     let dist = norm(point(src_p.x - dst_p.x, src_p.y - dst_p.y));
-    let src_gravity_f = dist * (src_gravity as f32) / 5.0 * 0.3;
-    let dst_gravity_f = dist * (dst_gravity as f32) / 5.0 * 0.3;
+    let src_gravity_f = min_gravity + dist * (src_gravity as f32) / 5.0 * 0.3;
+    let dst_gravity_f = min_gravity + dist * (dst_gravity as f32) / 5.0 * 0.3;
     Arrow::new(
         src_p,
         dst_p,

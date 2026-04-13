@@ -89,6 +89,49 @@ Options:
   -h, --help             Print help
 ```
 
+### Kaya on Webpage
+
+Another workflow is to put Kaya diagrams in a webpage then use the JavaScript
+Kaya package to render the diagrams in the browser. Currently setting up this
+workflow requires building the `kaya_ts` project in this repository using:
+
+```bash
+just wasm
+```
+
+Once the build is complete the Kaya web files are located in `kaya_ts/dist/`.
+Note that the WASM files are required and need to be served with proper headers
+by the webserver when requested.
+
+The general technique is to import the `kaya.js` ESM module from your page. You
+can then immediately call the `initialize()` function to setup options.
+
+```js
+import kaya from './dist/kaya.js';
+kaya.initialize({ scale: 0.75, theme: 'light', verbose: true });
+```
+
+Once the page has loaded, Kaya will look for `<pre>` elements with class `kaya`
+(selector can be changed in options). The elements found will be replaced with
+PNG images of the diagram.
+
+Options:
+```ts
+export type Options = {
+    startOnLoad?: boolean,
+    showPartial?: boolean,
+    showErrors?: boolean,
+    verbose?: boolean;
+    scale?: number,
+    theme?: string,
+    querySelector?: string,
+    nodes?: [HTMLElement],
+}
+```
+
+If you set `startOnLoad` to `false`, then Kaya will only run when you call
+`kaya.run()` and not automatically on page load.
+
 ### Kaya in Markdown Workflow
 
 It is also possible to put `kaya` format diagrams inside Markdown
@@ -107,8 +150,8 @@ ecosystem](https://remark.js.org/). You can see the final result online at the
 
 ### Automatic Rust Analysis Workflow
 
-It is also possible to use Kaya as part of a fully automated
-analysis pipefile for Rust code.
+It is also possible to use Kaya as part of a fully automated analysis pipefile
+for Rust code.
 
 ```
 Rust code --> JSON analysis --> Kaya format --> PNG diagram

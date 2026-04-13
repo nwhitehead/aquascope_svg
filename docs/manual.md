@@ -11,8 +11,7 @@ changes on the right.
 
 Kaya is a human-readable text format that uses some Markdown conventions and
 encodes program state at different points. In this manual we'll explain how Kaya
-works and give examples to show how you might use it. At the end we'll also
-cover adding Kaya support to your Markdown renderer.
+works and give examples to show how you might use it.
 
 ## Overview
 
@@ -480,5 +479,87 @@ cannot execute.
 
 ## More Examples
 
-## Setting Up
+Here is the example from the `README.md` in the repository:
 
+```kaya
+/* 
+Demo Kaya diagram
+
+This demo is designed to demonstrate a few features of Kaya in a somewhat
+realistic way without being overwhelming.
+*/
+
+# L1
+## Stack
+### main
+x: ptr(H0)
+y: ptr(H1)
+## Heap
+H0: 1
+H1: (4, ptr(H2))
+##
+H2: (2, *)
+
+# L2
+## Stack
+### main
+x: ptr(H0)
+y: *
+z: ptr(H2).ds
+## Heap
+H0: 1
+H1: (4, ptr(H2))
+##
+H2: (2, *)
+```
+
+Here is the more advanced example from the repository:
+
+```kaya
+/* 
+Demo2 Kaya diagram
+
+This demo is designed to demonstrate as many features of Kaya as possible in one
+diagram.
+
+* Steps
+* Stack values
+* Stack regions
+* Heap values
+* Multiple nameless heaps
+* Multiple named heaps
+* Pointers to stack
+* Pointers to heap
+* Pointers to contents of struct/tuple
+* Pointers to contents of array
+* Pointers to deep contents
+* Pointers inside struct
+* Pointers inside array
+* Invalid pointers
+* Char values
+* Number values
+* Looped pointers
+
+*/
+
+# L0
+## Stack
+### main
+x: 5
+y: [67, ptr(x)]
+### foo
+m: ptr(H0)
+d: ptr(H1)
+l: ptr(H2)
+u: (1000, 1001, ptr(H1.0).ds)
+z: [1, [2, [3, 4]]]
+## Heap
+H0: ['H', 'e', 'l', 'l', 'o', ptr(H100)]
+H1: person{ id: 1000 }
+H2: [5, ptr(H3)]
+H3: [4, *]
+## Arena
+H100: [67, 5]
+end: ptr(end)
+
+```

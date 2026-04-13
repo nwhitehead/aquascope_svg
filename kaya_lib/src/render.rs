@@ -20,8 +20,14 @@ use crate::style::{
 pub struct RenderState {
     pub style: Styling,
     skip_heap: bool,
+    /// Which ids we've seen (these are valid targets of arrows)
     ids: Vec<String>,
+    /// Keep track of step location names to avoid duplicates (duplicates screw up arrow drawing, uniqueness of labels)
     step_names: Vec<String>,
+    /// Set of pointers we will need to draw, containing (dst prefix, src prefix, ptr stuff)
+    // The prefix stuff is needed for dst to know what step location label is (e.g. L0:...)
+    // The prefix is needed for src to know precise stuff about label we are coming from (e..g L0:x.0.1)
+    // The Ptr part itself has bare target label, like "x" or whatever, plus information about selectors (e.g. .1.0) and borrows
     ptrs: Vec<(String, String, Ptr)>,
 }
 
@@ -70,6 +76,7 @@ fn render_value_array(
     a: &[Value],
     prefix: &str,
     ptr_dst_prefix: &str,
+    loc_idx: &IndexLocation,
     render_state: &mut RenderState,
     canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
@@ -80,6 +87,7 @@ fn render_value_array(
             x,
             &format!("{}.{}", prefix, idx),
             ptr_dst_prefix,
+            loc_idx,
             render_state,
             canvas,
         )?;
@@ -127,6 +135,7 @@ fn render_value_tuple(
     a: &[Value],
     prefix: &str,
     ptr_dst_prefix: &str,
+    loc_idx: &IndexLocation,
     render_state: &mut RenderState,
     canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
@@ -137,6 +146,7 @@ fn render_value_tuple(
             x,
             &format!("{}.{}", prefix, idx),
             ptr_dst_prefix,
+            loc_idx,
             render_state,
             canvas,
         )?;
@@ -184,6 +194,7 @@ fn render_def(
     def: &Def,
     prefix: &str,
     ptr_dst_prefix: &str,
+    loc_idx: &IndexLocation,
     render_state: &mut RenderState,
     canvas: &Canvas,
     skip_heap: bool,
@@ -237,7 +248,7 @@ fn render_def(
     // Note that ptr_dst_prefix just passes through here, it is for getting common step name prefix only.
     // Values can be L0:x.0.1 or something, even inside we still want ptr_dst_prefix to be just L0
     // Point is to convert a pointer to "x.0" into the label "L0:x.0".
-    let g_value = render_value(&def.value, prefix, ptr_dst_prefix, render_state, canvas)?;
+    let g_value = render_value(&def.value, prefix, ptr_dst_prefix, loc_idx, render_state, canvas)?;
     let mut g_border_value = border(g_value, canvas, ds.clone())?;
 
     // Now align the value to right of separator, centered vertically
@@ -264,6 +275,7 @@ fn render_value_struct(
     named_struct: &NamedStruct,
     prefix: &str,
     ptr_dst_prefix: &str,
+    loc_idx: &IndexLocation,
     render_state: &mut RenderState,
     canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
@@ -272,7 +284,7 @@ fn render_value_struct(
     for (idx, p) in named_struct.fields.clone().into_iter().enumerate() {
         let value = &p.1;
         let prefix = &format!("{}.{}", prefix, idx);
-        let draw = render_value(value, prefix, ptr_dst_prefix, render_state, canvas)?;
+        let draw = render_value(value, prefix, ptr_dst_prefix, loc_idx, render_state, canvas)?;
         v_draws.push(draw);
     }
     // Now measure the height for divider lines
@@ -432,6 +444,7 @@ pub fn render_value(
     value: &Value,
     prefix: &str,
     ptr_dst_prefix: &str,
+    loc_idx: &IndexLocation,
     render_state: &mut RenderState,
     canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
@@ -439,9 +452,9 @@ pub fn render_value(
         Value::Number(v) => render_value_number(*v, render_state, canvas)?,
         Value::Char(c) => render_value_char(*c, render_state, canvas)?,
         Value::Pointer(p) => render_value_pointer(p, prefix, ptr_dst_prefix, render_state, canvas)?,
-        Value::Array(a) => render_value_array(a, prefix, ptr_dst_prefix, render_state, canvas)?,
-        Value::Tuple(a) => render_value_tuple(a, prefix, ptr_dst_prefix, render_state, canvas)?,
-        Value::Struct(a) => render_value_struct(a, prefix, ptr_dst_prefix, render_state, canvas)?,
+        Value::Array(a) => render_value_array(a, prefix, ptr_dst_prefix, loc_idx, render_state, canvas)?,
+        Value::Tuple(a) => render_value_tuple(a, prefix, ptr_dst_prefix, loc_idx, render_state, canvas)?,
+        Value::Struct(a) => render_value_struct(a, prefix, ptr_dst_prefix, loc_idx, render_state, canvas)?,
         Value::Invalid => render_value_invalid(render_state, canvas)?,
     };
     // see if tag is already present
@@ -459,6 +472,7 @@ pub fn render_region(
     value: &Region,
     prefix: &str,
     ptr_dst_prefix: &str,
+    idx: &IndexLocation,
     render_state: &mut RenderState,
     canvas: &Canvas,
     skip_heap: bool,
@@ -478,7 +492,7 @@ pub fn render_region(
     // Body
     let mut body: Vec<Box<dyn Drawable>> = vec![];
     for def in &value.definitions {
-        let g_def = render_def(def, prefix, ptr_dst_prefix, render_state, canvas, skip_heap)?;
+        let g_def = render_def(def, prefix, ptr_dst_prefix, idx, render_state, canvas, skip_heap)?;
         body.push(g_def);
     }
     // stack vertically without moving horizontally (to keep : aligned)
@@ -492,6 +506,7 @@ pub fn render_location(
     value: &Location,
     prefix: &str,
     ptr_dst_prefix: &str,
+    idx: &IndexLocation,
     render_state: &mut RenderState,
     canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
@@ -508,6 +523,7 @@ pub fn render_location(
             },
             prefix,
             ptr_dst_prefix,
+            idx,
             render_state,
             canvas,
         );
@@ -537,6 +553,7 @@ pub fn render_location(
             region,
             prefix,
             ptr_dst_prefix,
+            idx,
             render_state,
             canvas,
             skip_heap,
@@ -549,8 +566,24 @@ pub fn render_location(
     Ok(Box::new(g_final))
 }
 
+#[derive(Clone, Debug)]
+pub struct IndexLocation {
+    step_idx: usize,
+    location_idx: usize,
+}
+
+impl IndexLocation {
+    fn new(step_idx: usize, location_idx: usize) -> Self {
+        Self {
+            step_idx,
+            location_idx,
+        }
+    }
+}
+
 pub fn render_step(
     value: &Step,
+    step_idx: usize,
     render_state: &mut RenderState,
     canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
@@ -587,6 +620,7 @@ pub fn render_step(
             location,
             &value.label.to_string(),
             &value.label.to_string(),
+            &IndexLocation::new(step_idx, idx),
             render_state,
             canvas,
         )?;
@@ -838,7 +872,7 @@ pub fn render_program(
     let mut body: Vec<Box<dyn Drawable>> = vec![];
     let gap = style.get_number_or("program.step.gap", 5.0);
     for (idx, step) in value.0.iter().enumerate() {
-        let g_location = render_step(step, &mut rs, canvas)?;
+        let g_location = render_step(step, idx, &mut rs, canvas)?;
         if idx > 0 {
             body.push(Box::new(GSpace::new(0.0, gap)));
         }
@@ -959,7 +993,7 @@ mod tests {
         rs.style
             .add_color("value.number.color", color("#bccfa980")?);
 
-        let mut v = render_value(&Value::Number(42.0), "", "", &mut rs, &canvas)?;
+        let mut v = render_value(&Value::Number(42.0), "", "", &IndexLocation::new(0, 0), &mut rs, &canvas)?;
         v.translate(point(400.0, 400.0));
         v.draw(&mut canvas)?;
         v.translate(point(10.0, 5.0));
@@ -969,7 +1003,7 @@ mod tests {
 
         rs.style
             .add_color("value.number.color", color("#cfa9bc80")?);
-        let mut v2 = render_value(&Value::Number(67.0), "", "", &mut rs, &canvas)?;
+        let mut v2 = render_value(&Value::Number(67.0), "", "", &IndexLocation::new(0, 0), &mut rs, &canvas)?;
         v2.translate(point(400.0, 430.0));
         v2.draw(&mut canvas)?;
         v2.translate(point(10.0, -7.0));
@@ -1109,11 +1143,11 @@ mod tests {
         let mut rs = RenderState::default();
         rs.style = dark_style()?;
 
-        let mut v = render_value(&Value::Number(42.0), "", "", &mut rs, &canvas)?;
+        let mut v = render_value(&Value::Number(42.0), "", "", &IndexLocation::new(0, 0), &mut rs, &canvas)?;
         v.translate(point(200.0, 200.0));
         v.draw(&mut canvas)?;
 
-        let mut v = render_value(&Value::Char('H'), "", "", &mut rs, &canvas)?;
+        let mut v = render_value(&Value::Char('H'), "", "", &IndexLocation::new(0, 0), &mut rs, &canvas)?;
         v.translate(point(250.0, 200.0));
         v.draw(&mut canvas)?;
 
@@ -1126,6 +1160,7 @@ mod tests {
             }),
             "",
             "",
+            &IndexLocation::new(0, 0),
             &mut rs,
             &canvas,
         )?;
@@ -1145,6 +1180,7 @@ mod tests {
             ]),
             "",
             "",
+            &IndexLocation::new(0, 0),
             &mut rs,
             &canvas,
         )?;
@@ -1158,6 +1194,7 @@ mod tests {
             },
             "",
             "",
+            &IndexLocation::new(0, 0),
             &mut rs,
             &canvas,
             true,
@@ -1178,6 +1215,7 @@ mod tests {
             },
             "",
             "",
+            &IndexLocation::new(0, 0),
             &mut rs,
             &canvas,
             true,

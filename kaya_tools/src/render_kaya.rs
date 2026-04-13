@@ -21,7 +21,10 @@ struct Args {
         long
     )]
     scale: Option<f64>,
-    #[arg(help = "Choose theme, choices are: dark, light, dark_transparent, light_transparent", long)]
+    #[arg(
+        help = "Choose theme, choices are: dark, light, dark_transparent, light_transparent",
+        long
+    )]
     theme: Option<String>,
     #[arg(
         help = "Output filename(s), required, (use - for stdout), (must be PNG)",

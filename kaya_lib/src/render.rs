@@ -21,6 +21,7 @@ pub struct RenderState {
     pub style: Styling,
     skip_heap: bool,
     ids: Vec<String>,
+    step_names: Vec<String>,
     ptrs: Vec<(String, String, Ptr)>,
 }
 
@@ -30,6 +31,7 @@ impl Default for RenderState {
             style: Default::default(),
             skip_heap: true,
             ids: vec![],
+            step_names: vec![],
             ptrs: vec![],
         }
     }
@@ -44,6 +46,13 @@ impl RenderState {
     }
     pub fn clear_ids(&mut self) {
         self.ids = vec![];
+        self.step_names = vec![];
+    }
+    pub fn register_step(&mut self, name: &str) {
+        self.step_names.push(name.to_string());
+    }
+    pub fn step_names(&self) -> Vec<String> {
+        self.step_names.clone()
     }
 }
 
@@ -545,6 +554,10 @@ pub fn render_step(
     render_state: &mut RenderState,
     canvas: &Canvas,
 ) -> Result<Box<dyn Drawable>> {
+    if render_state.step_names().contains(&value.label) {
+        bail!("Repeated step location name {}", &value.label);
+    }
+    render_state.register_step(&value.label);
     // Label
     let style = &render_state.style;
     let mut ds = DrawState {

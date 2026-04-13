@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import { ref, watch, computed, nextTick } from 'vue';
-import { Edit, Download } from '@element-plus/icons-vue';
+import { Download } from '@element-plus/icons-vue';
 import { useDark } from '@vueuse/core';
 import Kaya from './Kaya.vue';
 
@@ -22,9 +22,6 @@ p: ptr(H0).se.ds.g4
 H0: (42, ptr(z).c4.sn.dw)
 `);
 
-const scale = ref(4.0);
-
-//"# L0\n## Stack\nx: 5\ny: 7\nz: ptr(x)\np: ptr(H0)\n## Heap\nH0: 42\n");
 const renderedCode = ref("");
 const isDark = useDark();
 const autoUpdate = ref(false);

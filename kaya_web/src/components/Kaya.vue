@@ -1,7 +1,8 @@
 <script setup lang="ts">
 
 import { ref, watch, onMounted } from 'vue';
-import { ErrorInformation, render } from '../../../kaya_ts/ts/kaya.ts';
+import { ErrorInformation, initialize, render } from '../../../kaya_ts/ts/kaya.ts';
+initialize({ startOnLoad: false });
 
 const props = defineProps<{
     source: string,
@@ -48,11 +49,10 @@ function error_text() {
 }
 </script>
 
-<style scoped>
-code.language-kaya pre.error {
+<style>
+pre.error {
     text-align: left;
-    /* background-color: var(--el-color-danger-light-5); */
-    background-color: #f00;
+    background-color: var(--el-color-danger-light-5);
 }
 img.output {
     transform-origin: top left;

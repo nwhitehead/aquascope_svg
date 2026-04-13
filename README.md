@@ -99,8 +99,11 @@ be code fences in the Markdown source tagged with `kaya`. This workflow requires
 a Markdown processor plugin that extracts the `kaya` blocks, calls `render_kaya`
 to get PNG output, then includes the output in the final rendered Markdown.
 
-This repository includes a [demonstration program](kaya_web/src/components/About.vue) written in Vue that shows the
-Kaya manual Markdown on a webpage using the [remark ecosystem](https://remark.js.org/).
+This repository includes a [demonstration
+program](kaya_web/src/components/About.vue) written in Vue that shows the Kaya
+manual Markdown on a webpage using the [remark
+ecosystem](https://remark.js.org/). You can see the final result online at the
+[Kaya manual](https://kaya.shimmermathlabs.com/about).
 
 ### Automatic Rust Analysis Workflow
 
@@ -131,8 +134,6 @@ This project has a tool `render_kaya` for rendering `kaya` diagrams into PNG.
 Usually this will be called from some sort of document preparation system (e.g.
 during Markdown rendering).
 
-## Options
-
 ## Building from source
 
 In general `kaya` is a Rust project that uses standard Rust tools through
@@ -150,8 +151,11 @@ You can run some simple tests with:
 cargo test
 ```
 
-## Testdata
+The project includes a toplevel `Justfile` for convenience.
 
-There are test Rust programs in `testdata/rust`.
+To build appropriate parts of the project for the web, use:
+```bash
+just wasm
+```
 
-JSON output from `aquascope_cli` is in `testdata/json`.
+The final distributable files for the JS `kaya` package are in `kaya_ts/dist/`.

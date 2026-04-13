@@ -8,7 +8,7 @@ import { ElMenu, ElMenuItem } from 'element-plus';
 
 <template>
   <el-menu class="el-menu-bh" mode="horizontal" :ellipsis="false" router>
-    <el-menu-item index="/about">
+    <el-menu-item index="/manual">
       <div class="flex items-center justify-center gap-2">
         <span>Kaya</span>
       </div>

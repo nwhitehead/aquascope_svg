@@ -15,11 +15,11 @@ import ElementPlus from 'element-plus'
 
 import Editor from './components/Editor.vue';
 import MdEditor from './components/MdEditor.vue';
-import About from './components/About.vue';
+import Manual from './components/Manual.vue';
 
 const routes = [
     { path: '/', component: Editor },
-    { path: '/about', component: About },
+    { path: '/manual', component: Manual },
     { path: '/markdown', component: MdEditor },
 ];
 

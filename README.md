@@ -92,22 +92,13 @@ Options:
 ### Kaya on Webpage
 
 Another workflow is to put Kaya diagrams in a webpage then use the JavaScript
-Kaya package to render the diagrams in the browser. Currently setting up this
-workflow requires building the `kaya_ts` project in this repository using:
-
-```bash
-just wasm
-```
-
-Once the build is complete the Kaya web files are located in `kaya_ts/dist/`.
-Note that the WASM files are required and need to be served with proper headers
-by the webserver when requested.
+Kaya package to render the diagrams in the browser. 
 
 The general technique is to import the `kaya.js` ESM module from your page. You
 can then immediately call the `initialize()` function to setup options.
 
 ```js
-import kaya from './dist/kaya.js';
+import kaya from 'https://kaya.shimmermathlabs.com/kaya_ts/v0.1.0/kaya.js';
 kaya.initialize({ scale: 0.75, theme: 'light', verbose: true });
 ```
 

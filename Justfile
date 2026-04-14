@@ -24,6 +24,8 @@ build_website:
 # Deploy to website (assumes webserver already configured)
 deploy:
     rsync --archive kaya_web/dist/ root@shimmermathlabs.com:/var/www/kaya/
+    VERSION=$(cd kaya_ts && npm pkg get version | xargs) && \
+      rsync --archive kaya_ts/dist/ root@shimmermathlabs.com:/var/www/kaya/kaya_ts/v$VERSION/
 
 # Generate some PNG files to test rendering
 rendertest:
